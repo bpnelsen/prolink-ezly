@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
-import { supabase } from '@/lib/supabase-client';
+import { supabase } from '../../../lib/supabase-client';
 
 export default function ConfirmVisitPage() {
   const { jobId } = useParams();
@@ -15,7 +15,7 @@ export default function ConfirmVisitPage() {
       if (!jobId) return;
       const { data, error } = await supabase
         .from('tasks')
-        .select('title, address, description')
+        .select('title, address, description, images')
         .eq('id', jobId)
         .single();
         
@@ -47,6 +47,22 @@ export default function ConfirmVisitPage() {
             <h2 className="font-semibold text-gray-900">{job.title}</h2>
             <p className="text-sm text-gray-500 mb-2">{job.address}</p>
             <p className="text-sm text-gray-700">{job.description}</p>
+            
+            {job.images && job.images.length > 0 ? (
+               <div className="mt-4">
+                 <h3 className="text-sm font-semibold text-gray-900 mb-2">Project Photos</h3>
+                 <div className="grid grid-cols-4 gap-2">
+                   {job.images.slice(0, 4).map((url: string, index: number) => (
+                     <img key={index} src={url} alt={`Project photo ${index + 1}`} className="w-full h-16 object-cover rounded-md border border-gray-200" />
+                   ))}
+                 </div>
+                 {job.images.length > 4 && (
+                   <p className="text-xs text-blue-600 mt-2 font-medium">+{job.images.length - 4} more photos</p>
+                 )}
+               </div>
+            ) : (
+              <p className="text-xs text-gray-400 italic mt-4">No photos provided.</p>
+            )}
           </div>
         ) : null}
 
