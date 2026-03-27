@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { sendSmsNotification } from '../../../lib/twilio-service';
+import { sendSmsNotification } from '../../../../../../lib/twilio-service';
 
 export async function POST(req: NextRequest) {
   const { proName, jobName, confirmLink, customerPhone } = await req.json();
