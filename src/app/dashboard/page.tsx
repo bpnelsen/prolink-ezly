@@ -17,6 +17,7 @@ export default function Dashboard() {
           <div className="flex gap-6 items-center">
             <Link href="/dispatch" className="text-sm font-semibold text-gray-600 hover:text-teal-600 transition-colors">Schedule</Link>
             <Link href="/customers" className="text-sm font-semibold text-gray-600 hover:text-teal-600 transition-colors">Customers</Link>
+            <Link href="/settings" className="text-sm font-semibold text-gray-600 hover:text-teal-600 transition-colors">Settings</Link>
             <a href="https://ezly-dashboard.vercel.app/" className="text-sm font-semibold text-teal-600 hover:text-teal-700 transition-colors">Go to EZLY Dashboard →</a>
             <Link href="/new-job" className="bg-teal-600 text-white px-5 py-2 rounded-lg font-semibold text-sm hover:bg-teal-700 transition-colors shadow-sm">+ New Job</Link>
             <button onClick={handleLogout} className="text-gray-400 hover:text-red-600 transition-colors" title="Logout">
