@@ -1,5 +1,6 @@
 node_modules/
-.env*
 .next/
-node_modules/
+.next_ghost/
+.next_old/
 .env*
+*.log
