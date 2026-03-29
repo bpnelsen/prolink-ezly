@@ -1,14 +1,17 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 
-// Initialize Supabase. 
-// Note: In a real project, these should be in your environment variables.
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
-const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
-const supabase = createClient(supabaseUrl, supabaseKey);
+// Lazy-init to avoid build-time crash when env vars aren't available
+function getSupabase() {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  if (!url || !key) throw new Error('Supabase env vars not set');
+  return createClient(url, key);
+}
 
 export async function POST(req: Request) {
   try {
+    const supabase = getSupabase();
     const body = await req.json();
     const { task_id, requested_at, reason } = body;
 
