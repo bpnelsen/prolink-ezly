@@ -6,10 +6,8 @@ import Breadcrumbs from '../../components/Breadcrumbs';
 export default function SettingsPage() {
   const settingsOptions = [
     { title: 'Profile', desc: 'Manage your business details', href: '/settings/profile', icon: User },
-    { title: 'Automations', desc: 'Configure workflow triggers', href: '/automations', icon: Zap },
-    { title: 'Access & Security', desc: 'Manage team and permissions', href: '/settings/security', icon: Lock },
-    { title: 'Design & Theme', desc: 'Custom branding and colors', href: '/settings/design', icon: Palette },
-    { title: 'Notifications', desc: 'Manage alerts and alerts', href: '/settings/notifications', icon: Bell },
+    { title: 'Notifications', desc: 'Manage alerts and preferences', href: '/settings/notifications', icon: Bell },
+    { title: 'Enterprise', desc: 'Automations, Security & Design', href: '/settings/enterprise', icon: Settings },
   ];
 
   return (
