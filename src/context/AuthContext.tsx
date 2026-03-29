@@ -25,6 +25,8 @@ const AuthContext = createContext<AuthContextType>({
 });
 
 // Pages that don't require authentication
+// Prolink (pro.useezly.com) is contractor-only
+// Homeowners are redirected to useezly.com
 const PUBLIC_PATHS = ['/login', '/signup', '/', '/confirm-visit'];
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
