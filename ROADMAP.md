@@ -1,22 +1,33 @@
 # Prolink-EZLY: Master Roadmap
+*Updated: March 28, 2026*
 
-## 🚀 High Priority (Blocking Launch)
-- [ ] **Data Migration & RLS:** Connect Live Supabase (`rrpkokhjomvlumreknuq`) + Row Level Security (RLS) policies.
-- [ ] **Auth Workflow:** Finalize role-based access for "Contractors" vs "Admin".
-- [ ] **Operational Core:** Build the full Job Detail Hub (moving from test data to dynamic data).
-- [ ] **Invoicing Engine:** Finish Stripe Connect integration for real payouts.
+## ✅ Completed
+- [x] **Job Detail Hub UI** — Two-column layout (CRM/Map/History + Workflow Engine)
+- [x] **Supabase Connection** — Live DB connected, env vars on Vercel
+- [x] **Feature Gates** — Solo/Team/Scale tiers with `<FeatureGate>` component
+- [x] **Auth Workflow** — Signup, Login, AuthContext, AuthGuard, role-based access
+- [x] **RLS Policies** — jobs, job_contractors, reschedule_requests, profiles locked down
+- [x] **Job Bidding Model** — junction table, invite/bid/assign flow, 3-day decline visibility
+- [x] **Settings Pages** — Profile, Notifications, Enterprise (all with back buttons)
+- [x] **Twilio Verified** — SMS send working
+- [x] **Vercel Deployment** — CI/CD pipeline via GitHub push
+
+## 🚀 High Priority (Next Up)
+- [ ] **Stripe Connect** — Invoicing engine, contractor payouts
+- [ ] **SMS Integration** — Wire Twilio into job status updates (invite, assigned, reschedule)
+- [ ] **Custom Domain** — Configure `pro.useezly.com` DNS on Vercel
 
 ## 📈 Medium Priority (Scaling/Growth)
-- [ ] **SMS/Communication:** Integrate inbound/outbound SMS (Twilio) with job status updates.
-- [ ] **Advanced Reporting:** Complete the "Financial dashboard" visualization for Scale-tier users.
-- [ ] **Multi-Tier Logic:** Refine the `<FeatureGate>` and Plan system in `lib/plans.ts`.
+- [ ] **Advanced Reporting** — Financial dashboards for Scale-tier users
+- [ ] **Contractor Browse** — Higher-tier plan lets contractors see all available jobs (not just invited)
+- [ ] **Notification System** — In-app notifications + email digests
 
 ## 🏗️ Technical / DevOps
-- [ ] **Prod Vercel Sync:** Finalize CI/CD pipeline for `prolink-ezly`.
-- [ ] **Custom Domain:** Configure `pro.useezly.com` DNS.
+- [ ] **Supabase Service Role Key** — Add to Vercel for server-side operations
+- [ ] **Error Handling** — Global error boundaries + toast notifications
+- [ ] **Testing** — Unit tests for auth flow + RLS policy verification
 
-## Recently Completed
-- ✅ Initial Job Detail Hub UI (CRM/Map/History/Workflow).
-- ✅ Stripe/Financial simulation panels.
-- ✅ Tiered system (Solo/Team/Scale) framework.
-- ✅ Twilio integration verified.
+## 💡 Future Ideas
+- [ ] **Ezly (useezly.com)** — Homeowner-facing site (separate codebase)
+- [ ] **Consultation Fee** — Optional site visit charge with transparent advisory banners
+- [ ] **Inspection Requests** — Optional, fee-based
