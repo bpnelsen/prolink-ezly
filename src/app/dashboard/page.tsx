@@ -1,14 +1,17 @@
 'use client'
 import { Plus, Search, Calendar, Users, Briefcase, TrendingUp, AlertTriangle, FileText, CheckCircle, BarChart3, Tag, Clock, MapPin, User, ArrowUpRight, DollarSign, Send, Check, LogOut } from 'lucide-react';
 import Link from 'next/link';
-
-const handleLogout = () => {
-  localStorage.clear()
-  window.location.href = '/login'
-}
+import AuthGuard from '@/components/AuthGuard';
+import { useAuth } from '@/context/AuthContext';
 
 export default function Dashboard() {
+  const { user, signOut } = useAuth();
+
+  const handleLogout = () => {
+    signOut();
+  }
   return (
+    <AuthGuard roles={['admin', 'contractor']}>
     <div className="min-h-screen bg-gray-50">
       {/* Top Nav */}
       <nav className="bg-white border-b border-gray-200 sticky top-0 z-50 px-6 py-4">
@@ -208,5 +211,6 @@ export default function Dashboard() {
         </section>
       </main>
     </div>
+    </AuthGuard>
   );
 }

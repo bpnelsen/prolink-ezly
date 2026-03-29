@@ -1,8 +1,9 @@
 'use client'
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { supabase } from '../../lib/supabase-client'
+import { supabase } from '@/lib/supabase-client'
 import { Eye, EyeOff, LogIn } from 'lucide-react'
+import Link from 'next/link'
 
 export default function LoginPage() {
   const router = useRouter()
@@ -26,9 +27,20 @@ export default function LoginPage() {
       if (authError) throw authError
 
       if (data.user) {
-        localStorage.setItem('user_email', email)
-        localStorage.setItem('authenticated', 'true')
-        window.location.href = '/dashboard'
+        // Fetch role to determine redirect
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('role')
+          .eq('id', data.user.id)
+          .single();
+
+        const role = profile?.role || 'homeowner';
+
+        if (role === 'admin' || role === 'contractor') {
+          router.push('/dashboard');
+        } else {
+          router.push('/dashboard');
+        }
       }
     } catch (err: any) {
       setError(err.message || 'Login failed')
@@ -42,11 +54,6 @@ export default function LoginPage() {
     localStorage.setItem('authenticated', 'true')
     localStorage.setItem('dev_mode', 'true')
     window.location.href = '/dashboard'
-  }
-
-  const handleReset = () => {
-    localStorage.clear()
-    window.location.reload()
   }
 
   return (
@@ -120,7 +127,14 @@ export default function LoginPage() {
             </button>
           </form>
 
-          <div className="mt-6 pt-6 border-t border-gray-200">
+          <div className="mt-6 pt-6 border-t border-gray-200 text-center">
+            <p className="text-sm text-gray-500">
+              Don&apos;t have an account?{' '}
+              <Link href="/signup" className="text-teal-600 hover:text-teal-700 font-semibold">Create Account</Link>
+            </p>
+          </div>
+
+          <div className="mt-4 pt-4 border-t border-gray-100">
             <p className="text-xs text-gray-400 text-center mb-3">Dev Mode</p>
             <button
               onClick={handleDevLogin}
@@ -129,16 +143,6 @@ export default function LoginPage() {
               Quick Login (Demo)
             </button>
           </div>
-        </div>
-
-        {/* Footer Links */}
-        <div className="text-center mt-6 space-y-2">
-          <a href="https://ezly-dashboard.vercel.app" className="block text-sm text-teal-600 hover:text-teal-700 font-semibold">
-            Looking for EZLY? Go to marketplace →
-          </a>
-          <button onClick={handleReset} className="text-xs text-gray-400 hover:text-gray-600 underline">
-            Reset Session
-          </button>
         </div>
       </div>
     </div>
