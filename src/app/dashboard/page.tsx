@@ -24,7 +24,7 @@ export default function Dashboard() {
                 <Link href="/dispatch" className="text-sm font-semibold text-gray-600 hover:text-teal-600 transition-colors">Schedule</Link>
                 <Link href="/customers" className="text-sm font-semibold text-gray-600 hover:text-teal-600 transition-colors">Customers</Link>
                 <Link href="/settings" className="text-sm font-semibold text-gray-600 hover:text-teal-600 transition-colors">Settings</Link>
-                <a href="https://app.useezly.com/prolink" className="text-sm font-semibold text-teal-600 hover:text-teal-700 transition-colors">Go to EZLY →</a>
+                <a href="https://useezly.com" className="text-sm font-semibold text-teal-600 hover:text-teal-700 transition-colors">Go to Homeowner Portal →</a>
              </div>
              
              {/* Mobile Menu Toggle (Simplified placeholder) */}
