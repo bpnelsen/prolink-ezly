@@ -43,6 +43,43 @@ ALTER TABLE public.pl_contractors ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.pl_pipelines ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.pl_vetting_records ENABLE ROW LEVEL SECURITY;
 
--- Basic RLS Policy: Pro members can read their own prolink info
-CREATE POLICY "Users can read own prolink info" ON public.pl_contractors
-  FOR SELECT USING (auth.uid() = id);
+-- Helper function for role-based access
+CREATE OR REPLACE FUNCTION public.is_admin()
+RETURNS BOOLEAN AS $$
+  SELECT EXISTS (
+    SELECT 1 FROM public.profiles 
+    WHERE id = auth.uid() AND role = 'admin'
+  );
+$$ LANGUAGE sql STABLE;
+
+-- Profiles: Admin can do anything; Users can only read/update their own profile
+CREATE POLICY "Admin has all access" ON public.profiles FOR ALL USING (public.is_admin());
+CREATE POLICY "Users can read own profile" ON public.profiles FOR SELECT USING (auth.uid() = id);
+CREATE POLICY "Users can update own profile" ON public.profiles FOR UPDATE USING (auth.uid() = id);
+
+-- Contractors: Admin has all; Contractors can only access their own
+CREATE POLICY "Admin has all access" ON public.pl_contractors FOR ALL USING (public.is_admin());
+CREATE POLICY "Contractors can read own record" ON public.pl_contractors FOR SELECT USING (id = auth.uid());
+CREATE POLICY "Contractors can update own record" ON public.pl_contractors FOR UPDATE USING (id = auth.uid());
+
+-- Pipelines: Admin has all; Contractors can only access their own
+CREATE POLICY "Admin has all access" ON public.pl_pipelines FOR ALL USING (public.is_admin());
+CREATE POLICY "Contractors can access own pipelines" ON public.pl_pipelines FOR ALL USING (contractor_id = auth.uid());
+
+CREATE TABLE IF NOT EXISTS public.pl_customers (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  contractor_id UUID REFERENCES public.pl_contractors(id),
+  first_name TEXT,
+  last_name TEXT,
+  phone TEXT,
+  email TEXT,
+  street_address TEXT,
+  city TEXT,
+  zip_code TEXT,
+  notes TEXT,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now())
+);
+ALTER TABLE public.pl_customers ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Admin has all access" ON public.pl_customers FOR ALL USING (public.is_admin());
+CREATE POLICY "Contractors can access own customers" ON public.pl_customers FOR ALL USING (contractor_id = auth.uid());
+

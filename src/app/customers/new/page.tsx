@@ -1,9 +1,45 @@
 'use client'
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { Plus } from 'lucide-react';
+import { supabase } from '@/lib/supabase-client';
 import Breadcrumbs from '../../../components/Breadcrumbs';
 
 export default function NewCustomer() {
+  const router = useRouter();
+  const [loading, setLoading] = useState(false);
+  const [formData, setFormData] = useState({
+    first_name: '', last_name: '', phone: '', email: '',
+    street_address: '', city: '', zip_code: '', notes: ''
+  });
+
+  const handleCreate = async () => {
+    setLoading(true);
+    const { data: { user } } = await supabase.auth.getUser();
+    
+    if (!user) {
+        alert("Please log in first.");
+        setLoading(false);
+        return;
+    }
+
+    const { error } = await supabase.from('pl_customers').insert({
+        contractor_id: user.id,
+        ...formData
+    });
+
+    if (error) {
+        alert("Error saving: " + error.message);
+    } else {
+        router.push('/customers');
+    }
+    setLoading(false);
+  };
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 text-gray-900 p-8">
       <div className="max-w-3xl mx-auto">
@@ -15,25 +51,29 @@ export default function NewCustomer() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             <div className="space-y-4">
               <h3 className="font-bold text-teal-600">Personal Details</h3>
-              <input className="w-full bg-gray-50 p-3 rounded-lg border border-gray-200 focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20" placeholder="First Name" />
-              <input className="w-full bg-gray-50 p-3 rounded-lg border border-gray-200 focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20" placeholder="Last Name" />
-              <input className="w-full bg-gray-50 p-3 rounded-lg border border-gray-200 focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20" placeholder="Phone Number" />
-              <input className="w-full bg-gray-50 p-3 rounded-lg border border-gray-200 focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20" placeholder="Email Address" />
+              <input name="first_name" onChange={handleChange} className="w-full bg-gray-50 p-3 rounded-lg border border-gray-200" placeholder="First Name" />
+              <input name="last_name" onChange={handleChange} className="w-full bg-gray-50 p-3 rounded-lg border border-gray-200" placeholder="Last Name" />
+              <input name="phone" onChange={handleChange} className="w-full bg-gray-50 p-3 rounded-lg border border-gray-200" placeholder="Phone Number" />
+              <input name="email" onChange={handleChange} className="w-full bg-gray-50 p-3 rounded-lg border border-gray-200" placeholder="Email Address" />
             </div>
 
             <div className="space-y-4">
               <h3 className="font-bold text-teal-600">Primary Property</h3>
-              <input className="w-full bg-gray-50 p-3 rounded-lg border border-gray-200 focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20" placeholder="Street Address" />
+              <input name="street_address" onChange={handleChange} className="w-full bg-gray-50 p-3 rounded-lg border border-gray-200" placeholder="Street Address" />
               <div className="grid grid-cols-2 gap-4">
-                 <input className="bg-gray-50 p-3 rounded-lg border border-gray-200 focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20" placeholder="City" />
-                 <input className="bg-gray-50 p-3 rounded-lg border border-gray-200 focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20" placeholder="Zip Code" />
+                 <input name="city" onChange={handleChange} className="bg-gray-50 p-3 rounded-lg border border-gray-200" placeholder="City" />
+                 <input name="zip_code" onChange={handleChange} className="bg-gray-50 p-3 rounded-lg border border-gray-200" placeholder="Zip Code" />
               </div>
-              <textarea className="w-full bg-gray-50 p-3 rounded-lg border border-gray-200 h-28 focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20" placeholder="Notes (Gate codes, pet info, etc.)" />
+              <textarea name="notes" onChange={handleChange} className="w-full bg-gray-50 p-3 rounded-lg border border-gray-200 h-28" placeholder="Notes (Gate codes, pet info, etc.)" />
             </div>
           </div>
           
-          <button className="w-full mt-8 bg-teal-600 text-white font-bold py-4 rounded-xl hover:bg-teal-700 transition-all flex items-center justify-center gap-2 shadow-sm">
-            <Plus size={18}/> Create Customer Profile
+          <button 
+            onClick={handleCreate} 
+            disabled={loading}
+            className="w-full mt-8 bg-teal-600 text-white font-bold py-4 rounded-xl hover:bg-teal-700 transition-all flex items-center justify-center gap-2 shadow-sm"
+          >
+            {loading ? 'Creating...' : <><Plus size={18}/> Create Customer Profile</>}
           </button>
         </div>
       </div>
