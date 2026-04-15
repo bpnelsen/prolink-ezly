@@ -14,15 +14,27 @@ export default function Dashboard() {
     <AuthGuard roles={['admin', 'contractor']}>
     <div className="min-h-screen bg-gray-50">
       {/* Top Nav */}
-      <nav className="bg-white border-b border-gray-200 sticky top-0 z-50 px-6 py-4">
+      <nav className="bg-white border-b border-gray-200 sticky top-0 z-50 px-4 md:px-6 py-4">
         <div className="max-w-7xl mx-auto flex justify-between items-center">
-          <h1 className="text-xl font-bold text-gray-900">Prolink <span className="font-light text-gray-500">by Ezly</span></h1>
-          <div className="flex gap-6 items-center">
-            <Link href="/dispatch" className="text-sm font-semibold text-gray-600 hover:text-teal-600 transition-colors">Schedule</Link>
-            <Link href="/customers" className="text-sm font-semibold text-gray-600 hover:text-teal-600 transition-colors">Customers</Link>
-            <Link href="/settings" className="text-sm font-semibold text-gray-600 hover:text-teal-600 transition-colors">Settings</Link>
-            <a href="https://ezly-dashboard.vercel.app/" className="text-sm font-semibold text-teal-600 hover:text-teal-700 transition-colors">Go to EZLY Dashboard →</a>
-            <Link href="/new-job" className="bg-teal-600 text-white px-5 py-2 rounded-lg font-semibold text-sm hover:bg-teal-700 transition-colors shadow-sm">+ New Job</Link>
+          <h1 className="text-xl font-bold text-gray-900">Prolink <span className="font-light text-gray-500 hidden md:inline">by Ezly</span></h1>
+          
+          <div className="flex gap-4 items-center">
+             {/* Desktop Menu */}
+             <div className="hidden md:flex gap-6 items-center">
+                <Link href="/dispatch" className="text-sm font-semibold text-gray-600 hover:text-teal-600 transition-colors">Schedule</Link>
+                <Link href="/customers" className="text-sm font-semibold text-gray-600 hover:text-teal-600 transition-colors">Customers</Link>
+                <Link href="/settings" className="text-sm font-semibold text-gray-600 hover:text-teal-600 transition-colors">Settings</Link>
+                <a href="https://app.useezly.com/prolink" className="text-sm font-semibold text-teal-600 hover:text-teal-700 transition-colors">Go to EZLY →</a>
+             </div>
+             
+             {/* Mobile Menu Toggle (Simplified placeholder) */}
+             <div className="md:hidden">
+               <button className="p-2 text-gray-600 hover:text-teal-600">
+                  <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16m-7 6h7" /></svg>
+               </button>
+             </div>
+
+            <Link href="/new-job" className="bg-teal-600 text-white px-4 md:px-5 py-2 rounded-lg font-semibold text-sm hover:bg-teal-700 transition-colors shadow-sm">+ Job</Link>
             <button onClick={handleLogout} className="text-gray-400 hover:text-red-600 transition-colors" title="Logout">
               <LogOut size={18} />
             </button>
