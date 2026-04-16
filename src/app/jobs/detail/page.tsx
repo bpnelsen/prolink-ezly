@@ -2,8 +2,8 @@
 import { useState } from 'react';
 import { MapPin, Phone, MessageSquare, Clock, DollarSign, CheckCircle, FileText } from 'lucide-react';
 import Link from 'next/link';
-import FinancialsTab from '../../components/FinancialsTab';
-import WorkflowEngine from '../../components/WorkflowEngine';
+import FinancialsTab from '../../../components/FinancialsTab';
+import WorkflowEngine from '../../../components/WorkflowEngine';
 
 export default function JobDetail() {
   const [activeTab, setActiveTab] = useState('Workflow');
