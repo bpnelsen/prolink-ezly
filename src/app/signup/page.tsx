@@ -1,195 +1,172 @@
 'use client'
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { supabase } from '@/lib/supabase-client';
-import { UserPlus, Eye, EyeOff } from 'lucide-react';
-import Link from 'next/link';
+
+export const dynamic = 'force-dynamic'
+
+import { useState } from 'react'
+import Link from 'next/link'
+import { ArrowLeft } from 'lucide-react'
+import { supabase } from '@/lib/supabase-client'
 
 export default function SignupPage() {
-  const router = useRouter();
-  const [form, setForm] = useState({
-    full_name: '',
-    business_name: '',
+  const [step, setStep] = useState(1)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
+  const [formData, setFormData] = useState({
     email: '',
     password: '',
-    trade: '',
-  });
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
+    businessName: '',
+    ownerName: '',
+    phone: '',
+    serviceAreas: '',
+    specialties: [] as string[],
+    yearsExperience: '',
+    licensed: '',
+    insured: '',
+    howDidYouHear: ''
+  })
 
-  const trades = [
-    'General Contractor',
-    'Plumbing',
-    'Electrical',
-    'HVAC',
-    'Roofing',
-    'Painting',
-    'Landscaping',
-    'Flooring',
-    'Handyman',
-    'Other',
-  ];
-
-  const handleSignup = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    setError('');
+  const handleGoogleSignup = async () => {
+    setLoading(true)
+    setError('')
 
     try {
-      const { data, error: signUpError } = await supabase.auth.signUp({
-        email: form.email,
-        password: form.password,
+      const { error: authError } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
         options: {
-          data: {
-            full_name: form.full_name,
-            role: 'contractor',
-          },
+          redirectTo: `${window.location.origin}/auth/callback?role=contractor`,
         },
-      });
-
-      if (signUpError) throw signUpError;
-
-      if (data.user) {
-        await supabase.from('profiles').upsert({
-          id: data.user.id,
-          full_name: form.full_name,
-          email: form.email,
-          role: 'contractor',
-          business_name: form.business_name,
-          trade: form.trade,
-        });
-
-        setSuccess(true);
-        setTimeout(() => router.push('/login'), 2000);
-      }
+      })
+      if (authError) setError(authError.message)
     } catch (err: any) {
-      setError(err.message || 'Signup failed');
+      setError(err.message || 'Failed to sign up with Google')
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
-  };
+  }
+
+  const handleChange = (e: any) => {
+    const { name, value, type, checked } = e.target
+    if (type === 'checkbox') {
+      setFormData(prev => ({
+        ...prev,
+        specialties: checked 
+          ? [...prev.specialties, value]
+          : prev.specialties.filter(t => t !== value)
+      }))
+    } else {
+      setFormData(prev => ({ ...prev, [name]: value }))
+    }
+  }
+
+  const handleSignup = async () => {
+    setLoading(true)
+    setError('')
+    try {
+      const { data, error: authError } = await supabase.auth.signUp({
+        email: formData.email,
+        password: formData.password,
+        options: { data: { full_name: formData.ownerName, phone: formData.phone, role: 'contractor', business_name: formData.businessName } }
+      })
+      if (authError) throw authError
+      if (data.user) {
+        const { error: profileError } = await supabase.from('profiles').insert({
+          id: data.user.id,
+          email: formData.email,
+          full_name: formData.ownerName,
+          business_name: formData.businessName,
+          role: 'contractor',
+          metadata: {
+            serviceAreas: formData.serviceAreas,
+            specialties: formData.specialties,
+            yearsExperience: formData.yearsExperience,
+            licensed: formData.licensed,
+            insured: formData.insured,
+            howDidYouHear: formData.howDidYouHear
+          }
+        })
+        if (profileError) throw profileError
+      }
+      window.location.href = '/dashboard'
+    } catch (err: any) {
+      setError(err.message || 'Signup failed')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const specialties = ['Kitchen Remodeling', 'Bathroom Renovation', 'Roofing', 'Electrical', 'HVAC', 'Plumbing', 'Flooring', 'Painting', 'Carpentry', 'Landscaping', 'Masonry', 'General Contracting']
 
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-      <div className="w-full max-w-md">
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">Prolink <span className="font-light text-gray-500">by Ezly</span></h1>
-          <p className="text-gray-500 mt-2">Create your contractor account</p>
+    <div className="min-h-screen bg-gray-50 flex flex-col">
+      <header className="bg-white border-b border-gray-200 py-4 px-6">
+        <div className="max-w-5xl mx-auto flex justify-between items-center">
+          <Link href="/" className="text-[#0f3a7d] font-bold text-2xl tracking-tight">Prolink</Link>
+          <Link href="https://useezly.com" className="text-gray-500 hover:text-[#0f3a7d] text-sm flex items-center gap-2">
+            <ArrowLeft size={16} /> Back to EZLY
+          </Link>
         </div>
+      </header>
 
-        <div className="card p-8">
-          {success ? (
-            <div className="text-center py-6">
-              <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <UserPlus className="text-green-600" size={24} />
-              </div>
-              <p className="text-lg font-bold text-gray-900 mb-2">Account Created!</p>
-              <p className="text-sm text-gray-500">Redirecting to login...</p>
-            </div>
-          ) : (
-            <form onSubmit={handleSignup} className="space-y-5">
-              <div>
-                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Full Name</label>
-                <input
-                  type="text"
-                  value={form.full_name}
-                  onChange={e => setForm({ ...form, full_name: e.target.value })}
-                  className="w-full bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 text-gray-900 focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20"
-                  placeholder="John Smith"
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Business Name</label>
-                <input
-                  type="text"
-                  value={form.business_name}
-                  onChange={e => setForm({ ...form, business_name: e.target.value })}
-                  className="w-full bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 text-gray-900 focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20"
-                  placeholder="Smith Plumbing LLC"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Trade / Specialty</label>
-                <select
-                  value={form.trade}
-                  onChange={e => setForm({ ...form, trade: e.target.value })}
-                  className="w-full bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 text-gray-900 focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20"
-                  required
-                >
-                  <option value="">Select your trade...</option>
-                  {trades.map(t => <option key={t} value={t}>{t}</option>)}
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Email</label>
-                <input
-                  type="email"
-                  value={form.email}
-                  onChange={e => setForm({ ...form, email: e.target.value })}
-                  className="w-full bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 text-gray-900 focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20"
-                  placeholder="you@example.com"
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Password</label>
-                <div className="relative">
-                  <input
-                    type={showPassword ? 'text' : 'password'}
-                    value={form.password}
-                    onChange={e => setForm({ ...form, password: e.target.value })}
-                    className="w-full bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 text-gray-900 focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 pr-12"
-                    placeholder="••••••••"
-                    minLength={6}
-                    required
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                  >
-                    {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
-                  </button>
-                </div>
-              </div>
-
-              {error && (
-                <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
-                  {error}
-                </div>
-              )}
-
-              <button
-                type="submit"
-                disabled={loading}
-                className="w-full bg-teal-600 text-white font-semibold py-3 rounded-lg hover:bg-teal-700 transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
-              >
-                {loading ? 'Creating Account...' : <><UserPlus size={18} /> Create Contractor Account</>}
-              </button>
-            </form>
-          )}
-
-          <div className="mt-6 pt-6 border-t border-gray-200 text-center">
-            <p className="text-sm text-gray-500">
-              Already have an account?{' '}
-              <Link href="/login" className="text-teal-600 hover:text-teal-700 font-semibold">Sign In</Link>
-            </p>
+      <div className="flex-1 flex items-center justify-center p-6">
+        <div className="w-full max-w-lg bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
+          <div className="mb-8">
+            <h2 className="text-2xl font-bold text-[#0f3a7d]">Create Your Prolink Account</h2>
+            <p className="text-gray-500 text-sm mt-1">Step {step} of 3</p>
           </div>
 
-          <div className="mt-4 text-center">
-            <p className="text-xs text-gray-400">
-              Homeowner? Visit <a href="https://useezly.com" className="text-teal-600 hover:text-teal-700 font-semibold">useezly.com</a> instead
-            </p>
+          {step === 1 && (
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-1">Email</label>
+                <input type="email" name="email" value={formData.email} onChange={handleChange} className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#14b8a6]" placeholder="you@work.com" />
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-1">Password</label>
+                <input type="password" name="password" value={formData.password} onChange={handleChange} className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#14b8a6]" />
+              </div>
+              <button onClick={() => setStep(2)} className="w-full py-2.5 bg-[#0f3a7d] text-white rounded-lg font-semibold hover:bg-[#0c2e5c]">Continue</button>
+              <div className="text-center text-sm text-gray-400">or</div>
+              <button onClick={handleGoogleSignup} className="w-full py-2.5 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 font-semibold text-gray-700 text-sm">Continue with Google</button>
+            </div>
+          )}
+          
+          {step === 2 && (
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-1">Business Name</label>
+                <input type="text" name="businessName" value={formData.businessName} onChange={handleChange} className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#14b8a6]" />
+              </div>
+              <div className="flex gap-3">
+                <button onClick={() => setStep(1)} className="flex-1 py-2.5 bg-gray-100 rounded-lg font-semibold hover:bg-gray-200">Back</button>
+                <button onClick={() => setStep(3)} className="flex-1 py-2.5 bg-[#0f3a7d] text-white rounded-lg font-semibold hover:bg-[#0c2e5c]">Continue</button>
+              </div>
+            </div>
+          )}
+
+          {step === 3 && (
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-1">Specialties</label>
+                <div className="grid grid-cols-2 gap-2">
+                  {specialties.map(t => (
+                    <label key={t} className="flex items-center gap-2 text-sm text-gray-600">
+                      <input type="checkbox" name="specialties" value={t} checked={formData.specialties.includes(t)} onChange={handleChange} /> {t}
+                    </label>
+                  ))}
+                </div>
+              </div>
+              <div className="flex gap-3">
+                <button onClick={() => setStep(2)} className="flex-1 py-2.5 bg-gray-100 rounded-lg font-semibold hover:bg-gray-200">Back</button>
+                <button onClick={handleSignup} className="flex-1 py-2.5 bg-[#14b8a6] text-white rounded-lg font-semibold hover:bg-[#0d9e8c]">Create Account</button>
+              </div>
+            </div>
+          )}
+
+          <div className="mt-6 text-center text-sm text-gray-600">
+            Already have an account? <Link href="/login" className="text-[#14b8a6] font-semibold">Sign In</Link>
           </div>
         </div>
       </div>
     </div>
-  );
+  )
 }
