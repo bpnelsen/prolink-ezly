@@ -74,7 +74,7 @@ export default function JobDetail() {
               </div>
 
               {/* Dynamic Content */}
-              {activeTab === 'Workflow' && <WorkflowEngine />}
+              {activeTab === 'Workflow' && <WorkflowEngine currentStatus="schedule" />}
               {activeTab === 'Financials' && <FinancialsTab />}
               {activeTab === 'Docs' && (
                 <div className="text-center py-12">
