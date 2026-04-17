@@ -69,6 +69,7 @@ export default function NewCustomer() {
           </div>
           
           <button 
+            type="button"
             onClick={handleCreate} 
             disabled={loading}
             className="w-full mt-8 bg-teal-600 text-white font-bold py-4 rounded-xl hover:bg-teal-700 transition-all flex items-center justify-center gap-2 shadow-sm"
