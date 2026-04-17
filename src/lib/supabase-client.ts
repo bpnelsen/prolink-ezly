@@ -8,7 +8,9 @@ if (!supabaseUrl || !supabaseAnonKey) {
   console.warn('Missing Supabase environment variables - using mock client');
 }
 
-// Create client only if we have credentials, otherwise use placeholder
-export const supabase = (supabaseUrl && supabaseAnonKey) 
-  ? createClient(supabaseUrl, supabaseAnonKey)
-  : createClient('https://placeholder.supabase.co', 'placeholder');
+// Create client only if we have credentials, otherwise throw error
+if (!supabaseUrl || !supabaseAnonKey) {
+  throw new Error('Supabase environment variables are missing!');
+}
+
+export const supabase = createClient(supabaseUrl, supabaseAnonKey);
