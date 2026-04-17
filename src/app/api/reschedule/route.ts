@@ -5,13 +5,18 @@ import { createClient } from '@supabase/supabase-js';
 function getSupabase() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-  if (!url || !key) throw new Error('Supabase env vars not set');
+  // If not building, or if env vars are missing during build, warn but don't crash
+  if (!url || !key) {
+    console.warn('Supabase env vars not set, skipping initialization.');
+    return null;
+  }
   return createClient(url, key);
 }
 
 export async function POST(req: Request) {
   try {
     const supabase = getSupabase();
+    if (!supabase) return NextResponse.json({ error: 'Database service unavailable' }, { status: 503 });
     const body = await req.json();
     const { task_id, requested_at, reason } = body;
 
