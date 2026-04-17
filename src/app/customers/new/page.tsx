@@ -31,6 +31,14 @@ export default function NewCustomer() {
         <Breadcrumbs items={[{ label: 'Customers', href: '/customers' }, { label: 'New Customer', href: '/customers/new' }]} />
         
         <div className="card p-8 bg-white">
+          <button 
+            type="button"
+            onClick={() => alert("TEST CLICK SUCCESS")} 
+            className="w-full my-6 p-6 bg-red-500 text-white rounded-xl font-bold"
+          >
+            DEBUG: CLICK ME
+          </button>
+          
           <h2 className="text-2xl font-bold mb-8 text-gray-900">Add New Customer</h2>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
