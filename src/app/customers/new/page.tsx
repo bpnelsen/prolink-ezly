@@ -14,26 +14,11 @@ export default function NewCustomer() {
   });
 
   const handleCreate = async () => {
+    alert("Button is working!");
+    /*
     setLoading(true);
     const { data: { user } } = await supabase.auth.getUser();
-    
-    if (!user) {
-        alert("Please log in first.");
-        setLoading(false);
-        return;
-    }
-
-    const { error } = await supabase.from('pl_customers').insert({
-        contractor_id: user.id,
-        ...formData
-    });
-
-    if (error) {
-        alert("Error saving: " + error.message);
-    } else {
-        router.push('/customers');
-    }
-    setLoading(false);
+    ... */
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
