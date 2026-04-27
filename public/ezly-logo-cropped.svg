@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 150" width="400" height="150">
+  <!-- EZLY Logo Combined - Icon + Wordmark -->
+  <!-- Horizontal layout: House icon on left, EZLY text on right -->
+  
+  <defs>
+    <style>
+      .ezly-navy { fill: #0F3A7D; }
+      .ezly-teal { fill: #06B6D4; }
+      .ezly-stroke { stroke: #0F3A7D; stroke-width: 2; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+      .wordmark-text {
+        font-family: 'Inter', 'Helvetica Neue', Arial, sans-serif;
+        font-size: 56px;
+        font-weight: 700;
+        letter-spacing: -0.5px;
+      }
+    </style>
+  </defs>
+
+  <!-- Icon: House Mark (Left side, scaled down) -->
+  <g id="icon" transform="translate(10, 30)">
+    <!-- House roof -->
+    <polygon points="40,50 70,20 100,50" class="ezly-navy"/>
+    
+    <!-- House body -->
+    <rect x="40" y="50" width="60" height="50" class="ezly-navy"/>
+    
+    <!-- Door -->
+    <rect x="60" y="65" width="15" height="35" fill="#FFFFFF"/>
+    <circle cx="72" cy="82" r="1.5" class="ezly-teal"/>
+    
+    <!-- Accent circle (top) -->
+    <circle cx="70" cy="10" r="6" class="ezly-teal" opacity="0.8"/>
+  </g>
+
+  <!-- Text: EZLY (Right side) -->
+  <text x="130" y="105" class="wordmark-text ezly-navy">EZLY</text>
+
+  <!-- Accent bar under text -->
+  <rect x="130" y="115" width="105" height="3" rx="1.5" class="ezly-teal"/>
+</svg>
