@@ -1,0 +1,5 @@
+<svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <path d="M4 24L16 28L28 24" stroke="#14b8a6" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="16" y="22" font-family="sans-serif" font-weight="bold" font-size="16" fill="#0F3A7D" text-anchor="middle">EZ</text>
+  <rect x="6" y="28" width="20" height="4" fill="#14b8a6" rx="2"/>
+</svg>
