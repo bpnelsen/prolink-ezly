@@ -1,5 +1,8 @@
 'use client'
-import { useState } from 'react'
+
+export const dynamic = 'force-dynamic'
+
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '../../lib/supabase-client'
 import { Eye, EyeOff, LogIn } from 'lucide-react'
@@ -12,6 +15,16 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [showPassword, setShowPassword] = useState(false)
+
+  useEffect(() => {
+    try {
+      const params = new URLSearchParams(window.location.search)
+      const msg = params.get('error')
+      if (msg) setError(decodeURIComponent(msg))
+    } catch {
+      // ignore
+    }
+  }, [])
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()

@@ -9,16 +9,22 @@ export async function GET(request: Request) {
     return NextResponse.redirect(`${origin}/login?error=auth_failed`)
   }
 
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  )
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+
+  if (!supabaseUrl || !supabaseAnonKey) {
+    return NextResponse.redirect(`${origin}/login?error=${encodeURIComponent('Missing Supabase env vars (SERVER)')}`)
+  }
+
+  const supabase = createClient(supabaseUrl, supabaseAnonKey)
 
   const { data, error } = await supabase.auth.exchangeCodeForSession(code)
 
   if (error || !data.session) {
     console.error('Auth callback error:', error)
-    return NextResponse.redirect(`${origin}/login?error=auth_failed`)
+    return NextResponse.redirect(
+      `${origin}/login?error=${encodeURIComponent(error?.message || 'auth_exchange_failed')}`
+    )
   }
 
   // Look up role from profiles table
