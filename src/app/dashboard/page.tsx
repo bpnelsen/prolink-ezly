@@ -19,6 +19,7 @@ export default function Dashboard() {
           <div className="hidden md:flex gap-6 items-center">
             <Link href="/dispatch" className="text-sm font-semibold text-gray-600 hover:text-teal-600">Schedule</Link>
             <Link href="/customers" className="text-sm font-semibold text-gray-600 hover:text-teal-600">Customers</Link>
+            <Link href="/dashboard/reports" className="text-sm font-semibold text-gray-600 hover:text-teal-600">Reports</Link>
             <Link href="/settings" className="text-sm font-semibold text-gray-600 hover:text-teal-600">Settings</Link>
             <Link href="/new-job" className="bg-teal-600 text-white px-4 py-2 rounded-lg font-semibold text-sm hover:bg-teal-700 shadow-sm">+ New Job</Link>
             <button onClick={handleLogout} className="text-gray-400 hover:text-red-600" title="Logout">
