@@ -1,5 +1,5 @@
-import './globals.css';
-import { AppProvider } from '../context/AppContext';
+import AIForeman from '../components/AIForeman'
+import { AppProvider } from '../context/AppContext'
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -10,6 +10,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className="bg-gray-50 text-gray-700">
         <AppProvider>
           {children}
+          <AIForeman />
         </AppProvider>
       </body>
     </html>
