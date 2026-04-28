@@ -1,4 +1,4 @@
-import AIForeman from '../components/AIForeman'
+import AIForeman from '@/components/AIForeman'
 import { AppProvider } from '../context/AppContext'
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
