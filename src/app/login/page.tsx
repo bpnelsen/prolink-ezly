@@ -54,9 +54,14 @@ export default function LoginPage() {
     }
   }
 
+  const handleGoogleLogin = () => {
+    setError('Google login is temporarily disabled.')
+  }
+
   return (
     <div className="min-h-screen bg-[#f8fafc] flex items-center justify-center p-4">
       <div className="w-full max-w-md">
+
         {/* Logo */}
         <div className="text-center mb-8">
           <Link href="/">
@@ -67,6 +72,23 @@ export default function LoginPage() {
 
         {/* Card */}
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-8">
+
+          {/* Google Button (Disabled) */}
+          <button
+            type="button"
+            onClick={handleGoogleLogin}
+            className="w-full py-3 bg-gray-50 border-2 border-gray-100 rounded-xl text-gray-400 transition font-semibold flex items-center justify-center gap-3 text-sm mb-5 cursor-not-allowed"
+          >
+            Google login disabled
+          </button>
+
+          <div className="relative flex items-center mb-5">
+            <div className="flex-1 border-t border-gray-200" />
+            <span className="mx-4 text-xs text-gray-400 uppercase tracking-wider">or</span>
+            <div className="flex-1 border-t border-gray-200" />
+          </div>
+
+          {/* Email/Password Form */}
           <form onSubmit={handleLogin} className="space-y-4">
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-1.5">Email</label>
