@@ -1,20 +1,20 @@
 export default function RoofingTips() {
   return (
     <main className="max-w-3xl mx-auto px-6 py-12">
-      <h1 className="text-3xl font-black text-[#0f3a7d] mb-4">5 Essential Roofing Tips for Homeowners</h1>
-      <p className="text-gray-500 mb-8">Keep your home safe and dry with these maintenance tips.</p>
+      <h1 className="text-3xl font-black text-[#0f3a7d] mb-4">5 Roofing Efficiency Hacks for Contractors</h1>
+      <p className="text-gray-500 mb-8">Increase your profit margins and speed on every shingle job.</p>
       <div className="prose prose-teal max-w-none text-gray-700">
-        <p>Your roof is your home's first line of defense against the elements. Regular maintenance can save you thousands in repairs.</p>
-        <h2 className="text-xl font-bold mt-6 mb-2">1. Inspect annually</h2>
-        <p>Walk around your property and look for missing or damaged shingles.</p>
-        <h2 className="text-xl font-bold mt-6 mb-2">2. Clear debris</h2>
-        <p>Leaves and sticks hold moisture, which accelerates shingle decay.</p>
-        <h2 className="text-xl font-bold mt-6 mb-2">3. Check your gutters</h2>
-        <p>Clogged gutters lead to water pooling against your roofline.</p>
-        <h2 className="text-xl font-bold mt-6 mb-2">4. Look inside</h2>
-        <p>Check your attic for daylight peeking through or water spots on the insulation.</p>
-        <h2 className="text-xl font-bold mt-6 mb-2">5. Call a pro</h2>
-        <p>If you see major damage, don't DIY it. Call a local roofing contractor immediately.</p>
+        <p>Speed doesn't have to mean sacrificing quality. Use these tactics to streamline your roofing operations.</p>
+        <h2 className="text-xl font-bold mt-6 mb-2">1. Prefabricated Starter Strips</h2>
+        <p>Skip the manual cutting and use high-quality factory-cut starter strips to reduce waste and labor time on the eaves.</p>
+        <h2 className="text-xl font-bold mt-6 mb-2">2. Roof Pitch Measurement Tech</h2>
+        <p>Invest in satellite-based roof measurement reports. They save your crew from climbing for quotes and ensure material accuracy before you arrive.</p>
+        <h2 className="text-xl font-bold mt-6 mb-2">3. Strategic Staging</h2>
+        <p>Load materials directly onto the roof deck upon delivery to minimize ground handling.</p>
+        <h2 className="text-xl font-bold mt-6 mb-2">4. Tool Organization</h2>
+        <p>Standardize tool belts and trailer layouts across all crews so anyone can find a nail gun or flashing in seconds.</p>
+        <h2 className="text-xl font-bold mt-6 mb-2">5. High-Speed Fastening</h2>
+        <p>Invest in coil roofing nailers that are lightweight but durable, and keep backup seal kits ready to prevent maintenance downtime.</p>
       </div>
     </main>
   )
