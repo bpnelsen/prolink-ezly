@@ -51,32 +51,6 @@ export default function SignupPage() {
 
   const trade = formData.specialties[0] || 'General Contracting'
 
-  const handleGoogleSignup = async () => {
-    setLoading(true)
-    setError('')
-
-    try {
-      // OAuth doesn’t collect the full business profile in this flow.
-      // The server callback will ensure profiles/pl_contractors exist with defaults.
-      if (typeof window !== 'undefined') {
-        window.localStorage.setItem('ezly_oauth_role', 'contractor')
-      }
-
-      const { error: authError } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
-        options: {
-          redirectTo: `${window.location.origin}/auth/callback`
-        }
-      })
-
-      if (authError) setError(authError.message)
-    } catch (err: any) {
-      setError(err.message || 'Failed to sign up with Google')
-    } finally {
-      setLoading(false)
-    }
-  }
-
   const handleChange = (e: any) => {
     const { name, value, type, checked } = e.target
 
@@ -113,7 +87,6 @@ export default function SignupPage() {
       if (authError) throw authError
       if (!data.user) throw new Error('No user returned from sign up')
 
-      // 1) profiles (used by login + role routing)
       const { error: profileError } = await supabase.from('profiles').upsert({
         id: data.user.id,
         email: data.user.email,
@@ -123,7 +96,6 @@ export default function SignupPage() {
 
       if (profileError) throw profileError
 
-      // 2) pl_contractors (used by contractor lists)
       const { error: contractorError } = await supabase.from('pl_contractors').upsert({
         id: data.user.id,
         trade,
@@ -203,7 +175,7 @@ export default function SignupPage() {
           {step === 1 && (
             <div className="space-y-5">
               <h1 className="text-2xl font-bold text-[#0f3a7d]">Create Your Account</h1>
-              <p className="text-gray-500 text-sm">Start your account with email/password or Google.</p>
+              <p className="text-gray-500 text-sm">Enter your email and create a password to get started.</p>
 
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-1.5">Email Address</label>
@@ -236,21 +208,6 @@ export default function SignupPage() {
                 className="w-full py-3 bg-[#0f3a7d] text-white rounded-xl font-semibold hover:bg-[#0c2e5c] disabled:bg-gray-200 disabled:text-gray-400 transition text-sm"
               >
                 Continue
-              </button>
-
-              <div className="relative flex items-center">
-                <div className="flex-1 border-t border-gray-200" />
-                <span className="mx-4 text-xs text-gray-400">or</span>
-                <div className="flex-1 border-t border-gray-200" />
-              </div>
-
-              <button
-                type="button"
-                onClick={handleGoogleSignup}
-                disabled={loading}
-                className="w-full py-3 bg-white border-2 border-gray-200 rounded-xl hover:border-gray-300 hover:bg-gray-50 transition text-sm font-semibold text-gray-700 flex items-center justify-center gap-3"
-              >
-                Continue with Google
               </button>
             </div>
           )}
@@ -317,7 +274,6 @@ export default function SignupPage() {
                 <button
                   type="button"
                   onClick={() => setStep(3)}
-                  disabled={loading}
                   className="flex-1 py-3 bg-[#14b8a6] text-white rounded-xl font-semibold hover:bg-[#0d9e8c] disabled:bg-gray-200 disabled:text-gray-400 transition text-sm"
                 >
                   Continue
@@ -329,7 +285,7 @@ export default function SignupPage() {
           {step === 3 && (
             <div className="space-y-6">
               <h1 className="text-2xl font-bold text-[#0f3a7d]">Your Expertise</h1>
-              <p className="text-gray-500 text-sm">Select specialties and answers for vetting.</p>
+              <p className="text-gray-500 text-sm">Select specialties and answer a few questions.</p>
 
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2">Specialties</label>
@@ -415,7 +371,6 @@ export default function SignupPage() {
                 <button
                   type="button"
                   onClick={() => setStep(2)}
-                  disabled={loading}
                   className="flex-1 py-3 bg-white border-2 border-gray-200 text-gray-700 rounded-xl font-semibold hover:border-gray-300 transition text-sm"
                 >
                   Back
@@ -428,10 +383,6 @@ export default function SignupPage() {
                 >
                   {loading ? 'Creating Account...' : 'Create Account'}
                 </button>
-              </div>
-
-              <div className="text-xs text-gray-400 pt-1">
-                Note: Only fields that exist in Supabase tables are saved (profiles + pl_contractors).
               </div>
             </div>
           )}
