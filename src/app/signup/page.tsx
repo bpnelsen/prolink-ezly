@@ -175,7 +175,7 @@ export default function SignupPage() {
           {step === 1 && (
             <div className="space-y-5">
               <h1 className="text-2xl font-bold text-[#0f3a7d]">Create Your Account</h1>
-              <p className="text-gray-500 text-sm">Enter your email and create a password to get started.</p>
+              <p className="text-gray-500 text-sm">Start your account with email and a secure password.</p>
 
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-1.5">Email Address</label>
@@ -188,6 +188,7 @@ export default function SignupPage() {
                   className="w-full px-4 py-3 bg-[#f8fafc] border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#14b8a6] focus:border-transparent outline-none transition text-gray-900 text-sm"
                 />
               </div>
+
 
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-1.5">Password</label>
