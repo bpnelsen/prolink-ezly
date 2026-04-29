@@ -52,7 +52,7 @@ Do NOT:
         'X-Title': 'Prolink Foreman AI',
       },
       body: JSON.stringify({
-        model: 'google/gemini-2.5-flash',
+        model: 'minimax/minimax-m2.7',
         messages: [
           { role: 'system', content: systemPrompt },
           { role: 'user', content: prompt }
