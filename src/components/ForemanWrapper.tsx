@@ -9,15 +9,18 @@ export default function ForemanWrapper() {
 
   useEffect(() => {
     setMounted(true)
-    supabase.auth.getSession().then(({ data }) => {
+
+    supabase.auth.getSession().then(({ data }: any) => {
       setSession(data.session)
     })
 
-    const { data: listener } = supabase.auth.onAuthStateChange((_event, data) => {
+    const sub = supabase.auth.onAuthStateChange((_event: string, data: any) => {
       setSession(data.session)
     })
 
-    return () => listener.subscription.unsubscribe()
+    return () => {
+      sub.data.subscription.unsubscribe()
+    }
   }, [])
 
   if (!mounted || !session) return null
