@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { DollarSign, TrendingUp, BarChart3, AlertTriangle } from 'lucide-react'
+import Breadcrumbs from '../../../components/Breadcrumbs'
 
 export default function MarketIntelligence() {
   const [data] = useState({
@@ -27,6 +28,7 @@ export default function MarketIntelligence() {
 
   return (
     <div className="p-6 md:p-8 space-y-8">
+      <Breadcrumbs items={[{ label: 'Dashboard', href: '/dashboard' }, { label: 'Market Intelligence', href: '/dashboard/market-intelligence' }]} />
       <h1 className="text-2xl font-bold text-gray-900">Market Intelligence</h1>
 
       {/* Pricing Analysis Cards */}

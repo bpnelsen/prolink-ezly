@@ -2,6 +2,8 @@
 
 import { useState } from 'react'
 import { BarChart3, TrendingUp, DollarSign, Users, ArrowUpRight } from 'lucide-react'
+import Breadcrumbs from '../../../components/Breadcrumbs'
+import Link from 'next/link'
 
 export default function Reports() {
   const [stats] = useState([
@@ -13,6 +15,7 @@ export default function Reports() {
 
   return (
     <div className="p-6 md:p-8">
+      <Breadcrumbs items={[{ label: 'Dashboard', href: '/dashboard' }, { label: 'Reports', href: '/dashboard/reports' }]} />
       <h1 className="text-2xl font-bold text-gray-900 mb-6">Reports & KPIs</h1>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {stats.map((stat, i) => (
