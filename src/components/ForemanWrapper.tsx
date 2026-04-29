@@ -5,24 +5,29 @@ import { supabase } from '@/lib/supabase-client'
 
 export default function ForemanWrapper() {
   const [session, setSession] = useState<any>(null)
-  const [mounted, setMounted] = useState(false)
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    setMounted(true)
-
-    supabase.auth.getSession().then(({ data }: any) => {
-      setSession(data.session)
+    // Check current session immediately
+    supabase.auth.getSession().then((result: any) => {
+      setSession(result.data.session)
+      setLoading(false)
     })
 
-    const sub = supabase.auth.onAuthStateChange((_event: string, data: any) => {
+    // Listen for auth changes
+    const { data: sub } = supabase.auth.onAuthStateChange((_event: string, data: any) => {
       setSession(data.session)
+      setLoading(false)
     })
 
     return () => {
-      sub.data.subscription.unsubscribe()
+      sub.subscription.unsubscribe()
     }
   }, [])
 
-  if (!mounted || !session) return null
+  // Don't show until we've confirmed session status
+  if (loading) return null
+  if (!session) return null
+
   return <AIForeman />
 }
