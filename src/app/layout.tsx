@@ -1,3 +1,4 @@
+import './globals.css'
 import AIForeman from '@/components/AIForeman'
 import { AppProvider } from '../context/AppContext'
 
