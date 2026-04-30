@@ -1,5 +1,5 @@
 'use client'
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Plus, CheckCircle2 } from 'lucide-react'
 import Breadcrumbs from '../../../components/Breadcrumbs'
@@ -18,29 +18,21 @@ export default function NewCustomer() {
     city: '',
     zip_code: '',
     notes: '',
-    service_address: '',
-    service_city: '',
-    service_zip: '',
   })
 
   const handleChange = (field: string) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     setForm(prev => ({ ...prev, [field]: e.target.value }))
   }
 
-  // Ensure contractor record exists, then submit
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!form.first_name.trim() || !form.last_name.trim()) return
     setLoading(true)
 
     const { data: { user } } = await supabase.auth.getUser()
-    if (!user) {
-      setLoading(false)
-      alert('You must be logged in.')
-      return
-    }
+    if (!user) { setLoading(false); alert('You must be logged in.'); return }
 
-    // Auto-create contractor record if it doesn't exist (satisfies RLS)
+    // Ensure contractor record exists (FK chain: auth.users → profiles → pl_contractors)
     const { data: existing } = await supabase
       .from('pl_contractors')
       .select('id')
@@ -48,7 +40,14 @@ export default function NewCustomer() {
       .single()
 
     if (!existing) {
-      await supabase.from('pl_contractors').upsert({ id: user.id })
+      // profiles row must exist first (satisfies pl_contractors FK to profiles)
+      await supabase.from('profiles').upsert({ id: user.id })
+      const { error: contractorError } = await supabase.from('pl_contractors').upsert({ id: user.id })
+      if (contractorError) {
+        setLoading(false)
+        alert('Could not set up contractor profile: ' + contractorError.message)
+        return
+      }
     }
 
     const { error } = await supabase.from('pl_customers').insert({
