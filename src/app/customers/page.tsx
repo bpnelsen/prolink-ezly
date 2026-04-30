@@ -7,12 +7,13 @@ import Breadcrumbs from '../../components/Breadcrumbs';
 
 interface Customer {
   id: string;
-  full_name: string;
+  First_name: string;
+  Last_name: string;
   phone: string | null;
   email: string | null;
+  Street_address: string | null;
   notes: string | null;
   created_at: string;
-  [key: string]: unknown;
 }
 
 export default function CustomersPage() {
@@ -34,7 +35,8 @@ export default function CustomersPage() {
 
   const filtered = customers.filter(c =>
     !search ||
-    c.full_name?.toLowerCase().includes(search.toLowerCase()) ||
+    c.First_name?.toLowerCase().includes(search.toLowerCase()) ||
+    c.Last_name?.toLowerCase().includes(search.toLowerCase()) ||
     c.email?.toLowerCase().includes(search.toLowerCase()) ||
     c.phone?.includes(search)
   );
@@ -92,6 +94,7 @@ export default function CustomersPage() {
                 <tr>
                   <th className="px-6 py-4 font-semibold">Customer</th>
                   <th className="px-6 py-4 font-semibold">Contact</th>
+                  <th className="px-6 py-4 font-semibold">Location</th>
                   <th className="px-6 py-4 font-semibold text-right">Added</th>
                   <th className="px-6 py-4"></th>
                 </tr>
@@ -100,13 +103,20 @@ export default function CustomersPage() {
                 {filtered.map(c => (
                   <tr key={c.id} className="border-t border-gray-100 hover:bg-gray-50 transition-colors">
                     <td className="px-6 py-4">
-                      <p className="font-bold text-gray-900">{c.full_name || 'Unnamed'}</p>
+                      <p className="font-bold text-gray-900">{c.First_name} {c.Last_name}</p>
                       {c.notes && <p className="text-xs text-gray-400 mt-0.5 truncate max-w-xs">{c.notes}</p>}
                     </td>
                     <td className="px-6 py-4 text-gray-600">
                       {c.phone && <p className="flex items-center gap-2 text-sm"><Phone size={11}/> {c.phone}</p>}
                       {c.email && <p className="flex items-center gap-2 text-sm mt-1"><Mail size={11}/> {c.email}</p>}
                       {!c.phone && !c.email && <p className="text-gray-300 text-xs">No contact info</p>}
+                    </td>
+                    <td className="px-6 py-4 text-gray-600 text-sm">
+                      {c.Street_address ? (
+                        <p className="flex items-center gap-2"><MapPin size={11}/> {c.Street_address}</p>
+                      ) : (
+                        <p className="text-gray-300 text-xs">No address</p>
+                      )}
                     </td>
                     <td className="px-6 py-4 text-right text-xs text-gray-400">
                       {new Date(c.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
