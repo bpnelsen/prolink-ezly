@@ -29,18 +29,17 @@ export default function NewCustomer() {
     if (!form.first_name.trim() || !form.last_name.trim()) return
     setLoading(true)
 
-    // Look up the contractor's UUID for RLS
     const { data: { user } } = await supabase.auth.getUser()
+    // Look up the contractor_id from the junction table using the auth user's ID
     let contractorId = null
-    if (user?.email) {
-      const { data: contractor } = await supabase
-        .from('pl_contractors')
-        .select('id')
-        .eq('email', user.email)
+    if (user) {
+      const { data: link } = await supabase
+        .from('contractor_users')
+        .select('contractor_id')
+        .eq('user_id', user.id)
         .single()
-      contractorId = contractor?.id || null
+      contractorId = link?.contractor_id || null
     }
-
 
     const { error } = await supabase.from('pl_customers').insert({
       contractor_id: contractorId,
