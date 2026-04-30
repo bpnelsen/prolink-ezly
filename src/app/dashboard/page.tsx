@@ -14,6 +14,7 @@ export default function Dashboard() {
   const navLinks = [
     { name: 'Schedule', href: '/dispatch' },
     { name: 'Customers', href: '/customers' },
+    { name: 'Blog', href: '/blog' },
     { name: 'Reports', href: '/dashboard/reports' },
     { name: 'Market Intel', href: '/dashboard/market-intelligence' },
     { name: 'Settings', href: '/settings' },
