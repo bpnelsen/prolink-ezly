@@ -6,32 +6,43 @@ export async function POST(request: Request) {
   const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
 
   if (!supabaseUrl || !serviceKey) {
-    return NextResponse.json({ error: 'Server misconfigured' }, { status: 500 })
+    return NextResponse.json({ error: 'Server misconfigured — missing env vars' }, { status: 500 })
   }
 
-  // Extract user's auth token from the request (set by Supabase client cookies)
   const authHeader = request.headers.get('Authorization')
   if (!authHeader) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  // Create admin client with the user's token so we know WHO is calling
   const supabaseAdmin = createClient(supabaseUrl, serviceKey, {
     auth: { autoRefreshToken: false, persistSession: false }
   })
 
-  // Validate the user's session server-side using their token
-  const { data: { user }, error: userError } = await supabaseAdmin.auth.getUser(
-    authHeader.replace('Bearer ', '')
-  )
+  const token = authHeader.replace('Bearer ', '')
+  const { data: { user }, error: userError } = await supabaseAdmin.auth.getUser(token)
 
   if (userError || !user) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  // Upsert both records using service role (bypasses RLS)
-  await supabaseAdmin.from('profiles').upsert({ id: user.id })
-  await supabaseAdmin.from('pl_contractors').upsert({ id: user.id })
+  // profiles: upsert (INSERT OR REPLACE equivalent via ON CONFLICT)
+  const { error: profileError } = await supabaseAdmin.from('profiles').upsert(
+    { id: user.id, email: user.email },
+    { onConflict: 'id' }
+  )
+
+  // pl_contractors: upsert to handle re-logins gracefully
+  const { error: contractorError } = await supabaseAdmin.from('pl_contractors').upsert(
+    { id: user.id },
+    { onConflict: 'id' }
+  )
+
+  if (profileError || contractorError) {
+    return NextResponse.json({
+      error: 'Bootstrap failed',
+      details: profileError?.message || contractorError?.message,
+    }, { status: 500 })
+  }
 
   return NextResponse.json({ ok: true, userId: user.id })
 }

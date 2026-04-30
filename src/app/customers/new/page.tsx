@@ -29,34 +29,31 @@ export default function NewCustomer() {
     if (!form.first_name.trim() || !form.last_name.trim()) return
     setLoading(true)
 
-    // getSession reads from localStorage which may be empty on fresh page loads; use getUser() as primary
-    let user = (await supabase.auth.getUser()).data.user ?? null
-    if (!user) {
-      const { data: sessionData } = await supabase.auth.getSession()
-      user = sessionData?.session?.user ?? null
-    }
-    if (!user) { setLoading(false); alert('You must be logged in.'); return }
-
-    // Ensure contractor record exists (FK chain: auth.users → profiles → pl_contractors)
-    const { data: existing } = await supabase
-      .from('pl_contractors')
-      .select('id')
-      .eq('id', user.id)
-      .single()
-
-    if (!existing) {
-      // profiles row must exist first (satisfies pl_contractors FK to profiles)
-      await supabase.from('profiles').upsert({ id: user.id })
-      const { error: contractorError } = await supabase.from('pl_contractors').upsert({ id: user.id })
-      if (contractorError) {
-        setLoading(false)
-        alert('Could not set up contractor profile: ' + contractorError.message)
-        return
-      }
+    const { data: { session } } = await supabase.auth.getSession()
+    if (!session) {
+      setLoading(false)
+      alert('You must be logged in to add a customer.')
+      router.push('/login')
+      return
     }
 
+    // Bootstrap first to ensure contractor record exists
+    const token = `Bearer ${session.access_token}`
+    const bootRes = await fetch('/api/bootstrap', {
+      method: 'POST',
+      headers: { 'Authorization': token, 'Content-Type': 'application/json' },
+    })
+
+    if (!bootRes.ok) {
+      const err = await bootRes.json()
+      setLoading(false)
+      alert('Could not set up your account: ' + (err.error || 'try again'))
+      return
+    }
+
+    // Now insert the customer
     const { error } = await supabase.from('pl_customers').insert({
-      contractor_id: user.id,
+      contractor_id: session.user.id,
       first_name: form.first_name.trim(),
       last_name: form.last_name.trim(),
       phone: form.phone.trim() || null,

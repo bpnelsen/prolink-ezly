@@ -11,10 +11,32 @@ const handleLogout = () => {
 
 export default function Dashboard() {
   const [menuOpen, setMenuOpen] = useState(false);
+  const [setupComplete, setSetupComplete] = useState(false);
 
-  // Ensure contractor record exists on load (calls server-side API using service role key to bypass RLS)
+  // Bootstrap: ensure profiles + pl_contractors exist for this user
   useEffect(() => {
-    fetch('/api/bootstrap', { method: 'POST' })
+    const bootstrap = async () => {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session) return
+
+      const token = `Bearer ${session.access_token}`
+      const res = await fetch('/api/bootstrap', {
+        method: 'POST',
+        headers: {
+          'Authorization': token,
+          'Content-Type': 'application/json',
+        },
+      })
+
+      if (res.ok) {
+        setSetupComplete(true)
+      } else {
+        const body = await res.json()
+        console.error('Bootstrap failed:', body)
+      }
+    }
+
+    bootstrap()
   }, [])
 
   const navLinks = [
@@ -32,7 +54,7 @@ export default function Dashboard() {
       <nav className="bg-white border-b border-gray-200 sticky top-0 z-50 px-4 py-3">
         <div className="max-w-7xl mx-auto flex justify-between items-center">
           <h1 className="text-xl font-bold text-gray-900">Prolink</h1>
-          
+
           {/* Desktop Menu */}
           <div className="hidden md:flex gap-6 items-center">
             {navLinks.map(link => (
@@ -69,7 +91,6 @@ export default function Dashboard() {
       <main className="max-w-7xl mx-auto p-6 md:p-8 space-y-6">
         {/* KPI Grid */}
         <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-           {/* ... existing KPIs content ... */}
            <div className="card p-5">
               <p className="text-[10px] uppercase font-bold text-gray-500 tracking-wider mb-2">Revenue</p>
               <p className="text-2xl font-bold text-gray-900">$24,850</p>
@@ -92,7 +113,6 @@ export default function Dashboard() {
         <section className="card p-5">
           <h3 className="font-bold text-gray-900 text-sm mb-4">Today's Schedule</h3>
           <div className="bg-gray-50 rounded-lg border border-gray-200 divide-y divide-gray-200">
-            {/* ... schedule items ... */}
              <div className="p-3 text-sm text-gray-600">8:00 AM - Kitchen Remodel</div>
              <div className="p-3 text-sm text-gray-600">10:30 AM - Bathroom Fix</div>
           </div>
