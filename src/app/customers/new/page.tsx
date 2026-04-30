@@ -29,7 +29,8 @@ export default function NewCustomer() {
     if (!form.first_name.trim() || !form.last_name.trim()) return
     setLoading(true)
 
-    const { data: { user } } = await supabase.auth.getUser()
+    const { data: { session } } = await supabase.auth.getSession()
+    const user = session?.user ?? null
     if (!user) { setLoading(false); alert('You must be logged in.'); return }
 
     // Ensure contractor record exists (FK chain: auth.users → profiles → pl_contractors)
