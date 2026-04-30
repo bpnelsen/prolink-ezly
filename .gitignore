@@ -4,3 +4,4 @@ node_modules/
 .next_old/
 .env*
 *.log
+.vercel

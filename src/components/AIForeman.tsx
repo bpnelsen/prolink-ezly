@@ -56,26 +56,39 @@ export default function AIForeman() {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages])
 
-  // Fetch active job context when opened
-  useEffect(() => {
-    if (isOpen && !jobContext) {
-      ;(async () => {
-        try {
-          const { data } = await supabase
-            .from('pl_pipelines')
-            .select('project_name, stage, value, deadline')
-            .eq('stage', 'Active')
-            .limit(1)
-            .maybeSingle()
-          if (data?.project_name) {
-            setJobContext(`Currently on: ${data.project_name} (${data.stage})`)
-          }
-        } catch { /* silent */ }
-      })()
-    }
-  }, [isOpen])
+  // Fetch Business Context manually
+  const fetchBusinessContext = async () => {
+    setLoading(true);
+    try {
+      // Fetch top 3 active jobs
+      const { data: pipelines } = await supabase
+        .from('pl_pipelines')
+        .select('project_name, stage, value')
+        .eq('stage', 'Active')
+        .limit(3)
 
-  const sendToForeman = async (prompt: string) => {
+      // Fetch summary counts
+      const { count: leadCount } = await supabase
+        .from('pl_pipelines')
+        .select('*', { count: 'exact', head: true })
+        .eq('stage', 'Lead')
+
+      const summary = pipelines && pipelines.length > 0
+        ? `Active Jobs (Top 3):\n${pipelines.map(p => `- ${p.project_name}: $${p.value}`).join('\n')}\n\nLeads waiting: ${leadCount || 0}`
+        : 'No active jobs currently.';
+
+      setJobContext(summary);
+    } catch (e) {
+        console.error("Foreman context fetch error:", e);
+    } finally {
+        setLoading(false);
+    }
+  }
+
+  const sendToForeman = async (prompt: string, includeContext: boolean = false) => {
+    if (includeContext) {
+        await fetchBusinessContext();
+    }
     setInput(prompt)
     await handleSubmit(prompt)
   }
@@ -126,17 +139,29 @@ export default function AIForeman() {
                 <Wrench size={15} />
                 Prolink Foreman AI
               </div>
-              {jobContext && (
-                <p className="text-blue-200 text-[10px] flex items-center gap-1 mt-1">
-                  <span className="w-1.5 h-1.5 rounded-full bg-teal-400 inline-block" />
-                  {jobContext}
-                </p>
-              )}
+              <div className="flex items-center gap-2 mt-2">
+                 <button 
+                   onClick={fetchBusinessContext}
+                   className="text-[10px] bg-white/10 hover:bg-white/20 px-2 py-1 rounded-md transition border border-white/10"
+                 >
+                   Refresh Data
+                 </button>
+                 {jobContext && <span className="text-[10px] text-teal-400">Data Loaded</span>}
+              </div>
             </div>
             <button onClick={() => setIsOpen(false)} className="hover:bg-white/10 p-1 rounded transition">
               <X size={16} />
             </button>
           </div>
+          
+          {jobContext && (
+            <div className="bg-blue-900/50 p-3 text-[10px] text-blue-100 border-b border-white/5 whitespace-pre-line">
+              <span className="font-bold flex items-center gap-1 mb-1 text-teal-400">
+                Business Insight:
+              </span>
+              {jobContext}
+            </div>
+          )}
 
           {/* Quick prompts (collapsed by default) */}
           <div className="bg-gray-50 border-b border-gray-100">
