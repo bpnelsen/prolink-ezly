@@ -1,7 +1,8 @@
 'use client'
+import { useState, useEffect } from 'react';
 import { Plus, LogOut, Menu, X } from 'lucide-react';
 import Link from 'next/link';
-import { useState } from 'react';
+import { supabase } from '../../lib/supabase-client';
 
 const handleLogout = () => {
   localStorage.clear()
@@ -10,6 +11,20 @@ const handleLogout = () => {
 
 export default function Dashboard() {
   const [menuOpen, setMenuOpen] = useState(false);
+
+  // Ensure contractor record exists on load (handles immediate-login signup path where callback is skipped)
+  useEffect(() => {
+    const bootstrap = async () => {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
+      const { data: existing } = await supabase.from('pl_contractors').select('id').eq('id', user.id).single()
+      if (!existing) {
+        await supabase.from('profiles').upsert({ id: user.id })
+        await supabase.from('pl_contractors').upsert({ id: user.id })
+      }
+    }
+    bootstrap()
+  }, [])
 
   const navLinks = [
     { name: 'Schedule', href: '/dispatch' },

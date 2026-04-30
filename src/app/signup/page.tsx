@@ -49,9 +49,7 @@ export default function SignupPage() {
     { num: 3, label: 'Expertise' }
   ]
 
-  const trade = formData.specialties[0] || 'General Contracting'
-
-  const handleChange = (e: any) => {
+const handleChange = (e: any) => {
     const { name, value, type, checked } = e.target
 
     if (type === 'checkbox') {
@@ -87,23 +85,7 @@ export default function SignupPage() {
       if (authError) throw authError
       if (!data.user) throw new Error('No user returned from sign up')
 
-      const { error: profileError } = await supabase.from('profiles').upsert({
-        id: data.user.id,
-        email: data.user.email,
-        full_name: formData.ownerName || data.user.email?.split('@')[0],
-        role: 'contractor'
-      })
-
-      if (profileError) throw profileError
-
-      const { error: contractorError } = await supabase.from('pl_contractors').upsert({
-        id: data.user.id,
-        trade,
-        phone: formData.phone
-      })
-
-      if (contractorError) throw contractorError
-
+      // Profiles and pl_contractors are created in the auth callback (server-side)
       window.location.href = '/dashboard'
     } catch (err: any) {
       setError(err.message || 'Signup failed')
