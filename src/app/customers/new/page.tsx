@@ -13,10 +13,10 @@ export default function NewCustomer() {
     full_name: '',
     phone: '',
     email: '',
-    street_address: '',
+    notes: '',
   })
 
-  const handleChange = (field: string) => (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleChange = (field: string) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     setForm(prev => ({ ...prev, [field]: e.target.value }))
   }
 
@@ -29,7 +29,7 @@ export default function NewCustomer() {
       full_name: form.full_name.trim(),
       phone: form.phone.trim() || null,
       email: form.email.trim() || null,
-      street_address: form.street_address.trim() || null,
+      notes: form.notes.trim() || null,
     })
 
     setLoading(false)
@@ -91,12 +91,11 @@ export default function NewCustomer() {
             </div>
 
             <div className="space-y-5">
-              <h3 className="font-bold text-sm text-gray-500 uppercase tracking-wide">Primary Property</h3>
+              <h3 className="font-bold text-sm text-gray-500 uppercase tracking-wide">Notes</h3>
               <div>
-                <label className="block text-xs font-semibold text-gray-600 mb-1.5">Street Address</label>
-                <input value={form.street_address} onChange={handleChange('street_address')}
-                  className="w-full bg-gray-50 p-3 rounded-xl border border-gray-200 text-sm focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 transition"
-                  placeholder="123 Main St, SLC, UT" />
+                <textarea value={form.notes} onChange={handleChange('notes')} rows={5}
+                  className="w-full bg-gray-50 p-3 rounded-xl border border-gray-200 text-sm focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 transition resize-none"
+                  placeholder="Gate codes, pet info, special instructions..." />
               </div>
             </div>
           </div>
