@@ -1,6 +1,7 @@
 export default function HomeMaintenance() {
   return (
     <main className="max-w-3xl mx-auto px-6 py-12">
+      <img src="/blog/home-maintenance.jpg" alt="" className="w-full rounded-2xl mb-8 object-cover" style={{ height:"320px", width:"100%" }} />
       <h1 className="text-3xl font-black text-[#0f3a7d] mb-4">Proactive Maintenance for Contractor Success</h1>
       <p className="text-gray-500 mb-8">How regular service contracts keep your schedule predictable.</p>
       <div className="prose prose-teal max-w-none text-gray-700">

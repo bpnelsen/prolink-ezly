@@ -1,6 +1,7 @@
 export default function VettingContractorPage() {
   return (
     <main className="max-w-3xl mx-auto px-6 py-12">
+      <img src="/blog/contractor-vetting.jpg" alt="" className="w-full rounded-2xl mb-8 object-cover" style={{ height:"320px", width:"100%" }} />
       <h1 className="text-3xl font-black text-[#0f3a7d] mb-4">Building a Network of Trusted Subs</h1>
       <p className="text-gray-500 mb-8">How to vet and maintain a high-quality subcontractor pool.</p>
       <div className="prose prose-teal max-w-none text-gray-700">
