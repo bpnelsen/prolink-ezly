@@ -13,11 +13,9 @@ export default function NewCustomer() {
     full_name: '',
     phone: '',
     email: '',
-    address: '',
-    notes: '',
   })
 
-  const handleChange = (field: string) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  const handleChange = (field: string) => (e: React.ChangeEvent<HTMLInputElement>) => {
     setForm(prev => ({ ...prev, [field]: e.target.value }))
   }
 
@@ -30,8 +28,6 @@ export default function NewCustomer() {
       full_name: form.full_name.trim(),
       phone: form.phone.trim() || null,
       email: form.email.trim() || null,
-      address: form.address.trim() || null,
-      notes: form.notes.trim() || null,
     })
 
     setLoading(false)
@@ -69,47 +65,28 @@ export default function NewCustomer() {
         <h2 className="text-2xl font-bold text-gray-900 mb-8">Add New Customer</h2>
 
         <form onSubmit={handleSubmit} className="bg-white rounded-2xl border border-gray-100 p-8 shadow-sm">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <div className="space-y-5">
-              <h3 className="font-bold text-sm text-gray-500 uppercase tracking-wide">Personal Details</h3>
-              <div>
-                <label className="block text-xs font-semibold text-gray-600 mb-1.5">Full Name *</label>
-                <input required value={form.full_name} onChange={handleChange('full_name')}
-                  className="w-full bg-gray-50 p-3 rounded-xl border border-gray-200 text-sm focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 transition"
-                  placeholder="John Smith" />
-              </div>
-              <div>
-                <label className="block text-xs font-semibold text-gray-600 mb-1.5">Phone</label>
-                <input value={form.phone} onChange={handleChange('phone')} type="tel"
-                  className="w-full bg-gray-50 p-3 rounded-xl border border-gray-200 text-sm focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 transition"
-                  placeholder="(801) 555-0100" />
-              </div>
-              <div>
-                <label className="block text-xs font-semibold text-gray-600 mb-1.5">Email</label>
-                <input value={form.email} onChange={handleChange('email')} type="email"
-                  className="w-full bg-gray-50 p-3 rounded-xl border border-gray-200 text-sm focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 transition"
-                  placeholder="customer@example.com" />
-              </div>
+          <div className="space-y-5 max-w-md">
+            <div>
+              <label className="block text-xs font-semibold text-gray-600 mb-1.5">Full Name *</label>
+              <input required value={form.full_name} onChange={handleChange('full_name')}
+                className="w-full bg-gray-50 p-3 rounded-xl border border-gray-200 text-sm focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 transition"
+                placeholder="John Smith" />
             </div>
-
-            <div className="space-y-5">
-              <h3 className="font-bold text-sm text-gray-500 uppercase tracking-wide">Primary Property</h3>
-              <div>
-                <label className="block text-xs font-semibold text-gray-600 mb-1.5">Street Address</label>
-                <input value={form.address} onChange={handleChange('address')}
-                  className="w-full bg-gray-50 p-3 rounded-xl border border-gray-200 text-sm focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 transition"
-                  placeholder="123 Main St, SLC, UT" />
-              </div>
-              <div>
-                <label className="block text-xs font-semibold text-gray-600 mb-1.5">Notes</label>
-                <textarea value={form.notes} onChange={handleChange('notes')} rows={4}
-                  className="w-full bg-gray-50 p-3 rounded-xl border border-gray-200 text-sm focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 transition resize-none"
-                  placeholder="Gate codes, pet info, special instructions..." />
-              </div>
+            <div>
+              <label className="block text-xs font-semibold text-gray-600 mb-1.5">Phone</label>
+              <input value={form.phone} onChange={handleChange('phone')} type="tel"
+                className="w-full bg-gray-50 p-3 rounded-xl border border-gray-200 text-sm focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 transition"
+                placeholder="(801) 555-0100" />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-gray-600 mb-1.5">Email</label>
+              <input value={form.email} onChange={handleChange('email')} type="email"
+                className="w-full bg-gray-50 p-3 rounded-xl border border-gray-200 text-sm focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 transition"
+                placeholder="customer@example.com" />
             </div>
           </div>
 
-          <div className="flex gap-3 mt-8">
+          <div className="flex gap-3 mt-8 max-w-md">
             <button type="button" onClick={() => router.back()}
               className="flex-1 py-3.5 rounded-xl border border-gray-200 text-gray-600 font-semibold text-sm hover:bg-gray-50 transition">
               Cancel
