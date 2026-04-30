@@ -12,18 +12,9 @@ const handleLogout = () => {
 export default function Dashboard() {
   const [menuOpen, setMenuOpen] = useState(false);
 
-  // Ensure contractor record exists on load (handles immediate-login signup path where callback is skipped)
+  // Ensure contractor record exists on load (calls server-side API using service role key to bypass RLS)
   useEffect(() => {
-    const bootstrap = async () => {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) return
-      const { data: existing } = await supabase.from('pl_contractors').select('id').eq('id', user.id).single()
-      if (!existing) {
-        await supabase.from('profiles').upsert({ id: user.id })
-        await supabase.from('pl_contractors').upsert({ id: user.id })
-      }
-    }
-    bootstrap()
+    fetch('/api/bootstrap', { method: 'POST' })
   }, [])
 
   const navLinks = [
