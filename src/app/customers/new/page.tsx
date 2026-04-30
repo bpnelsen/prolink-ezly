@@ -1,5 +1,5 @@
 'use client'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { Plus, CheckCircle2 } from 'lucide-react'
 import Breadcrumbs from '../../../components/Breadcrumbs'
@@ -18,31 +18,41 @@ export default function NewCustomer() {
     city: '',
     zip_code: '',
     notes: '',
+    service_address: '',
+    service_city: '',
+    service_zip: '',
   })
 
   const handleChange = (field: string) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     setForm(prev => ({ ...prev, [field]: e.target.value }))
   }
 
+  // Ensure contractor record exists, then submit
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!form.first_name.trim() || !form.last_name.trim()) return
     setLoading(true)
 
     const { data: { user } } = await supabase.auth.getUser()
-    // Look up the contractor_id from the junction table using the auth user's ID
-    let contractorId = null
-    if (user) {
-      const { data: link } = await supabase
-        .from('contractor_users')
-        .select('contractor_id')
-        .eq('user_id', user.id)
-        .single()
-      contractorId = link?.contractor_id || null
+    if (!user) {
+      setLoading(false)
+      alert('You must be logged in.')
+      return
+    }
+
+    // Auto-create contractor record if it doesn't exist (satisfies RLS)
+    const { data: existing } = await supabase
+      .from('pl_contractors')
+      .select('id')
+      .eq('id', user.id)
+      .single()
+
+    if (!existing) {
+      await supabase.from('pl_contractors').upsert({ id: user.id })
     }
 
     const { error } = await supabase.from('pl_customers').insert({
-      contractor_id: contractorId,
+      contractor_id: user.id,
       first_name: form.first_name.trim(),
       last_name: form.last_name.trim(),
       phone: form.phone.trim() || null,
