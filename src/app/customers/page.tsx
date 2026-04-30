@@ -1,6 +1,6 @@
 'use client'
 import { useState, useEffect } from 'react';
-import { Phone, Mail, Search, Plus, MoreHorizontal } from 'lucide-react';
+import { Phone, Mail, MapPin, Search, Plus, MoreHorizontal } from 'lucide-react';
 import Link from 'next/link';
 import { supabase } from '../../lib/supabase-client';
 import Breadcrumbs from '../../components/Breadcrumbs';
@@ -10,6 +10,7 @@ interface Customer {
   full_name: string;
   phone: string | null;
   email: string | null;
+  street_address: string | null;
   created_at: string;
 }
 
@@ -21,7 +22,7 @@ export default function CustomersPage() {
   const fetchCustomers = async () => {
     const { data } = await supabase
       .from('pl_customers')
-      .select('id, full_name, phone, email, created_at')
+      .select('id, full_name, phone, email, street_address, created_at')
       .order('created_at', { ascending: false });
 
     if (data) setCustomers(data);
@@ -90,6 +91,7 @@ export default function CustomersPage() {
                 <tr>
                   <th className="px-6 py-4 font-semibold">Customer</th>
                   <th className="px-6 py-4 font-semibold">Contact</th>
+                  <th className="px-6 py-4 font-semibold">Location</th>
                   <th className="px-6 py-4 font-semibold text-right">Added</th>
                   <th className="px-6 py-4"></th>
                 </tr>
@@ -104,6 +106,13 @@ export default function CustomersPage() {
                       {c.phone && <p className="flex items-center gap-2 text-sm"><Phone size={11}/> {c.phone}</p>}
                       {c.email && <p className="flex items-center gap-2 text-sm mt-1"><Mail size={11}/> {c.email}</p>}
                       {!c.phone && !c.email && <p className="text-gray-300 text-xs">No contact info</p>}
+                    </td>
+                    <td className="px-6 py-4 text-gray-600 text-sm">
+                      {c.street_address ? (
+                        <p className="flex items-center gap-2"><MapPin size={11}/> {c.street_address}</p>
+                      ) : (
+                        <p className="text-gray-300 text-xs">No address</p>
+                      )}
                     </td>
                     <td className="px-6 py-4 text-right text-xs text-gray-400">
                       {new Date(c.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
