@@ -7,11 +7,13 @@ import Breadcrumbs from '../../components/Breadcrumbs';
 
 interface Customer {
   id: string;
-  First_name: string;
-  Last_name: string;
+  first_name: string;
+  last_name: string;
   phone: string | null;
   email: string | null;
-  Street_address: string | null;
+  street_address: string | null;
+  city: string | null;
+  zip_code: string | null;
   notes: string | null;
   created_at: string;
 }
@@ -35,8 +37,8 @@ export default function CustomersPage() {
 
   const filtered = customers.filter(c =>
     !search ||
-    c.First_name?.toLowerCase().includes(search.toLowerCase()) ||
-    c.Last_name?.toLowerCase().includes(search.toLowerCase()) ||
+    c.first_name?.toLowerCase().includes(search.toLowerCase()) ||
+    c.last_name?.toLowerCase().includes(search.toLowerCase()) ||
     c.email?.toLowerCase().includes(search.toLowerCase()) ||
     c.phone?.includes(search)
   );
@@ -103,7 +105,7 @@ export default function CustomersPage() {
                 {filtered.map(c => (
                   <tr key={c.id} className="border-t border-gray-100 hover:bg-gray-50 transition-colors">
                     <td className="px-6 py-4">
-                      <p className="font-bold text-gray-900">{c.First_name} {c.Last_name}</p>
+                      <p className="font-bold text-gray-900">{c.first_name} {c.last_name}</p>
                       {c.notes && <p className="text-xs text-gray-400 mt-0.5 truncate max-w-xs">{c.notes}</p>}
                     </td>
                     <td className="px-6 py-4 text-gray-600">
@@ -112,8 +114,8 @@ export default function CustomersPage() {
                       {!c.phone && !c.email && <p className="text-gray-300 text-xs">No contact info</p>}
                     </td>
                     <td className="px-6 py-4 text-gray-600 text-sm">
-                      {c.Street_address ? (
-                        <p className="flex items-center gap-2"><MapPin size={11}/> {c.Street_address}</p>
+                      {c.street_address ? (
+                        <p className="flex items-center gap-2"><MapPin size={11}/> {c.street_address}{c.city ? `, ${c.city}` : ''}{c.zip_code ? ` ${c.zip_code}` : ''}</p>
                       ) : (
                         <p className="text-gray-300 text-xs">No address</p>
                       )}

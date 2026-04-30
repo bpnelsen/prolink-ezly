@@ -10,11 +10,13 @@ export default function NewCustomer() {
   const [loading, setLoading] = useState(false)
   const [success, setSuccess] = useState(false)
   const [form, setForm] = useState({
-    First_name: '',
-    Last_name: '',
+    first_name: '',
+    last_name: '',
     phone: '',
     email: '',
-    Street_address: '',
+    street_address: '',
+    city: '',
+    zip_code: '',
     notes: '',
   })
 
@@ -24,15 +26,17 @@ export default function NewCustomer() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!form.First_name.trim() || !form.Last_name.trim()) return
+    if (!form.first_name.trim() || !form.last_name.trim()) return
     setLoading(true)
 
     const { error } = await supabase.from('pl_customers').insert({
-      First_name: form.First_name.trim(),
-      Last_name: form.Last_name.trim(),
+      first_name: form.first_name.trim(),
+      last_name: form.last_name.trim(),
       phone: form.phone.trim() || null,
       email: form.email.trim() || null,
-      Street_address: form.Street_address.trim() || null,
+      street_address: form.street_address.trim() || null,
+      city: form.city.trim() || null,
+      zip_code: form.zip_code.trim() || null,
       notes: form.notes.trim() || null,
     })
 
@@ -77,13 +81,13 @@ export default function NewCustomer() {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-semibold text-gray-600 mb-1.5">First Name *</label>
-                  <input required value={form.First_name} onChange={handleChange('First_name')}
+                  <input required value={form.first_name} onChange={handleChange('first_name')}
                     className="w-full bg-gray-50 p-3 rounded-xl border border-gray-200 text-sm focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 transition"
                     placeholder="John" />
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-gray-600 mb-1.5">Last Name *</label>
-                  <input required value={form.Last_name} onChange={handleChange('Last_name')}
+                  <input required value={form.last_name} onChange={handleChange('last_name')}
                     className="w-full bg-gray-50 p-3 rounded-xl border border-gray-200 text-sm focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 transition"
                     placeholder="Smith" />
                 </div>
@@ -106,13 +110,27 @@ export default function NewCustomer() {
               <h3 className="font-bold text-sm text-gray-500 uppercase tracking-wide">Primary Property</h3>
               <div>
                 <label className="block text-xs font-semibold text-gray-600 mb-1.5">Street Address</label>
-                <input value={form.Street_address} onChange={handleChange('Street_address')}
+                <input value={form.street_address} onChange={handleChange('street_address')}
                   className="w-full bg-gray-50 p-3 rounded-xl border border-gray-200 text-sm focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 transition"
-                  placeholder="123 Main St, SLC, UT" />
+                  placeholder="123 Main St" />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-semibold text-gray-600 mb-1.5">City</label>
+                  <input value={form.city} onChange={handleChange('city')}
+                    className="w-full bg-gray-50 p-3 rounded-xl border border-gray-200 text-sm focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 transition"
+                    placeholder="Salt Lake City" />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-gray-600 mb-1.5">Zip Code</label>
+                  <input value={form.zip_code} onChange={handleChange('zip_code')}
+                    className="w-full bg-gray-50 p-3 rounded-xl border border-gray-200 text-sm focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 transition"
+                    placeholder="84101" />
+                </div>
               </div>
               <div>
                 <label className="block text-xs font-semibold text-gray-600 mb-1.5">Notes</label>
-                <textarea value={form.notes} onChange={handleChange('notes')} rows={5}
+                <textarea value={form.notes} onChange={handleChange('notes')} rows={4}
                   className="w-full bg-gray-50 p-3 rounded-xl border border-gray-200 text-sm focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 transition resize-none"
                   placeholder="Gate codes, pet info, special instructions..." />
               </div>
@@ -124,7 +142,7 @@ export default function NewCustomer() {
               className="flex-1 py-3.5 rounded-xl border border-gray-200 text-gray-600 font-semibold text-sm hover:bg-gray-50 transition">
               Cancel
             </button>
-            <button type="submit" disabled={loading || !form.First_name.trim() || !form.Last_name.trim()}
+            <button type="submit" disabled={loading || !form.first_name.trim() || !form.last_name.trim()}
               className="flex-1 py-3.5 bg-teal-600 text-white font-bold text-sm rounded-xl hover:bg-teal-700 transition shadow-sm flex items-center justify-center gap-2 disabled:opacity-50">
               <Plus size={15} />
               {loading ? 'Saving...' : 'Create Customer'}
