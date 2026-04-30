@@ -29,7 +29,21 @@ export default function NewCustomer() {
     if (!form.first_name.trim() || !form.last_name.trim()) return
     setLoading(true)
 
+    // Look up the contractor's UUID for RLS
+    const { data: { user } } = await supabase.auth.getUser()
+    let contractorId = null
+    if (user?.email) {
+      const { data: contractor } = await supabase
+        .from('pl_contractors')
+        .select('id')
+        .eq('email', user.email)
+        .single()
+      contractorId = contractor?.id || null
+    }
+
+
     const { error } = await supabase.from('pl_customers').insert({
+      contractor_id: contractorId,
       first_name: form.first_name.trim(),
       last_name: form.last_name.trim(),
       phone: form.phone.trim() || null,
