@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import { apiClient } from '../../lib/api-client'
 
 function setTokens(accessToken: string, refreshToken: string) {
   localStorage.setItem('prolink_token', accessToken)
@@ -28,15 +29,16 @@ export default function LoginPage() {
     setLoading(true)
     setError('')
     try {
-      const res = await fetch('https://prolinkbackend.vercel.app/api/v1/auth/login', {
+      const result = await apiClient('/api/v1/auth/login', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password }),
       })
-      const json = await res.json()
-      if (!res.ok) throw new Error(json.error || 'Login failed')
-      setTokens(json.data.session.access_token, json.data.session.refresh_token)
-      router.push(json.data.user?.role === 'admin' ? '/dashboard/admin' : '/dashboard')
+      if (result.data) {
+        setTokens(result.data.session.access_token, result.data.session.refresh_token)
+        router.push(result.data.user?.role === 'admin' ? '/dashboard/admin' : '/dashboard')
+      } else {
+        throw new Error(result.error || 'Login failed')
+      }
     } catch (err: any) {
       setError(err.message || 'Login failed')
       setLoading(false)
