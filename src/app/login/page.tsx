@@ -1,4 +1,3 @@
-cat > ~/Documents/prolink-ezly/src/app/login/page.tsx << 'EOF'
 'use client'
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
@@ -177,4 +176,3 @@ export default function LoginPage() {
     </div>
   )
 }
-EOF
