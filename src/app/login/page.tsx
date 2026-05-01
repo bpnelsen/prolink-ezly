@@ -1,8 +1,13 @@
+cat > ~/Documents/prolink-ezly/src/app/login/page.tsx << 'EOF'
 'use client'
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { supabase } from '../../lib/supabase-client'
 import Link from 'next/link'
+
+function setTokens(accessToken: string, refreshToken: string) {
+  localStorage.setItem('prolink_token', accessToken)
+  localStorage.setItem('prolink_refresh_token', refreshToken)
+}
 
 export default function LoginPage() {
   const router = useRouter()
@@ -24,10 +29,15 @@ export default function LoginPage() {
     setLoading(true)
     setError('')
     try {
-      const { data, error: authError } = await supabase.auth.signInWithPassword({ email, password })
-      if (authError) throw authError
-      const { data: profile } = await supabase.from('profiles').select('role').eq('id', data.user!.id).single()
-      router.push(profile?.role === 'admin' ? '/dashboard/admin' : '/dashboard')
+      const res = await fetch('https://prolinkbackend.vercel.app/api/v1/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      })
+      const json = await res.json()
+      if (!res.ok) throw new Error(json.error || 'Login failed')
+      setTokens(json.data.session.access_token, json.data.session.refresh_token)
+      router.push(json.data.user?.role === 'admin' ? '/dashboard/admin' : '/dashboard')
     } catch (err: any) {
       setError(err.message || 'Login failed')
       setLoading(false)
@@ -36,7 +46,6 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen flex">
-      {/* Left panel */}
       <div className="hidden lg:flex lg:w-1/2 bg-[#0f3a7d] flex-col justify-between p-12">
         <Link href="/" className="flex items-center gap-3">
           <div className="w-8 h-8 bg-[#14b8a6] rounded-lg flex items-center justify-center">
@@ -46,7 +55,6 @@ export default function LoginPage() {
           </div>
           <span className="text-white font-bold text-xl tracking-tight">Prolink</span>
         </Link>
-
         <div>
           <h1 className="text-4xl font-bold text-white leading-tight mb-4">
             Run your business<br />like a pro.
@@ -67,15 +75,11 @@ export default function LoginPage() {
             ))}
           </div>
         </div>
-
         <p className="text-blue-300 text-xs">© 2026 Prolink by EZLY. All rights reserved.</p>
       </div>
 
-      {/* Right panel */}
       <div className="w-full lg:w-1/2 flex items-center justify-center p-8 bg-[#f8fafc]">
         <div className="w-full max-w-md">
-
-          {/* Mobile logo */}
           <div className="lg:hidden text-center mb-8">
             <Link href="/" className="inline-flex items-center gap-2">
               <div className="w-8 h-8 bg-[#0f3a7d] rounded-lg flex items-center justify-center">
@@ -173,3 +177,4 @@ export default function LoginPage() {
     </div>
   )
 }
+EOF
