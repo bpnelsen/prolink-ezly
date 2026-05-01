@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import { supabase } from '../../../lib/supabase-client';
+import { apiClient } from '../../../lib/api-client';
 
 export default function ConfirmVisitPage() {
   const { jobId } = useParams();
@@ -27,8 +28,13 @@ export default function ConfirmVisitPage() {
 
   const handleConfirm = async () => {
     setStatus('loading');
-    await fetch(`/api/confirm-visit/${jobId}/confirm`, { method: 'POST' });
-    setStatus('confirmed');
+    try {
+      await apiClient(`/api/v1/jobs/${jobId}/confirm`, { method: 'POST' });
+      setStatus('confirmed');
+    } catch (err) {
+      console.error('Confirmation failed', err);
+      setStatus('idle');
+    }
   };
 
   return (
