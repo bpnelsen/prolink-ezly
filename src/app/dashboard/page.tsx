@@ -2,42 +2,35 @@
 import { useState, useEffect } from 'react';
 import { Plus, LogOut, Menu, X } from 'lucide-react';
 import Link from 'next/link';
-import { supabase } from '../../lib/supabase-client';
+import { apiClient } from '../../lib/api-client';
 
 const handleLogout = () => {
-  localStorage.clear()
-  window.location.href = '/login'
-}
+  localStorage.clear();
+  window.location.href = '/login';
+};
 
 export default function Dashboard() {
   const [menuOpen, setMenuOpen] = useState(false);
-  const [setupComplete, setSetupComplete] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [stats, setStats] = useState({
+    summary: { total_revenue: 0, active_jobs: 0, new_leads: 0, avg_value: 0 },
+    revenue: 0,
+    leads: 0
+  });
 
-  // Bootstrap: ensure profiles + pl_contractors exist for this user
   useEffect(() => {
-    const bootstrap = async () => {
-      const { data: { session } } = await supabase.auth.getSession()
-      if (!session) return
-
-      const token = `Bearer ${session.access_token}`
-      const res = await fetch('/api/bootstrap', {
-        method: 'POST',
-        headers: {
-          'Authorization': token,
-          'Content-Type': 'application/json',
-        },
-      })
-
-      if (res.ok) {
-        setSetupComplete(true)
-      } else {
-        const body = await res.json()
-        console.error('Bootstrap failed:', body)
+    async function fetchDashboard() {
+      try {
+        const response = await apiClient('/api/v1/dashboard/report-summary');
+        setStats(response.data);
+        setLoading(false);
+      } catch (err) {
+        console.error('Failed to fetch dashboard', err);
+        setLoading(false);
       }
     }
-
-    bootstrap()
-  }, [])
+    fetchDashboard();
+  }, []);
 
   const navLinks = [
     { name: 'Schedule', href: '/dispatch' },
@@ -50,12 +43,9 @@ export default function Dashboard() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Top Nav */}
       <nav className="bg-white border-b border-gray-200 sticky top-0 z-50 px-4 py-3">
         <div className="max-w-7xl mx-auto flex justify-between items-center">
           <h1 className="text-xl font-bold text-gray-900">Prolink</h1>
-
-          {/* Desktop Menu */}
           <div className="hidden md:flex gap-6 items-center">
             {navLinks.map(link => (
               <Link key={link.name} href={link.href} className="text-sm font-semibold text-gray-600 hover:text-teal-600">{link.name}</Link>
@@ -65,16 +55,12 @@ export default function Dashboard() {
               <LogOut size={18} />
             </button>
           </div>
-
-          {/* Mobile Toggle */}
           <div className="md:hidden flex items-center gap-3">
             <button onClick={() => setMenuOpen(!menuOpen)} className="p-2 text-gray-700">
               {menuOpen ? <X size={24} /> : <Menu size={24} />}
             </button>
           </div>
         </div>
-
-        {/* Mobile Dropdown */}
         {menuOpen && (
           <div className="md:hidden bg-white border-t border-gray-100 py-3 mt-2 flex flex-col gap-3 px-4 shadow-lg rounded-b-xl">
              {navLinks.map(link => (
@@ -89,35 +75,30 @@ export default function Dashboard() {
       </nav>
 
       <main className="max-w-7xl mx-auto p-6 md:p-8 space-y-6">
-        {/* KPI Grid */}
         <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-           <div className="card p-5">
-              <p className="text-[10px] uppercase font-bold text-gray-500 tracking-wider mb-2">Revenue</p>
-              <p className="text-2xl font-bold text-gray-900">$24,850</p>
-           </div>
-           <div className="card p-5">
-              <p className="text-[10px] uppercase font-bold text-gray-500 tracking-wider mb-2">Active Jobs</p>
-              <p className="text-2xl font-bold text-gray-900">48</p>
-           </div>
-           <div className="card p-5">
-              <p className="text-[10px] uppercase font-bold text-gray-500 tracking-wider mb-2">New Leads</p>
-              <p className="text-2xl font-bold text-gray-900">89</p>
-           </div>
-           <div className="card p-5">
-              <p className="text-[10px] uppercase font-bold text-gray-500 tracking-wider mb-2">Avg Value</p>
-              <p className="text-2xl font-bold text-gray-900">$2,593</p>
-           </div>
+           {loading ? (
+             <div className="col-span-4 p-8 text-center text-gray-500 italic">Updating Dashboard...</div>
+           ) : (
+             <>
+               <div className="card p-5">
+                  <p className="text-[10px] uppercase font-bold text-gray-500 tracking-wider mb-2">Revenue</p>
+                  <p className="text-2xl font-bold text-gray-900">${stats.summary.total_revenue.toLocaleString()}</p>
+               </div>
+               <div className="card p-5">
+                  <p className="text-[10px] uppercase font-bold text-gray-500 tracking-wider mb-2">Active Jobs</p>
+                  <p className="text-2xl font-bold text-gray-900">{stats.summary.active_jobs}</p>
+               </div>
+               <div className="card p-5">
+                  <p className="text-[10px] uppercase font-bold text-gray-500 tracking-wider mb-2">New Leads</p>
+                  <p className="text-2xl font-bold text-gray-900">{stats.summary.new_leads}</p>
+               </div>
+               <div className="card p-5">
+                  <p className="text-[10px] uppercase font-bold text-gray-500 tracking-wider mb-2">Avg Job Value</p>
+                  <p className="text-2xl font-bold text-gray-900">${stats.summary.avg_value.toLocaleString()}</p>
+               </div>
+             </>
+           )}
         </section>
-
-        {/* Today's Schedule */}
-        <section className="card p-5">
-          <h3 className="font-bold text-gray-900 text-sm mb-4">Today's Schedule</h3>
-          <div className="bg-gray-50 rounded-lg border border-gray-200 divide-y divide-gray-200">
-             <div className="p-3 text-sm text-gray-600">8:00 AM - Kitchen Remodel</div>
-             <div className="p-3 text-sm text-gray-600">10:30 AM - Bathroom Fix</div>
-          </div>
-        </section>
-
       </main>
     </div>
   )
