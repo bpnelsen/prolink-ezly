@@ -1,14 +1,14 @@
-'use client'
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
-import { Plus, CheckCircle2 } from 'lucide-react'
-import Breadcrumbs from '../../../components/Breadcrumbs'
-import { supabase } from '../../../lib/supabase-client'
+'use client';
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { Plus, CheckCircle2 } from 'lucide-react';
+import Breadcrumbs from '../../../components/Breadcrumbs';
+import { apiClient } from '../../../lib/api-client';
 
 export default function NewCustomer() {
-  const router = useRouter()
-  const [loading, setLoading] = useState(false)
-  const [success, setSuccess] = useState(false)
+  const router = useRouter();
+  const [loading, setLoading] = useState(false);
+  const [success, setSuccess] = useState(false);
   const [form, setForm] = useState({
     first_name: '',
     last_name: '',
@@ -18,61 +18,43 @@ export default function NewCustomer() {
     city: '',
     zip_code: '',
     notes: '',
-  })
+  });
 
   const handleChange = (field: string) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    setForm(prev => ({ ...prev, [field]: e.target.value }))
-  }
+    setForm(prev => ({ ...prev, [field]: e.target.value }));
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!form.first_name.trim() || !form.last_name.trim()) return
-    setLoading(true)
+    e.preventDefault();
+    if (!form.first_name.trim() || !form.last_name.trim()) return;
+    setLoading(true);
 
-    const { data: { session } } = await supabase.auth.getSession()
-    if (!session) {
-      setLoading(false)
-      alert('You must be logged in to add a customer.')
-      router.push('/login')
-      return
+    try {
+      // Map UI fields to backend expected fields
+      const payload = {
+        first_name: form.first_name.trim(),
+        last_name: form.last_name.trim(),
+        phone: form.phone.trim() || undefined,
+        email: form.email.trim() || undefined,
+        address_line1: form.street_address.trim() || undefined,
+        city: form.city.trim() || undefined,
+        zip_code: form.zip_code.trim() || undefined,
+        notes: form.notes.trim() || undefined,
+      };
+
+      await apiClient('/api/v1/clients', {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      });
+
+      setLoading(false);
+      setSuccess(true);
+      setTimeout(() => router.push('/customers'), 1500);
+    } catch (err: any) {
+      setLoading(false);
+      alert('Error creating customer: ' + err.message);
     }
-
-    // Bootstrap first to ensure contractor record exists
-    const token = `Bearer ${session.access_token}`
-    const bootRes = await fetch('/api/bootstrap', {
-      method: 'POST',
-      headers: { 'Authorization': token, 'Content-Type': 'application/json' },
-    })
-
-    if (!bootRes.ok) {
-      const err = await bootRes.json()
-      setLoading(false)
-      alert('Could not set up your account: ' + (err.error || 'try again'))
-      return
-    }
-
-    // Now insert the customer
-    const { error } = await supabase.from('pl_customers').insert({
-      contractor_id: session.user.id,
-      first_name: form.first_name.trim(),
-      last_name: form.last_name.trim(),
-      phone: form.phone.trim() || null,
-      email: form.email.trim() || null,
-      street_address: form.street_address.trim() || null,
-      city: form.city.trim() || null,
-      zip_code: form.zip_code.trim() || null,
-      notes: form.notes.trim() || null,
-    })
-
-    setLoading(false)
-    if (error) {
-      alert('Error creating customer: ' + error.message)
-      return
-    }
-
-    setSuccess(true)
-    setTimeout(() => router.push('/customers'), 1500)
-  }
+  };
 
   if (success) {
     return (
@@ -88,7 +70,7 @@ export default function NewCustomer() {
           </div>
         </div>
       </div>
-    )
+    );
   }
 
   return (
@@ -175,5 +157,5 @@ export default function NewCustomer() {
         </form>
       </div>
     </div>
-  )
+  );
 }
