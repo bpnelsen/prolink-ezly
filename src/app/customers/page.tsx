@@ -28,7 +28,7 @@ export default function CustomersPage() {
     if (!session) { setLoading(false); return }
 
     const { data } = await supabase
-      .from('pl_customers')
+      .from('clients')
       .select('*')
       .eq('contractor_id', session.user.id)
       .order('created_at', { ascending: false });
