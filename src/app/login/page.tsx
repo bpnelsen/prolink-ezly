@@ -2,12 +2,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { apiClient } from '../../lib/api-client'
-
-function setTokens(accessToken: string, refreshToken: string) {
-  localStorage.setItem('prolink_token', accessToken)
-  localStorage.setItem('prolink_refresh_token', refreshToken)
-}
+import { supabase } from '../../lib/supabase-client'
 
 export default function LoginPage() {
   const router = useRouter()
@@ -25,26 +20,19 @@ export default function LoginPage() {
   }, [])
 
   const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setLoading(true)
-    setError('')
-    try {
-      const result = await apiClient('/api/v1/auth/login', {
-        method: 'POST',
-        body: JSON.stringify({ email, password }),
-      })
-      if (result.data) {
-        setTokens(result.data.session.access_token, result.data.session.refresh_token)
-        router.push(result.data.user?.role === 'admin' ? '/dashboard/admin' : '/dashboard')
-      } else {
-        throw new Error(result.error || 'Login failed')
-      }
-    } catch (err: any) {
-      setError(err.message || 'Login failed')
-      setLoading(false)
-    }
+  e.preventDefault()
+  setLoading(true)
+  setError('')
+  try {
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password })
+    if (error) throw error
+    const role = data.user?.user_metadata?.role || 'contractor'
+    router.push(role === 'admin' ? '/dashboard/admin' : '/dashboard')
+  } catch (err: any) {
+    setError(err.message || 'Login failed')
+    setLoading(false)
   }
-
+}
   return (
     <div className="min-h-screen flex">
       <div className="hidden lg:flex lg:w-1/2 bg-[#0f3a7d] flex-col justify-between p-12">
