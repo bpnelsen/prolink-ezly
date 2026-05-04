@@ -12,7 +12,7 @@ export type Contractor = {
 
 export async function fetchContractors(): Promise<Contractor[]> {
   const { data, error } = await supabase
-    .from('pl_contractors')
+    .from('contractors')
     .select(`
       id,
       profiles(full_name),
