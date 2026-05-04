@@ -41,7 +41,7 @@ export async function fetchContractors(): Promise<Contractor[]> {
 
 export async function updateContractorStatus(id: string, status: string) {
   const { error } = await supabase
-    .from('pl_contractors')
+    .from('contractors')
     .update({ status })
     .eq('id', id);
 
