@@ -4,7 +4,7 @@ import { clientService } from '../services/client.service';
 import { validate } from '../middleware/validate';
 
 const router = Router();
-// Middleware bypassed: requireAuth, requireContractor removed as requested
+// Bypassing auth: Injecting system-default ID until auth is restored.
 
 const clientSchema = z.object({
   first_name: z.string().min(1),
@@ -22,11 +22,11 @@ const clientSchema = z.object({
 });
 
 const noteSchema = z.object({ note: z.string().min(1) });
+const MOCK_CONTRACTOR_ID = 'contractor-id-placeholder';
 
 router.get('/', async (req: Request, res: Response) => {
   try {
-    const CONTRACTOR_ID = 'system-default'; 
-    const result = await clientService.list(CONTRACTOR_ID, {
+    const result = await clientService.list(MOCK_CONTRACTOR_ID, {
       page: req.query.page ? Number(req.query.page) : 1,
       limit: req.query.limit ? Number(req.query.limit) : 20,
       search: req.query.search as string | undefined,
@@ -42,8 +42,7 @@ router.get('/', async (req: Request, res: Response) => {
 
 router.post('/', validate(clientSchema), async (req: Request, res: Response) => {
   try {
-    const CONTRACTOR_ID = 'system-default';
-    const client = await clientService.create(CONTRACTOR_ID, req.body);
+    const client = await clientService.create(MOCK_CONTRACTOR_ID, req.body);
     res.status(201).json({ data: client, message: 'Client created' });
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Failed to create client';
@@ -53,8 +52,7 @@ router.post('/', validate(clientSchema), async (req: Request, res: Response) => 
 
 router.get('/:id', async (req: Request, res: Response) => {
   try {
-    const CONTRACTOR_ID = 'system-default';
-    const client = await clientService.getById(CONTRACTOR_ID, req.params.id);
+    const client = await clientService.getById(MOCK_CONTRACTOR_ID, req.params.id);
     res.json({ data: client });
   } catch (err) {
     res.status(404).json({ error: 'Client not found' });
@@ -63,8 +61,7 @@ router.get('/:id', async (req: Request, res: Response) => {
 
 router.put('/:id', validate(clientSchema.partial()), async (req: Request, res: Response) => {
   try {
-    const CONTRACTOR_ID = 'system-default';
-    const client = await clientService.update(CONTRACTOR_ID, req.params.id, req.body);
+    const client = await clientService.update(MOCK_CONTRACTOR_ID, req.params.id, req.body);
     res.json({ data: client, message: 'Client updated' });
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Failed to update client';
@@ -74,8 +71,7 @@ router.put('/:id', validate(clientSchema.partial()), async (req: Request, res: R
 
 router.delete('/:id', async (req: Request, res: Response) => {
   try {
-    const CONTRACTOR_ID = 'system-default';
-    await clientService.delete(CONTRACTOR_ID, req.params.id);
+    await clientService.delete(MOCK_CONTRACTOR_ID, req.params.id);
     res.json({ message: 'Client deleted' });
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Failed to delete client';
@@ -85,8 +81,7 @@ router.delete('/:id', async (req: Request, res: Response) => {
 
 router.post('/:id/notes', validate(noteSchema), async (req: Request, res: Response) => {
   try {
-    const CONTRACTOR_ID = 'system-default';
-    const note = await clientService.addNote(CONTRACTOR_ID, req.params.id, req.body.note);
+    const note = await clientService.addNote(MOCK_CONTRACTOR_ID, req.params.id, req.body.note);
     res.status(201).json({ data: note, message: 'Note added' });
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Failed to add note';
@@ -96,8 +91,7 @@ router.post('/:id/notes', validate(noteSchema), async (req: Request, res: Respon
 
 router.get('/:id/notes', async (req: Request, res: Response) => {
   try {
-    const CONTRACTOR_ID = 'system-default';
-    const notes = await clientService.getNotes(CONTRACTOR_ID, req.params.id);
+    const notes = await clientService.getNotes(MOCK_CONTRACTOR_ID, req.params.id);
     res.json({ data: notes });
   } catch (err) {
     res.status(404).json({ error: 'Client not found' });
