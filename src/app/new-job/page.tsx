@@ -1,11 +1,23 @@
 'use client'
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { CheckCircle2 } from 'lucide-react';
 import Breadcrumbs from '../../components/Breadcrumbs';
 import { supabase } from '../../lib/supabase-client';
 
-export default function NewJob() {
+export default function NewJobPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="w-8 h-8 border-2 border-gray-200 border-t-teal-600 rounded-full animate-spin" />
+      </div>
+    }>
+      <NewJob />
+    </Suspense>
+  );
+}
+
+function NewJob() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const clientId = searchParams.get('client_id');
