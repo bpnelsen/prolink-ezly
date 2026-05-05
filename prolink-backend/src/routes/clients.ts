@@ -35,19 +35,18 @@ router.get('/', async (req: Request, res: Response) => {
     });
     res.json(result);
   } catch (err) {
-    console.error('List error:', err);
     res.status(500).json({ error: err instanceof Error ? err.message : 'Failed' });
   }
 });
 
 router.post('/', validate(clientSchema), async (req: Request, res: Response) => {
   try {
-    console.log('Creating client for contractor:', req.user?.contractor_id);
+    console.log('Incoming client data:', JSON.stringify(req.body, null, 2));
     const client = await clientService.create(req.user!.contractor_id!, req.body);
     res.status(201).json({ data: client, message: 'Client created' });
   } catch (err) {
-    console.error('Creation error details:', err);
-    res.status(500).json({ error: err instanceof Error ? err.message : 'Failed to create client' });
+    console.error('Final database error:', err);
+    res.status(500).json({ error: err instanceof Error ? err.message : 'Database write failed' });
   }
 });
 
