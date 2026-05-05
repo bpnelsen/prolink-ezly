@@ -1,7 +1,7 @@
 'use client'
 import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { CheckCircle2, Plus, Trash2, ChevronDown, Search } from 'lucide-react';
+import { CheckCircle2, Plus, Trash2, Search } from 'lucide-react';
 import Breadcrumbs from '../../components/Breadcrumbs';
 import { supabase } from '../../lib/supabase-client';
 
@@ -49,13 +49,11 @@ function NewJob() {
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState('');
 
-  // Customer
   const [clients, setClients] = useState<Client[]>([]);
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
   const [clientSearch, setClientSearch] = useState('');
   const [showClientDropdown, setShowClientDropdown] = useState(false);
 
-  // Job details
   const [title, setTitle] = useState('');
   const [trade, setTrade] = useState('');
   const [priority, setPriority] = useState('Normal');
@@ -67,12 +65,10 @@ function NewJob() {
   const [siteAddress, setSiteAddress] = useState('');
   const [notes, setNotes] = useState('');
 
-  // Line items
   const [lineItems, setLineItems] = useState<LineItem[]>([
     { id: 1, description: '', qty: 1, unit: 'hr', rate: 0 },
   ]);
 
-  // Fetch clients for dropdown
   useEffect(() => {
     const fetchClients = async () => {
       const { data: { session } } = await supabase.auth.getSession();
@@ -88,7 +84,6 @@ function NewJob() {
     fetchClients();
   }, []);
 
-  // Prefill from client_id query param
   useEffect(() => {
     if (!clientId) return;
     const fetchClient = async () => {
@@ -122,7 +117,6 @@ function NewJob() {
     if (addr && !siteAddress) setSiteAddress(addr);
   };
 
-  // Line item helpers
   const addLineItem = () => {
     setLineItems(prev => [...prev, { id: Date.now(), description: '', qty: 1, unit: 'hr', rate: 0 }]);
   };
@@ -149,27 +143,35 @@ function NewJob() {
         ? new Date(`${scheduledDate}${scheduledTime ? 'T' + scheduledTime : ''}`).toISOString()
         : null;
 
-      // Create pipeline entry
-      const { error: pipelineError } = await supabase.from('pl_pipelines').insert({
+      const { data: job, error: jobError } = await supabase.from('jobs').insert({
         contractor_id: session.user.id,
-        project_name: title.trim(),
+        client_id: selectedClient?.id ?? null,
+        title: title.trim(),
+        trade: trade || null,
         stage,
-        value: subtotal,
-        deadline: scheduledDate || null,
-      });
-      if (pipelineError) throw pipelineError;
+        priority,
+        lead_source: leadSource || null,
+        site_address: siteAddress.trim() || null,
+        scheduled_at: scheduledAt,
+        estimated_duration: estimatedDuration || null,
+        notes: notes.trim() || null,
+        total_value: subtotal,
+      }).select('id').single();
 
-      // Create task entry linked to client
-      if (selectedClient) {
-        await supabase.from('tasks').insert({
-          contractor_id: session.user.id,
-          client_id: selectedClient.id,
-          title: title.trim(),
-          description: notes.trim() || null,
-          address: siteAddress.trim() || null,
-          status: stage === 'Active' ? 'active' : 'pending',
-          scheduled_at: scheduledAt,
-        });
+      if (jobError) throw jobError;
+
+      const validItems = lineItems.filter(i => i.description.trim());
+      if (validItems.length > 0 && job) {
+        const { error: lineError } = await supabase.from('job_line_items').insert(
+          validItems.map(i => ({
+            job_id: job.id,
+            description: i.description.trim(),
+            qty: i.qty,
+            unit: i.unit,
+            rate: i.rate,
+          }))
+        );
+        if (lineError) throw lineError;
       }
 
       setSuccess(true);
@@ -243,12 +245,8 @@ function NewJob() {
               {showClientDropdown && clientSearch && filteredClients.length > 0 && (
                 <div className="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-xl shadow-lg max-h-48 overflow-y-auto">
                   {filteredClients.map(c => (
-                    <button
-                      key={c.id}
-                      type="button"
-                      onClick={() => selectClient(c)}
-                      className="w-full text-left px-4 py-3 hover:bg-gray-50 border-b border-gray-100 last:border-0"
-                    >
+                    <button key={c.id} type="button" onClick={() => selectClient(c)}
+                      className="w-full text-left px-4 py-3 hover:bg-gray-50 border-b border-gray-100 last:border-0">
                       <p className="text-sm font-semibold text-gray-800">{c.first_name} {c.last_name}</p>
                       <p className="text-xs text-gray-400">{c.phone ?? c.email ?? 'No contact info'}</p>
                     </button>
@@ -284,13 +282,9 @@ function NewJob() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
               <div className="md:col-span-2">
                 <label className="block text-xs font-semibold text-gray-600 mb-1.5">Job Title *</label>
-                <input
-                  required
-                  value={title}
-                  onChange={e => setTitle(e.target.value)}
+                <input required value={title} onChange={e => setTitle(e.target.value)}
                   className="w-full bg-gray-50 p-3 rounded-xl border border-gray-200 text-sm focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 transition"
-                  placeholder="e.g. Kitchen Remodel — Johnson Residence"
-                />
+                  placeholder="e.g. Kitchen Remodel — Johnson Residence" />
               </div>
               <div>
                 <label className="block text-xs font-semibold text-gray-600 mb-1.5">Trade / Service Type</label>
@@ -319,7 +313,7 @@ function NewJob() {
                         priority === p
                           ? p === 'Emergency' ? 'bg-red-600 text-white border-red-600'
                           : p === 'High' ? 'bg-orange-500 text-white border-orange-500'
-                          : p === 'Low' ? 'bg-gray-200 text-gray-700 border-gray-200'
+                          : p === 'Low' ? 'bg-gray-400 text-white border-gray-400'
                           : 'bg-teal-600 text-white border-teal-600'
                           : 'bg-gray-50 text-gray-500 border-gray-200 hover:bg-gray-100'
                       }`}>
@@ -338,12 +332,9 @@ function NewJob() {
               </div>
               <div className="md:col-span-2">
                 <label className="block text-xs font-semibold text-gray-600 mb-1.5">Site Address</label>
-                <input
-                  value={siteAddress}
-                  onChange={e => setSiteAddress(e.target.value)}
+                <input value={siteAddress} onChange={e => setSiteAddress(e.target.value)}
                   className="w-full bg-gray-50 p-3 rounded-xl border border-gray-200 text-sm focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 transition"
-                  placeholder="Job site address (if different from customer address)"
-                />
+                  placeholder="Job site address" />
               </div>
             </div>
           </div>
@@ -367,21 +358,15 @@ function NewJob() {
                 <select value={estimatedDuration} onChange={e => setEstimatedDuration(e.target.value)}
                   className="w-full bg-gray-50 p-3 rounded-xl border border-gray-200 text-sm focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 transition">
                   <option value="">Select...</option>
-                  <option>1 hour</option>
-                  <option>2 hours</option>
-                  <option>4 hours</option>
-                  <option>Full day</option>
-                  <option>2 days</option>
-                  <option>3–5 days</option>
-                  <option>1–2 weeks</option>
-                  <option>2–4 weeks</option>
-                  <option>1+ month</option>
+                  <option>1 hour</option><option>2 hours</option><option>4 hours</option>
+                  <option>Full day</option><option>2 days</option><option>3–5 days</option>
+                  <option>1–2 weeks</option><option>2–4 weeks</option><option>1+ month</option>
                 </select>
               </div>
             </div>
           </div>
 
-          {/* Line Items / Estimate */}
+          {/* Line Items */}
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
             <h2 className="font-bold text-gray-900 mb-5">Estimate / Line Items</h2>
             <div className="space-y-3">
@@ -394,36 +379,22 @@ function NewJob() {
               </div>
               {lineItems.map(item => (
                 <div key={item.id} className="grid grid-cols-12 gap-3 items-center">
-                  <input
-                    value={item.description}
-                    onChange={e => updateLineItem(item.id, 'description', e.target.value)}
+                  <input value={item.description} onChange={e => updateLineItem(item.id, 'description', e.target.value)}
                     className="col-span-12 md:col-span-5 bg-gray-50 p-3 rounded-xl border border-gray-200 text-sm focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 transition"
-                    placeholder="Labor, material, service..."
-                  />
-                  <input
-                    type="number" min="0" step="0.5"
-                    value={item.qty}
+                    placeholder="Labor, material, service..." />
+                  <input type="number" min="0" step="0.5" value={item.qty}
                     onChange={e => updateLineItem(item.id, 'qty', parseFloat(e.target.value) || 0)}
-                    className="col-span-4 md:col-span-2 bg-gray-50 p-3 rounded-xl border border-gray-200 text-sm focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 transition"
-                  />
-                  <select
-                    value={item.unit}
-                    onChange={e => updateLineItem(item.id, 'unit', e.target.value)}
+                    className="col-span-4 md:col-span-2 bg-gray-50 p-3 rounded-xl border border-gray-200 text-sm focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 transition" />
+                  <select value={item.unit} onChange={e => updateLineItem(item.id, 'unit', e.target.value)}
                     className="col-span-4 md:col-span-2 bg-gray-50 p-3 rounded-xl border border-gray-200 text-sm focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 transition">
-                    <option value="hr">hr</option>
-                    <option value="ea">ea</option>
-                    <option value="sqft">sqft</option>
-                    <option value="lft">lft</option>
-                    <option value="day">day</option>
-                    <option value="lot">lot</option>
+                    <option value="hr">hr</option><option value="ea">ea</option>
+                    <option value="sqft">sqft</option><option value="lft">lft</option>
+                    <option value="day">day</option><option value="lot">lot</option>
                   </select>
-                  <input
-                    type="number" min="0" step="0.01"
-                    value={item.rate}
+                  <input type="number" min="0" step="0.01" value={item.rate}
                     onChange={e => updateLineItem(item.id, 'rate', parseFloat(e.target.value) || 0)}
                     className="col-span-3 md:col-span-2 bg-gray-50 p-3 rounded-xl border border-gray-200 text-sm focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 transition"
-                    placeholder="0.00"
-                  />
+                    placeholder="0.00" />
                   <button type="button" onClick={() => removeLineItem(item.id)}
                     className="col-span-1 flex justify-center text-gray-300 hover:text-red-500 transition">
                     <Trash2 size={15} />
@@ -435,8 +406,6 @@ function NewJob() {
               className="mt-4 flex items-center gap-2 text-sm font-semibold text-teal-600 hover:text-teal-700 transition">
               <Plus size={14} /> Add Line Item
             </button>
-
-            {/* Totals */}
             <div className="mt-6 pt-5 border-t border-gray-100 flex justify-end">
               <div className="w-64 space-y-2">
                 <div className="flex justify-between text-sm">
@@ -454,16 +423,11 @@ function NewJob() {
           {/* Notes */}
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
             <h2 className="font-bold text-gray-900 mb-5">Notes & Instructions</h2>
-            <textarea
-              value={notes}
-              onChange={e => setNotes(e.target.value)}
-              rows={4}
+            <textarea value={notes} onChange={e => setNotes(e.target.value)} rows={4}
               className="w-full bg-gray-50 p-3 rounded-xl border border-gray-200 text-sm focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 transition resize-none"
-              placeholder="Scope of work, access codes, special instructions, materials needed..."
-            />
+              placeholder="Scope of work, access codes, special instructions, materials needed..." />
           </div>
 
-          {/* Submit */}
           <div className="flex gap-3 pb-8">
             <button type="button" onClick={() => router.back()}
               className="px-6 py-3.5 rounded-xl border border-gray-200 text-gray-600 font-semibold text-sm hover:bg-gray-50 transition">
@@ -474,7 +438,6 @@ function NewJob() {
               {loading ? 'Creating...' : `Create Job${subtotal > 0 ? ` — $${subtotal.toFixed(2)}` : ''}`}
             </button>
           </div>
-
         </form>
       </div>
     </div>

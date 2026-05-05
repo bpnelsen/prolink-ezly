@@ -27,9 +27,9 @@ const STAGE_BADGE: Record<string, string> = {
 
 interface Pipeline {
   id: string;
-  project_name: string;
+  title: string;
   stage: string;
-  value: number;
+  total_value: number;
   created_at: string;
 }
 
@@ -65,7 +65,7 @@ export default function Dashboard() {
         const id = session.user.id;
 
         const [{ data: pipelineData }, { data: clientData }, { data: taskData }] = await Promise.all([
-          supabase.from('pl_pipelines').select('id, project_name, stage, value, created_at').eq('contractor_id', id).order('created_at', { ascending: false }),
+          supabase.from('jobs').select('id, title, stage, total_value, created_at').eq('contractor_id', id).order('created_at', { ascending: false }),
           supabase.from('clients').select('id, first_name, last_name, created_at').eq('contractor_id', id).neq('is_deleted', true).order('created_at', { ascending: false }),
           supabase.from('tasks').select('client_id').eq('contractor_id', id),
         ]);
@@ -88,7 +88,7 @@ export default function Dashboard() {
 
   const completedJobs = pipelines.filter(p => p.stage === 'Completed');
   const avgJobValue = completedJobs.length > 0
-    ? Math.round(completedJobs.reduce((sum, p) => sum + (Number(p.value) || 0), 0) / completedJobs.length)
+    ? Math.round(completedJobs.reduce((sum, p) => sum + (Number(p.total_value) || 0), 0) / completedJobs.length)
     : 0;
 
   const clientTaskCounts = tasks.reduce<Record<string, number>>((acc, t) => {
@@ -107,7 +107,7 @@ export default function Dashboard() {
   const totalPipelines = pipelines.length || 1;
 
   const recentActivity = [
-    ...pipelines.slice(0, 5).map(p => ({ type: 'job' as const, label: p.project_name, sub: p.stage, date: p.created_at, href: '/dashboard' })),
+    ...pipelines.slice(0, 5).map(p => ({ type: 'job' as const, label: p.title, sub: p.stage, date: p.created_at, href: '/dashboard' })),
     ...clients.slice(0, 5).map(c => ({ type: 'customer' as const, label: `${c.first_name} ${c.last_name}`, sub: 'New Customer', date: c.created_at, href: `/customers/${c.id}` })),
   ]
     .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
@@ -262,7 +262,7 @@ export default function Dashboard() {
                       <div key={p.id} className="flex items-center justify-between py-1.5">
                         <div className="flex items-center gap-3 min-w-0">
                           <Briefcase size={13} className="text-gray-300 shrink-0" />
-                          <span className="text-sm text-gray-700 truncate">{p.project_name}</span>
+                          <span className="text-sm text-gray-700 truncate">{p.title}</span>
                         </div>
                         <span className={`inline-flex items-center px-2 py-0.5 rounded-full border text-[10px] font-bold uppercase tracking-wide ml-3 shrink-0 ${STAGE_BADGE[p.stage] ?? 'bg-gray-100 text-gray-600 border-gray-200'}`}>
                           {p.stage}

@@ -7,11 +7,11 @@ import Breadcrumbs from '../../../components/Breadcrumbs';
 
 interface Pipeline {
   id: string;
-  project_name: string;
+  title: string;
   stage: string;
-  value: number;
+  total_value: number;
   created_at: string;
-  deadline: string | null;
+  scheduled_at: string | null;
 }
 
 interface Task {
@@ -70,7 +70,7 @@ export default function KpisPage() {
       const id = session.user.id;
 
       const [{ data: pd }, { data: td }, { data: cd }] = await Promise.all([
-        supabase.from('pl_pipelines').select('id, project_name, stage, value, created_at, deadline').eq('contractor_id', id),
+        supabase.from('jobs').select('id, title, stage, total_value, created_at, scheduled_at').eq('contractor_id', id),
         supabase.from('tasks').select('client_id').eq('contractor_id', id),
         supabase.from('clients').select('id, created_at').eq('contractor_id', id).neq('is_deleted', true),
       ]);
@@ -101,10 +101,10 @@ export default function KpisPage() {
   // Revenue
   const completed = pipelines.filter(p => p.stage === 'Completed');
   const revenueThisMonth = completed.filter(p => p.created_at >= thisMonthStart && p.created_at <= thisMonthEnd)
-    .reduce((sum, p) => sum + (Number(p.value) || 0), 0);
+    .reduce((sum, p) => sum + (Number(p.total_value) || 0), 0);
   const revenueLastMonth = completed.filter(p => p.created_at >= lastMonthStart && p.created_at <= lastMonthEnd)
-    .reduce((sum, p) => sum + (Number(p.value) || 0), 0);
-  const totalRevenue = completed.reduce((sum, p) => sum + (Number(p.value) || 0), 0);
+    .reduce((sum, p) => sum + (Number(p.total_value) || 0), 0);
+  const totalRevenue = completed.reduce((sum, p) => sum + (Number(p.total_value) || 0), 0);
 
   // Avg job value
   const avgJobValue = completed.length > 0
@@ -118,11 +118,11 @@ export default function KpisPage() {
   // Pipeline value (open jobs)
   const pipelineValue = pipelines
     .filter(p => ['Lead', 'Quoted', 'Active'].includes(p.stage))
-    .reduce((sum, p) => sum + (Number(p.value) || 0), 0);
+    .reduce((sum, p) => sum + (Number(p.total_value) || 0), 0);
 
   // Largest open job
   const openJobs = pipelines.filter(p => ['Lead', 'Quoted', 'Active'].includes(p.stage));
-  const largestOpen = openJobs.reduce<Pipeline | null>((max, p) => (!max || Number(p.value) > Number(max.value)) ? p : max, null);
+  const largestOpen = openJobs.reduce<Pipeline | null>((max, p) => (!max || Number(p.total_value) > Number(max.total_value)) ? p : max, null);
 
   // Customers
   const customersThisMonth = clients.filter(c => c.created_at >= thisMonthStart && c.created_at <= thisMonthEnd).length;
@@ -192,8 +192,8 @@ export default function KpisPage() {
             />
             <KpiCard
               label="Largest Open Job"
-              value={largestOpen ? `$${Number(largestOpen.value).toLocaleString()}` : '—'}
-              sub={largestOpen?.project_name ?? 'No open jobs'}
+              value={largestOpen ? `$${Number(largestOpen.total_value).toLocaleString()}` : '—'}
+              sub={largestOpen?.title ?? 'No open jobs'}
               color="text-gray-900"
             />
           </div>
