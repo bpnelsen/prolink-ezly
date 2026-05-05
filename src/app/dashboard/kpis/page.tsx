@@ -192,7 +192,7 @@ export default function KpisPage() {
             />
             <KpiCard
               label="Largest Open Job"
-              value={largestOpen ? `$${Number(largestOpen.total_value).toLocaleString()}` : '—'}
+              value={largestOpen ? `$${Number(largestOpen.estimated_value).toLocaleString()}` : '—'}
               sub={largestOpen?.title ?? 'No open jobs'}
               color="text-gray-900"
             />
