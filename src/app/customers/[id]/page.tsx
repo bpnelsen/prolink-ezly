@@ -1,7 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { Phone, Mail, MapPin, FileText, ArrowLeft, Pencil, Trash2, User } from 'lucide-react';
+import { Phone, Mail, MapPin, FileText, ArrowLeft, Pencil, Trash2, User, Briefcase } from 'lucide-react';
 import Link from 'next/link';
 import { supabase } from '../../../lib/supabase-client';
 import Breadcrumbs from '../../../components/Breadcrumbs';
@@ -101,6 +101,12 @@ export default function CustomerDetailPage() {
             </div>
           </div>
           <div className="flex gap-2">
+            <Link
+              href={`/customers/${id}/jobs`}
+              className="flex items-center gap-2 px-4 py-2 rounded-lg border border-teal-200 text-sm font-semibold text-teal-700 hover:bg-teal-50 transition"
+            >
+              <Briefcase size={13} /> View Jobs
+            </Link>
             <Link
               href={`/customers/${id}/edit`}
               className="flex items-center gap-2 px-4 py-2 rounded-lg border border-gray-200 text-sm font-semibold text-gray-700 hover:bg-gray-100 transition"
