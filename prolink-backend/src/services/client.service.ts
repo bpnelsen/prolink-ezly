@@ -25,9 +25,6 @@ export interface ClientListParams {
 }
 
 export const clientService = {
-  /**
-   * Returns a paginated list of clients for the contractor with optional filters.
-   */
   async list(contractorId: string, params: ClientListParams = {}): Promise<PaginatedResponse<Client>> {
     const page = Math.max(1, params.page ?? 1);
     const limit = Math.min(100, Math.max(1, params.limit ?? 20));
@@ -61,9 +58,6 @@ export const clientService = {
     };
   },
 
-  /**
-   * Creates a new client for the contractor.
-   */
   async create(contractorId: string, input: CreateClientInput): Promise<Client> {
     const normalized = input.state_code
       ? { ...input, state_code: input.state_code.toUpperCase() }
@@ -75,13 +69,13 @@ export const clientService = {
       .select()
       .single();
 
-    if (error || !data) throw new Error(error?.message ?? 'Failed to create client');
+    if (error) {
+       console.error('Supabase DB Error during creation:', error.message, error.details, error.hint);
+       throw new Error(error.message);
+    }
     return data as Client;
   },
 
-  /**
-   * Fetches a single client, enforcing contractor ownership.
-   */
   async getById(contractorId: string, clientId: string): Promise<Client> {
     const { data, error } = await supabase
       .from('clients')
@@ -90,13 +84,10 @@ export const clientService = {
       .eq('contractor_id', contractorId)
       .single();
 
-    if (error || !data) throw new Error('Client not found');
+    if (error) throw new Error('Client not found');
     return data as Client;
   },
 
-  /**
-   * Updates a client record.
-   */
   async update(contractorId: string, clientId: string, input: Partial<CreateClientInput>): Promise<Client> {
     const normalized = input.state_code
       ? { ...input, state_code: input.state_code.toUpperCase() }
@@ -110,13 +101,10 @@ export const clientService = {
       .select()
       .single();
 
-    if (error || !data) throw new Error(error?.message ?? 'Client not found');
+    if (error) throw new Error(error.message ?? 'Client not found');
     return data as Client;
   },
 
-  /**
-   * Deletes a client record.
-   */
   async delete(contractorId: string, clientId: string): Promise<void> {
     const { error } = await supabase
       .from('clients')
@@ -127,31 +115,24 @@ export const clientService = {
     if (error) throw new Error(error.message);
   },
 
-  /**
-   * Adds a note to a client record.
-   */
   async addNote(contractorId: string, clientId: string, note: string): Promise<ClientNote> {
-    // Verify ownership first
     await this.getById(contractorId, clientId);
 
     const { data, error } = await supabase
-      .from('client_notes')
+      .from('clients_notes')
       .insert({ client_id: clientId, contractor_id: contractorId, note })
       .select()
       .single();
 
-    if (error || !data) throw new Error(error?.message ?? 'Failed to add note');
+    if (error) throw new Error(error.message ?? 'Failed to add note');
     return data as ClientNote;
   },
 
-  /**
-   * Returns all notes for a client.
-   */
   async getNotes(contractorId: string, clientId: string): Promise<ClientNote[]> {
     await this.getById(contractorId, clientId);
 
     const { data, error } = await supabase
-      .from('client_notes')
+      .from('clients_notes')
       .select('*')
       .eq('client_id', clientId)
       .eq('contractor_id', contractorId)
