@@ -1,3 +1,4 @@
+'use client'
 import { useState } from 'react';
 import { DollarSign, Plus, Trash2, FileText, TrendingUp, AlertTriangle } from 'lucide-react';
 

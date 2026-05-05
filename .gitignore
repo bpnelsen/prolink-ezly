@@ -3,5 +3,6 @@ node_modules/
 .next_ghost/
 .next_old/
 .env*
+!.env.example
 *.log
 .vercel

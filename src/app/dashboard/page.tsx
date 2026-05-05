@@ -3,9 +3,10 @@ import { useState, useEffect } from 'react';
 import { Plus, LogOut, Menu, X } from 'lucide-react';
 import Link from 'next/link';
 import { apiClient } from '../../lib/api-client';
+import { supabase } from '../../lib/supabase-client';
 
-const handleLogout = () => {
-  localStorage.clear();
+const handleLogout = async () => {
+  await supabase.auth.signOut();
   window.location.href = '/login';
 };
 

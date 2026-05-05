@@ -1,7 +1,7 @@
 'use client';
 import { useState } from 'react';
 import Link from 'next/link';
-import { apiClient } from '../../lib/api-client';
+import { supabase } from '../../lib/supabase-client';
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState('');
@@ -12,11 +12,10 @@ export default function ForgotPasswordPage() {
     e.preventDefault();
     setStatus('loading');
     try {
-      // NOTE: This endpoint needs to be implemented in your new Express backend!
-      await apiClient('/api/v1/auth/forgot-password', {
-        method: 'POST',
-        body: JSON.stringify({ email }),
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/auth/callback?next=/settings/profile`,
       });
+      if (error) throw error;
       setStatus('success');
       setMessage('If an account exists, you will receive a reset email shortly.');
     } catch (err: any) {
@@ -30,7 +29,7 @@ export default function ForgotPasswordPage() {
       <div className="w-full max-w-md bg-white rounded-xl shadow-lg p-8">
         <h1 className="text-2xl font-bold text-gray-900 mb-2">Forgot password?</h1>
         <p className="text-gray-600 mb-6">Enter your email and we'll send you a link to reset your password.</p>
-        
+
         {status === 'success' ? (
           <div className="p-4 bg-green-50 text-green-700 rounded-lg">{message}</div>
         ) : (
@@ -47,8 +46,8 @@ export default function ForgotPasswordPage() {
               />
             </div>
             {status === 'error' && <p className="text-red-600 text-sm">{message}</p>}
-            <button 
-              type="submit" 
+            <button
+              type="submit"
               disabled={status === 'loading'}
               className="w-full bg-[#0f3a7d] text-white py-3 rounded-xl font-semibold hover:bg-[#0c2e5c]"
             >

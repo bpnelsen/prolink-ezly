@@ -12,7 +12,7 @@ export type Contractor = {
 
 export async function fetchContractors(): Promise<Contractor[]> {
   const { data, error } = await supabase
-    .from('contractors')
+    .from('pl_contractors')
     .select(`
       id,
       profiles(full_name),
@@ -41,7 +41,7 @@ export async function fetchContractors(): Promise<Contractor[]> {
 
 export async function updateContractorStatus(id: string, status: string) {
   const { error } = await supabase
-    .from('contractors')
+    .from('pl_contractors')
     .update({ status })
     .eq('id', id);
 

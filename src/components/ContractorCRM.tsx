@@ -1,3 +1,4 @@
+'use client'
 import { useState, useEffect } from 'react';
 import { Phone, Star, ShieldCheck, UserPlus, FileText, AlertTriangle } from 'lucide-react';
 import { fetchContractors, type Contractor } from '../lib/data-service';

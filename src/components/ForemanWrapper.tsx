@@ -14,9 +14,9 @@ export default function ForemanWrapper() {
       setLoading(false)
     })
 
-    // Listen for auth changes
-    const { data: sub } = supabase.auth.onAuthStateChange((_event: string, data: any) => {
-      setSession(data.session)
+    // Listen for auth changes — second arg IS the session (Session | null)
+    const { data: sub } = supabase.auth.onAuthStateChange((_event: string, session: any) => {
+      setSession(session)
       setLoading(false)
     })
 
