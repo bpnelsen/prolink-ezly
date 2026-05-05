@@ -15,9 +15,8 @@ export default function NewCustomer() {
     last_name: '',
     phone: '',
     email: '',
-    street_address: '',
-    city: '',
-    zip_code: '',
+    address_line1: '',
+    address_line2: '',
     notes: '',
   });
 
@@ -45,9 +44,8 @@ export default function NewCustomer() {
         last_name: form.last_name.trim(),
         phone: form.phone.trim() || null,
         email: form.email.trim() || null,
-        street_address: form.street_address.trim() || null,
-        city: form.city.trim() || null,
-        zip_code: form.zip_code.trim() || null,
+        address_line1: form.address_line1.trim() || null,
+        address_line2: form.address_line2.trim() || null,
         notes: form.notes.trim() || null,
       });
 
@@ -125,24 +123,16 @@ export default function NewCustomer() {
             <div className="space-y-5">
               <h3 className="font-bold text-sm text-gray-500 uppercase tracking-wide">Primary Property</h3>
               <div>
-                <label className="block text-xs font-semibold text-gray-600 mb-1.5">Street Address</label>
-                <input value={form.street_address} onChange={handleChange('street_address')}
+                <label className="block text-xs font-semibold text-gray-600 mb-1.5">Address Line 1</label>
+                <input value={form.address_line1} onChange={handleChange('address_line1')}
                   className="w-full bg-gray-50 p-3 rounded-xl border border-gray-200 text-sm focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 transition"
                   placeholder="123 Main St" />
               </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-semibold text-gray-600 mb-1.5">City</label>
-                  <input value={form.city} onChange={handleChange('city')}
-                    className="w-full bg-gray-50 p-3 rounded-xl border border-gray-200 text-sm focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 transition"
-                    placeholder="Salt Lake City" />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-gray-600 mb-1.5">Zip Code</label>
-                  <input value={form.zip_code} onChange={handleChange('zip_code')}
-                    className="w-full bg-gray-50 p-3 rounded-xl border border-gray-200 text-sm focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 transition"
-                    placeholder="84101" />
-                </div>
+              <div>
+                <label className="block text-xs font-semibold text-gray-600 mb-1.5">Address Line 2</label>
+                <input value={form.address_line2} onChange={handleChange('address_line2')}
+                  className="w-full bg-gray-50 p-3 rounded-xl border border-gray-200 text-sm focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 transition"
+                  placeholder="Apt, Suite, Unit..." />
               </div>
               <div>
                 <label className="block text-xs font-semibold text-gray-600 mb-1.5">Notes</label>
