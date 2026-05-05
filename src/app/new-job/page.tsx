@@ -1,13 +1,17 @@
 'use client'
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useEffect } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { CheckCircle2 } from 'lucide-react';
 import Breadcrumbs from '../../components/Breadcrumbs';
 import { supabase } from '../../lib/supabase-client';
 
 export default function NewJob() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const clientId = searchParams.get('client_id');
+
   const [loading, setLoading] = useState(false);
+  const [prefilling, setPrefilling] = useState(!!clientId);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState('');
   const [form, setForm] = useState({
@@ -20,6 +24,30 @@ export default function NewJob() {
     scheduledDate: '',
     estimatedPrice: '',
   });
+
+  useEffect(() => {
+    if (!clientId) return;
+    const fetchClient = async () => {
+      const { data } = await supabase
+        .from('clients')
+        .select('first_name, last_name, phone, email, address_line1, address_line2')
+        .eq('id', clientId)
+        .single();
+
+      if (data) {
+        const address = [data.address_line1, data.address_line2].filter(Boolean).join(', ');
+        setForm(prev => ({
+          ...prev,
+          customerName: `${data.first_name} ${data.last_name}`.trim(),
+          phone: data.phone ?? '',
+          email: data.email ?? '',
+          address: address,
+        }));
+      }
+      setPrefilling(false);
+    };
+    fetchClient();
+  }, [clientId]);
 
   const handleChange = (field: string) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     setForm(prev => ({ ...prev, [field]: e.target.value }));
@@ -39,7 +67,6 @@ export default function NewJob() {
         return;
       }
 
-      // Create a pipeline entry for the new job
       const { error: insertError } = await supabase.from('pl_pipelines').insert({
         contractor_id: session.user.id,
         project_name: `${form.customerName} — ${form.trade || 'General'}`,
@@ -52,7 +79,13 @@ export default function NewJob() {
 
       setLoading(false);
       setSuccess(true);
-      setTimeout(() => router.push('/dashboard'), 1500);
+      setTimeout(() => {
+        if (clientId) {
+          router.push(`/customers/${clientId}/jobs`);
+        } else {
+          router.push('/dashboard');
+        }
+      }, 1500);
     } catch (err: any) {
       setLoading(false);
       setError(err.message || 'Error creating job');
@@ -68,9 +101,19 @@ export default function NewJob() {
               <CheckCircle2 className="w-8 h-8 text-teal-600" />
             </div>
             <p className="text-xl font-bold text-gray-900">Job Created!</p>
-            <p className="text-gray-500 text-sm mt-2">Redirecting to Dashboard...</p>
+            <p className="text-gray-500 text-sm mt-2">
+              {clientId ? 'Redirecting to client jobs...' : 'Redirecting to Dashboard...'}
+            </p>
           </div>
         </div>
+      </div>
+    );
+  }
+
+  if (prefilling) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="w-8 h-8 border-2 border-gray-200 border-t-teal-600 rounded-full animate-spin" />
       </div>
     );
   }
@@ -174,7 +217,7 @@ export default function NewJob() {
             disabled={loading || !form.customerName.trim() || !form.address.trim()}
             className="w-full mt-8 bg-teal-600 text-white font-bold py-4 rounded-xl hover:bg-teal-700 transition-all shadow-sm disabled:opacity-50"
           >
-            {loading ? 'Creating...' : 'Create Job Bucket'}
+            {loading ? 'Creating...' : 'Create Job'}
           </button>
         </form>
       </div>

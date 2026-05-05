@@ -89,7 +89,7 @@ export default function ClientJobsPage() {
             </div>
           </div>
           <Link
-            href="/new-job"
+            href={`/new-job?client_id=${id}`}
             className="flex items-center gap-2 px-5 py-2.5 bg-teal-600 hover:bg-teal-700 text-white rounded-lg font-bold text-sm transition shadow-sm"
           >
             <Plus size={15} /> New Job
@@ -115,7 +115,7 @@ export default function ClientJobsPage() {
             <p className="text-gray-500 font-medium">No jobs yet for this customer.</p>
             <p className="text-gray-400 text-sm mt-1">Create the first job or bid to get started.</p>
             <Link
-              href="/new-job"
+              href={`/new-job?client_id=${id}`}
               className="inline-flex items-center gap-2 mt-4 text-teal-600 font-semibold text-sm hover:text-teal-700"
             >
               <Plus size={14} /> Create Job
