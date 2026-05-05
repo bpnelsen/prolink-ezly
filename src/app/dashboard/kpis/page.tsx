@@ -120,9 +120,7 @@ export default function KpisPage() {
     .filter(p => ['Lead', 'Quoted', 'Active'].includes(p.stage))
     .reduce((sum, p) => sum + (Number(p.estimated_value) || 0), 0);
 
-  // Largest open job
   const openJobs = pipelines.filter(p => ['Lead', 'Quoted', 'Active'].includes(p.stage));
-  const largestOpen = openJobs.reduce<Pipeline | null>((max, p) => (!max || Number(p.estimated_value) > Number(max.estimated_value)) ? p : max, null);
 
   // Customers
   const customersThisMonth = clients.filter(c => c.created_at >= thisMonthStart && c.created_at <= thisMonthEnd).length;
@@ -170,7 +168,7 @@ export default function KpisPage() {
         {/* Jobs */}
         <div className="mb-8">
           <p className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-4">Jobs & Pipeline</p>
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
             <KpiCard
               label="Jobs This Month"
               value={String(jobsThisMonth)}
@@ -189,12 +187,6 @@ export default function KpisPage() {
               value={`$${pipelineValue.toLocaleString()}`}
               sub={`${openJobs.length} open jobs`}
               color="text-blue-600"
-            />
-            <KpiCard
-              label="Largest Open Job"
-              value={largestOpen ? `$${Number(largestOpen.estimated_value).toLocaleString()}` : '—'}
-              sub={largestOpen?.title ?? 'No open jobs'}
-              color="text-gray-900"
             />
           </div>
         </div>
