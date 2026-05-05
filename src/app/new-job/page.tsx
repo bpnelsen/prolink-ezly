@@ -25,7 +25,7 @@ interface Client {
 
 const TRADES = ['Electrical', 'Plumbing', 'HVAC', 'Roofing', 'Kitchen Remodel', 'Bath Reno', 'Deck Build', 'Flooring', 'Painting', 'Landscaping', 'General Contractor', 'Other'];
 const LEAD_SOURCES = ['Referral', 'Website', 'Phone Call', 'Returning Customer', 'Social Media', 'Door Knock', 'Google', 'Other'];
-const PRIORITIES = ['Low', 'Normal', 'High', 'Emergency'];
+const PRIORITIES = ['Low', 'Medium', 'High'];
 
 export default function NewJobPage() {
   return (
@@ -56,7 +56,7 @@ function NewJob() {
 
   const [title, setTitle] = useState('');
   const [trade, setTrade] = useState('');
-  const [priority, setPriority] = useState('Normal');
+  const [priority, setPriority] = useState('low');
   const [leadSource, setLeadSource] = useState('');
   const [stage, setStage] = useState('Lead');
   const [scheduledDate, setScheduledDate] = useState('');
@@ -309,11 +309,10 @@ function NewJob() {
                 <label className="block text-xs font-semibold text-gray-600 mb-1.5">Priority</label>
                 <div className="flex gap-2">
                   {PRIORITIES.map(p => (
-                    <button key={p} type="button" onClick={() => setPriority(p)}
+                    <button key={p} type="button" onClick={() => setPriority(p.toLowerCase())}
                       className={`flex-1 py-2.5 rounded-xl text-xs font-bold border transition ${
-                        priority === p
-                          ? p === 'Emergency' ? 'bg-red-600 text-white border-red-600'
-                          : p === 'High' ? 'bg-orange-500 text-white border-orange-500'
+                        priority === p.toLowerCase()
+                          ? p === 'High' ? 'bg-orange-500 text-white border-orange-500'
                           : p === 'Low' ? 'bg-gray-400 text-white border-gray-400'
                           : 'bg-teal-600 text-white border-teal-600'
                           : 'bg-gray-50 text-gray-500 border-gray-200 hover:bg-gray-100'
