@@ -35,18 +35,19 @@ router.get('/', async (req: Request, res: Response) => {
     });
     res.json(result);
   } catch (err) {
-    const message = err instanceof Error ? err.message : 'Failed to fetch clients';
-    res.status(500).json({ error: message });
+    console.error('List error:', err);
+    res.status(500).json({ error: err instanceof Error ? err.message : 'Failed' });
   }
 });
 
 router.post('/', validate(clientSchema), async (req: Request, res: Response) => {
   try {
+    console.log('Creating client for contractor:', req.user?.contractor_id);
     const client = await clientService.create(req.user!.contractor_id!, req.body);
     res.status(201).json({ data: client, message: 'Client created' });
   } catch (err) {
-    const message = err instanceof Error ? err.message : 'Failed to create client';
-    res.status(500).json({ error: message });
+    console.error('Creation error details:', err);
+    res.status(500).json({ error: err instanceof Error ? err.message : 'Failed to create client' });
   }
 });
 
@@ -64,8 +65,7 @@ router.put('/:id', validate(clientSchema.partial()), async (req: Request, res: R
     const client = await clientService.update(req.user!.contractor_id!, req.params.id, req.body);
     res.json({ data: client, message: 'Client updated' });
   } catch (err) {
-    const message = err instanceof Error ? err.message : 'Failed to update client';
-    res.status(500).json({ error: message });
+    res.status(500).json({ error: err instanceof Error ? err.message : 'Failed to update client' });
   }
 });
 
@@ -74,8 +74,7 @@ router.delete('/:id', async (req: Request, res: Response) => {
     await clientService.delete(req.user!.contractor_id!, req.params.id);
     res.json({ message: 'Client deleted' });
   } catch (err) {
-    const message = err instanceof Error ? err.message : 'Failed to delete client';
-    res.status(500).json({ error: message });
+    res.status(500).json({ error: err instanceof Error ? err.message : 'Failed to delete client' });
   }
 });
 
@@ -84,8 +83,7 @@ router.post('/:id/notes', validate(noteSchema), async (req: Request, res: Respon
     const note = await clientService.addNote(req.user!.contractor_id!, req.params.id, req.body.note);
     res.status(201).json({ data: note, message: 'Note added' });
   } catch (err) {
-    const message = err instanceof Error ? err.message : 'Failed to add note';
-    res.status(500).json({ error: message });
+    res.status(500).json({ error: err instanceof Error ? err.message : 'Failed to add note' });
   }
 });
 
