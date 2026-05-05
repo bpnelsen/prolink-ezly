@@ -1,7 +1,8 @@
 'use client'
-import { useState, useEffect } from 'react';
-import { Phone, Mail, MapPin, Search, Plus, MoreHorizontal } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { Phone, Mail, MapPin, Search, Plus, MoreHorizontal, Eye, Pencil, Trash2 } from 'lucide-react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { supabase } from '../../lib/supabase-client';
 import Breadcrumbs from '../../components/Breadcrumbs';
 
@@ -11,11 +12,64 @@ interface Customer {
   last_name: string;
   phone: string | null;
   email: string | null;
-  street_address: string | null;
-  city: string | null;
-  zip_code: string | null;
+  address_line1: string | null;
+  address_line2: string | null;
   notes: string | null;
   created_at: string;
+}
+
+function RowMenu({ customerId, onDelete }: { customerId: string; onDelete: () => void }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  const router = useRouter();
+
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
+
+  const handleDelete = async () => {
+    setOpen(false);
+    if (!confirm('Delete this customer? This cannot be undone.')) return;
+    await supabase.from('clients').delete().eq('id', customerId);
+    onDelete();
+  };
+
+  return (
+    <div ref={ref} className="relative inline-block">
+      <button
+        onClick={() => setOpen(o => !o)}
+        className="p-1 rounded hover:bg-gray-100 transition"
+      >
+        <MoreHorizontal className="text-gray-400 hover:text-gray-700" size={16} />
+      </button>
+      {open && (
+        <div className="absolute right-0 z-10 mt-1 w-40 bg-white border border-gray-200 rounded-xl shadow-lg py-1">
+          <button
+            onClick={() => { setOpen(false); router.push(`/customers/${customerId}`); }}
+            className="w-full flex items-center gap-2.5 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+          >
+            <Eye size={13} /> View Details
+          </button>
+          <button
+            onClick={() => { setOpen(false); router.push(`/customers/${customerId}/edit`); }}
+            className="w-full flex items-center gap-2.5 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+          >
+            <Pencil size={13} /> Edit
+          </button>
+          <button
+            onClick={handleDelete}
+            className="w-full flex items-center gap-2.5 px-4 py-2 text-sm text-red-600 hover:bg-red-50"
+          >
+            <Trash2 size={13} /> Delete
+          </button>
+        </div>
+      )}
+    </div>
+  );
 }
 
 export default function CustomersPage() {
@@ -24,8 +78,8 @@ export default function CustomersPage() {
   const [search, setSearch] = useState('');
 
   const fetchCustomers = async () => {
-    const { data: { session } } = await supabase.auth.getSession()
-    if (!session) { setLoading(false); return }
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) { setLoading(false); return; }
 
     const { data } = await supabase
       .from('clients')
@@ -94,7 +148,7 @@ export default function CustomersPage() {
             )}
           </div>
         ) : (
-          <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden shadow-sm">
+          <div className="bg-white rounded-2xl border border-gray-100 overflow-visible shadow-sm">
             <table className="w-full text-sm text-left">
               <thead className="text-[10px] text-gray-500 uppercase tracking-wider bg-gray-50 border-b border-gray-100">
                 <tr>
@@ -109,9 +163,9 @@ export default function CustomersPage() {
                   <tr key={c.id} className="border-t border-gray-100 hover:bg-gray-50 transition-colors">
                     <td className="px-6 py-4">
                       <p className="font-bold text-gray-900">{c.first_name} {c.last_name}</p>
-                      {c.street_address && (
+                      {c.address_line1 && (
                         <p className="flex items-center gap-1 text-xs text-gray-400 mt-0.5">
-                          <MapPin size={10} /> {c.street_address}{c.city ? `, ${c.city}` : ''}
+                          <MapPin size={10} /> {c.address_line1}{c.address_line2 ? `, ${c.address_line2}` : ''}
                         </p>
                       )}
                     </td>
@@ -124,7 +178,7 @@ export default function CustomersPage() {
                       {new Date(c.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                     </td>
                     <td className="px-6 py-4 text-right">
-                      <MoreHorizontal className="text-gray-400 hover:text-gray-700 cursor-pointer ml-auto" size={16} />
+                      <RowMenu customerId={c.id} onDelete={fetchCustomers} />
                     </td>
                   </tr>
                 ))}
