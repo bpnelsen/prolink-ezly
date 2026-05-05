@@ -1,6 +1,6 @@
 'use client'
 import { useState, useEffect } from 'react';
-import { LogOut, Menu, X, Plus, Users, CalendarDays, TrendingUp, Briefcase, ChevronRight, Clock } from 'lucide-react';
+import { LogOut, Menu, X, Plus, Users, CalendarDays, TrendingUp, Briefcase, ChevronRight, Clock, BarChart2 } from 'lucide-react';
 import Link from 'next/link';
 import { supabase } from '../../lib/supabase-client';
 
@@ -40,11 +40,21 @@ interface Client {
   created_at: string;
 }
 
+interface Task {
+  client_id: string | null;
+}
+
+function startOfMonth() {
+  const d = new Date();
+  return new Date(d.getFullYear(), d.getMonth(), 1).toISOString();
+}
+
 export default function Dashboard() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [pipelines, setPipelines] = useState<Pipeline[]>([]);
   const [clients, setClients] = useState<Client[]>([]);
+  const [tasks, setTasks] = useState<Task[]>([]);
 
   useEffect(() => {
     async function fetchDashboard() {
@@ -54,13 +64,15 @@ export default function Dashboard() {
 
         const id = session.user.id;
 
-        const [{ data: pipelineData }, { data: clientData }] = await Promise.all([
+        const [{ data: pipelineData }, { data: clientData }, { data: taskData }] = await Promise.all([
           supabase.from('pl_pipelines').select('id, project_name, stage, value, created_at').eq('contractor_id', id).order('created_at', { ascending: false }),
           supabase.from('clients').select('id, first_name, last_name, created_at').eq('contractor_id', id).neq('is_deleted', true).order('created_at', { ascending: false }),
+          supabase.from('tasks').select('client_id').eq('contractor_id', id),
         ]);
 
         if (pipelineData) setPipelines(pipelineData);
         if (clientData) setClients(clientData);
+        if (taskData) setTasks(taskData);
       } catch (err) {
         console.error('Failed to fetch dashboard', err);
       } finally {
@@ -70,7 +82,23 @@ export default function Dashboard() {
     fetchDashboard();
   }, []);
 
-  const totalRevenue = pipelines.filter(p => p.stage === 'Completed').reduce((sum, p) => sum + (Number(p.value) || 0), 0);
+  const monthStart = startOfMonth();
+  const jobsThisMonth = pipelines.filter(p => p.created_at >= monthStart).length;
+  const customersThisMonth = clients.filter(c => c.created_at >= monthStart).length;
+
+  const completedJobs = pipelines.filter(p => p.stage === 'Completed');
+  const avgJobValue = completedJobs.length > 0
+    ? Math.round(completedJobs.reduce((sum, p) => sum + (Number(p.value) || 0), 0) / completedJobs.length)
+    : 0;
+
+  const clientTaskCounts = tasks.reduce<Record<string, number>>((acc, t) => {
+    if (t.client_id) acc[t.client_id] = (acc[t.client_id] || 0) + 1;
+    return acc;
+  }, {});
+  const clientsWithJobs = Object.keys(clientTaskCounts).length;
+  const repeatClients = Object.values(clientTaskCounts).filter(n => n >= 2).length;
+  const retentionRate = clientsWithJobs > 0 ? Math.round((repeatClients / clientsWithJobs) * 100) : 0;
+
   const activeJobs = pipelines.filter(p => p.stage === 'Active').length;
   const newLeads = pipelines.filter(p => p.stage === 'Lead').length;
   const totalCustomers = clients.length;
@@ -142,26 +170,37 @@ export default function Dashboard() {
         ) : (
           <>
             {/* KPI Stats */}
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-              <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
-                <p className="text-[10px] uppercase font-bold text-gray-400 tracking-wider mb-2">Revenue</p>
-                <p className="text-2xl font-bold text-gray-900">${totalRevenue.toLocaleString()}</p>
-                <p className="text-xs text-gray-400 mt-1">Completed jobs</p>
+            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+              <div className="flex items-center justify-between mb-5">
+                <div>
+                  <h3 className="font-bold text-gray-900">KPIs</h3>
+                  <p className="text-xs text-gray-400 mt-0.5">This month at a glance</p>
+                </div>
+                <Link href="/dashboard/kpis" className="flex items-center gap-1.5 text-xs font-semibold text-teal-600 hover:text-teal-700">
+                  <BarChart2 size={13} /> View All KPIs
+                </Link>
               </div>
-              <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
-                <p className="text-[10px] uppercase font-bold text-gray-400 tracking-wider mb-2">Active Jobs</p>
-                <p className="text-2xl font-bold text-teal-600">{activeJobs}</p>
-                <p className="text-xs text-gray-400 mt-1">In progress</p>
-              </div>
-              <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
-                <p className="text-[10px] uppercase font-bold text-gray-400 tracking-wider mb-2">New Leads</p>
-                <p className="text-2xl font-bold text-yellow-500">{newLeads}</p>
-                <p className="text-xs text-gray-400 mt-1">Awaiting quote</p>
-              </div>
-              <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
-                <p className="text-[10px] uppercase font-bold text-gray-400 tracking-wider mb-2">Customers</p>
-                <p className="text-2xl font-bold text-gray-900">{totalCustomers}</p>
-                <p className="text-xs text-gray-400 mt-1">Total in CRM</p>
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                <div className="bg-gray-50 rounded-xl p-4 border border-gray-100">
+                  <p className="text-[10px] uppercase font-bold text-gray-400 tracking-wider mb-2">Jobs This Month</p>
+                  <p className="text-2xl font-bold text-teal-600">{jobsThisMonth}</p>
+                  <p className="text-xs text-gray-400 mt-1">{pipelines.length} total</p>
+                </div>
+                <div className="bg-gray-50 rounded-xl p-4 border border-gray-100">
+                  <p className="text-[10px] uppercase font-bold text-gray-400 tracking-wider mb-2">New Customers</p>
+                  <p className="text-2xl font-bold text-blue-600">{customersThisMonth}</p>
+                  <p className="text-xs text-gray-400 mt-1">{totalCustomers} total</p>
+                </div>
+                <div className="bg-gray-50 rounded-xl p-4 border border-gray-100">
+                  <p className="text-[10px] uppercase font-bold text-gray-400 tracking-wider mb-2">Retention Rate</p>
+                  <p className="text-2xl font-bold text-emerald-600">{retentionRate}%</p>
+                  <p className="text-xs text-gray-400 mt-1">Repeat customers</p>
+                </div>
+                <div className="bg-gray-50 rounded-xl p-4 border border-gray-100">
+                  <p className="text-[10px] uppercase font-bold text-gray-400 tracking-wider mb-2">Avg Job Value</p>
+                  <p className="text-2xl font-bold text-gray-900">${avgJobValue.toLocaleString()}</p>
+                  <p className="text-xs text-gray-400 mt-1">Completed jobs</p>
+                </div>
               </div>
             </div>
 
