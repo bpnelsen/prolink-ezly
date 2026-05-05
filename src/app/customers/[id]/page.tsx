@@ -54,8 +54,8 @@ export default function CustomerDetailPage() {
   }, [id]);
 
   const handleDelete = async () => {
-    if (!confirm('Delete this customer? This cannot be undone.')) return;
-    await supabase.from('clients').delete().eq('id', id);
+    if (!confirm('Archive this customer? They will be hidden from your list.')) return;
+    await supabase.from('clients').update({ is_deleted: true }).eq('id', id);
     router.push('/customers');
   };
 
@@ -111,7 +111,7 @@ export default function CustomerDetailPage() {
               onClick={handleDelete}
               className="flex items-center gap-2 px-4 py-2 rounded-lg border border-red-200 text-sm font-semibold text-red-600 hover:bg-red-50 transition"
             >
-              <Trash2 size={13} /> Delete
+              <Trash2 size={13} /> Archive
             </button>
           </div>
         </div>

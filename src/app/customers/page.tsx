@@ -33,8 +33,8 @@ function RowMenu({ customerId, onDelete }: { customerId: string; onDelete: () =>
 
   const handleDelete = async () => {
     setOpen(false);
-    if (!confirm('Delete this customer? This cannot be undone.')) return;
-    await supabase.from('clients').delete().eq('id', customerId);
+    if (!confirm('Archive this customer? They will be hidden from your list.')) return;
+    await supabase.from('clients').update({ is_deleted: true }).eq('id', customerId);
     onDelete();
   };
 
@@ -64,7 +64,7 @@ function RowMenu({ customerId, onDelete }: { customerId: string; onDelete: () =>
             onClick={handleDelete}
             className="w-full flex items-center gap-2.5 px-4 py-2 text-sm text-red-600 hover:bg-red-50"
           >
-            <Trash2 size={13} /> Delete
+            <Trash2 size={13} /> Archive
           </button>
         </div>
       )}
@@ -85,6 +85,7 @@ export default function CustomersPage() {
       .from('clients')
       .select('*')
       .eq('contractor_id', session.user.id)
+      .neq('is_deleted', true)
       .order('created_at', { ascending: false });
 
     if (data) setCustomers(data);
