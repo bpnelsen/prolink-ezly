@@ -1,8 +1,7 @@
 'use client'
 import { useState, useEffect } from 'react';
-import { Plus, LogOut, Menu, X } from 'lucide-react';
+import { LogOut, Menu, X } from 'lucide-react';
 import Link from 'next/link';
-import { apiClient } from '../../lib/api-client';
 import { supabase } from '../../lib/supabase-client';
 
 const handleLogout = async () => {
@@ -10,23 +9,57 @@ const handleLogout = async () => {
   window.location.href = '/login';
 };
 
+interface DashboardStats {
+  total_revenue: number;
+  active_jobs: number;
+  new_leads: number;
+  avg_value: number;
+}
+
 export default function Dashboard() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [stats, setStats] = useState({
-    summary: { total_revenue: 0, active_jobs: 0, new_leads: 0, avg_value: 0 },
-    revenue: 0,
-    leads: 0
+  const [stats, setStats] = useState<DashboardStats>({
+    total_revenue: 0,
+    active_jobs: 0,
+    new_leads: 0,
+    avg_value: 0,
   });
 
   useEffect(() => {
     async function fetchDashboard() {
       try {
-        const response = await apiClient('/api/v1/dashboard/report-summary');
-        setStats(response.data);
-        setLoading(false);
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) { setLoading(false); return; }
+
+        const contractorId = session.user.id;
+
+        // Fetch pipeline stats from Supabase directly
+        const { data: pipelines } = await supabase
+          .from('pl_pipelines')
+          .select('stage, value')
+          .eq('contractor_id', contractorId);
+
+        if (pipelines) {
+          const active = pipelines.filter(p => p.stage === 'Active');
+          const leads = pipelines.filter(p => p.stage === 'Lead');
+          const totalRevenue = pipelines
+            .filter(p => p.stage === 'Completed')
+            .reduce((sum, p) => sum + (Number(p.value) || 0), 0);
+          const avgValue = active.length > 0
+            ? active.reduce((sum, p) => sum + (Number(p.value) || 0), 0) / active.length
+            : 0;
+
+          setStats({
+            total_revenue: totalRevenue,
+            active_jobs: active.length,
+            new_leads: leads.length,
+            avg_value: Math.round(avgValue),
+          });
+        }
       } catch (err) {
         console.error('Failed to fetch dashboard', err);
+      } finally {
         setLoading(false);
       }
     }
@@ -64,7 +97,7 @@ export default function Dashboard() {
         </div>
         {menuOpen && (
           <div className="md:hidden bg-white border-t border-gray-100 py-3 mt-2 flex flex-col gap-3 px-4 shadow-lg rounded-b-xl">
-             {navLinks.map(link => (
+            {navLinks.map(link => (
               <Link key={link.name} href={link.href} onClick={() => setMenuOpen(false)} className="text-sm font-semibold text-gray-800 p-2 hover:bg-gray-50 rounded">
                 {link.name}
               </Link>
@@ -77,28 +110,28 @@ export default function Dashboard() {
 
       <main className="max-w-7xl mx-auto p-6 md:p-8 space-y-6">
         <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-           {loading ? (
-             <div className="col-span-4 p-8 text-center text-gray-500 italic">Updating Dashboard...</div>
-           ) : (
-             <>
-               <div className="card p-5">
-                  <p className="text-[10px] uppercase font-bold text-gray-500 tracking-wider mb-2">Revenue</p>
-                  <p className="text-2xl font-bold text-gray-900">${stats.summary.total_revenue.toLocaleString()}</p>
-               </div>
-               <div className="card p-5">
-                  <p className="text-[10px] uppercase font-bold text-gray-500 tracking-wider mb-2">Active Jobs</p>
-                  <p className="text-2xl font-bold text-gray-900">{stats.summary.active_jobs}</p>
-               </div>
-               <div className="card p-5">
-                  <p className="text-[10px] uppercase font-bold text-gray-500 tracking-wider mb-2">New Leads</p>
-                  <p className="text-2xl font-bold text-gray-900">{stats.summary.new_leads}</p>
-               </div>
-               <div className="card p-5">
-                  <p className="text-[10px] uppercase font-bold text-gray-500 tracking-wider mb-2">Avg Job Value</p>
-                  <p className="text-2xl font-bold text-gray-900">${stats.summary.avg_value.toLocaleString()}</p>
-               </div>
-             </>
-           )}
+          {loading ? (
+            <div className="col-span-4 p-8 text-center text-gray-500 italic">Updating Dashboard...</div>
+          ) : (
+            <>
+              <div className="card p-5">
+                <p className="text-[10px] uppercase font-bold text-gray-500 tracking-wider mb-2">Revenue</p>
+                <p className="text-2xl font-bold text-gray-900">${stats.total_revenue.toLocaleString()}</p>
+              </div>
+              <div className="card p-5">
+                <p className="text-[10px] uppercase font-bold text-gray-500 tracking-wider mb-2">Active Jobs</p>
+                <p className="text-2xl font-bold text-gray-900">{stats.active_jobs}</p>
+              </div>
+              <div className="card p-5">
+                <p className="text-[10px] uppercase font-bold text-gray-500 tracking-wider mb-2">New Leads</p>
+                <p className="text-2xl font-bold text-gray-900">{stats.new_leads}</p>
+              </div>
+              <div className="card p-5">
+                <p className="text-[10px] uppercase font-bold text-gray-500 tracking-wider mb-2">Avg Job Value</p>
+                <p className="text-2xl font-bold text-gray-900">${stats.avg_value.toLocaleString()}</p>
+              </div>
+            </>
+          )}
         </section>
       </main>
     </div>

@@ -3,12 +3,13 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Plus, CheckCircle2 } from 'lucide-react';
 import Breadcrumbs from '../../../components/Breadcrumbs';
-import { apiClient } from '../../../lib/api-client';
+import { supabase } from '../../../lib/supabase-client';
 
 export default function NewCustomer() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [error, setError] = useState('');
   const [form, setForm] = useState({
     first_name: '',
     last_name: '',
@@ -28,31 +29,36 @@ export default function NewCustomer() {
     e.preventDefault();
     if (!form.first_name.trim() || !form.last_name.trim()) return;
     setLoading(true);
+    setError('');
 
     try {
-      // Map UI fields to backend expected fields
-      const payload = {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        setError('You must be logged in to add a customer.');
+        setLoading(false);
+        return;
+      }
+
+      const { error: insertError } = await supabase.from('clients').insert({
+        contractor_id: session.user.id,
         first_name: form.first_name.trim(),
         last_name: form.last_name.trim(),
-        phone: form.phone.trim() || undefined,
-        email: form.email.trim() || undefined,
-        address_line1: form.street_address.trim() || undefined,
-        city: form.city.trim() || undefined,
-        zip_code: form.zip_code.trim() || undefined,
-        notes: form.notes.trim() || undefined,
-      };
-
-      await apiClient('/api/v1/clients', {
-        method: 'POST',
-        body: JSON.stringify(payload),
+        phone: form.phone.trim() || null,
+        email: form.email.trim() || null,
+        street_address: form.street_address.trim() || null,
+        city: form.city.trim() || null,
+        zip_code: form.zip_code.trim() || null,
+        notes: form.notes.trim() || null,
       });
+
+      if (insertError) throw insertError;
 
       setLoading(false);
       setSuccess(true);
       setTimeout(() => router.push('/customers'), 1500);
     } catch (err: any) {
       setLoading(false);
-      alert('Error creating customer: ' + err.message);
+      setError(err.message || 'Error creating customer');
     }
   };
 
@@ -79,6 +85,10 @@ export default function NewCustomer() {
       <div className="max-w-3xl mx-auto p-4 md:p-8">
         <p className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-1">Customer Hub</p>
         <h2 className="text-2xl font-bold text-gray-900 mb-8">Add New Customer</h2>
+
+        {error && (
+          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl text-red-700 text-sm">{error}</div>
+        )}
 
         <form onSubmit={handleSubmit} className="bg-white rounded-2xl border border-gray-100 p-8 shadow-sm">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
