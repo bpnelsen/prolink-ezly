@@ -9,9 +9,9 @@ interface Pipeline {
   id: string;
   title: string;
   stage: string;
-  total_value: number;
+  estimated_value: number;
   created_at: string;
-  scheduled_at: string | null;
+  scheduled_start: string | null;
 }
 
 interface Task {
@@ -70,7 +70,7 @@ export default function KpisPage() {
       const id = session.user.id;
 
       const [{ data: pd }, { data: td }, { data: cd }] = await Promise.all([
-        supabase.from('jobs').select('id, title, stage, total_value, created_at, scheduled_at').eq('contractor_id', id),
+        supabase.from('jobs').select('id, title, stage, estimated_value, created_at, scheduled_start').eq('contractor_id', id),
         supabase.from('tasks').select('client_id').eq('contractor_id', id),
         supabase.from('clients').select('id, created_at').eq('contractor_id', id).neq('is_deleted', true),
       ]);
@@ -101,10 +101,10 @@ export default function KpisPage() {
   // Revenue
   const completed = pipelines.filter(p => p.stage === 'Completed');
   const revenueThisMonth = completed.filter(p => p.created_at >= thisMonthStart && p.created_at <= thisMonthEnd)
-    .reduce((sum, p) => sum + (Number(p.total_value) || 0), 0);
+    .reduce((sum, p) => sum + (Number(p.estimated_value) || 0), 0);
   const revenueLastMonth = completed.filter(p => p.created_at >= lastMonthStart && p.created_at <= lastMonthEnd)
-    .reduce((sum, p) => sum + (Number(p.total_value) || 0), 0);
-  const totalRevenue = completed.reduce((sum, p) => sum + (Number(p.total_value) || 0), 0);
+    .reduce((sum, p) => sum + (Number(p.estimated_value) || 0), 0);
+  const totalRevenue = completed.reduce((sum, p) => sum + (Number(p.estimated_value) || 0), 0);
 
   // Avg job value
   const avgJobValue = completed.length > 0
@@ -118,11 +118,11 @@ export default function KpisPage() {
   // Pipeline value (open jobs)
   const pipelineValue = pipelines
     .filter(p => ['Lead', 'Quoted', 'Active'].includes(p.stage))
-    .reduce((sum, p) => sum + (Number(p.total_value) || 0), 0);
+    .reduce((sum, p) => sum + (Number(p.estimated_value) || 0), 0);
 
   // Largest open job
   const openJobs = pipelines.filter(p => ['Lead', 'Quoted', 'Active'].includes(p.stage));
-  const largestOpen = openJobs.reduce<Pipeline | null>((max, p) => (!max || Number(p.total_value) > Number(max.total_value)) ? p : max, null);
+  const largestOpen = openJobs.reduce<Pipeline | null>((max, p) => (!max || Number(p.estimated_value) > Number(max.total_value)) ? p : max, null);
 
   // Customers
   const customersThisMonth = clients.filter(c => c.created_at >= thisMonthStart && c.created_at <= thisMonthEnd).length;

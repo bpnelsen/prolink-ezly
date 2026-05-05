@@ -29,7 +29,7 @@ interface Pipeline {
   id: string;
   title: string;
   stage: string;
-  total_value: number;
+  estimated_value: number;
   created_at: string;
 }
 
@@ -65,7 +65,7 @@ export default function Dashboard() {
         const id = session.user.id;
 
         const [{ data: pipelineData }, { data: clientData }, { data: taskData }] = await Promise.all([
-          supabase.from('jobs').select('id, title, stage, total_value, created_at').eq('contractor_id', id).order('created_at', { ascending: false }),
+          supabase.from('jobs').select('id, title, stage, estimated_value, created_at').eq('contractor_id', id).order('created_at', { ascending: false }),
           supabase.from('clients').select('id, first_name, last_name, created_at').eq('contractor_id', id).neq('is_deleted', true).order('created_at', { ascending: false }),
           supabase.from('tasks').select('client_id').eq('contractor_id', id),
         ]);
@@ -88,7 +88,7 @@ export default function Dashboard() {
 
   const completedJobs = pipelines.filter(p => p.stage === 'Completed');
   const avgJobValue = completedJobs.length > 0
-    ? Math.round(completedJobs.reduce((sum, p) => sum + (Number(p.total_value) || 0), 0) / completedJobs.length)
+    ? Math.round(completedJobs.reduce((sum, p) => sum + (Number(p.estimated_value) || 0), 0) / completedJobs.length)
     : 0;
 
   const clientTaskCounts = tasks.reduce<Record<string, number>>((acc, t) => {

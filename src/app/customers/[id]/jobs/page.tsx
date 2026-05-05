@@ -13,10 +13,11 @@ interface Job {
   stage: string;
   priority: string;
   site_address: string | null;
-  scheduled_at: string | null;
+  address_line1: string | null;
+  scheduled_start: string | null;
   estimated_duration: string | null;
-  total_value: number;
-  notes: string | null;
+  estimated_value: number;
+  description: string | null;
   created_at: string;
 }
 
@@ -140,13 +141,13 @@ export default function ClientJobsPage() {
                     </div>
                     {job.trade && <p className="text-xs text-gray-500 mb-2">{job.trade}</p>}
                     <div className="flex items-center gap-4 text-xs text-gray-400 flex-wrap">
-                      {job.site_address && (
-                        <span className="flex items-center gap-1"><MapPin size={11} /> {job.site_address}</span>
+                      {(job.site_address || job.address_line1) && (
+                        <span className="flex items-center gap-1"><MapPin size={11} /> {job.site_address || job.address_line1}</span>
                       )}
-                      {job.scheduled_at && (
+                      {job.scheduled_start && (
                         <span className="flex items-center gap-1">
                           <Calendar size={11} />
-                          {new Date(job.scheduled_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                          {new Date(job.scheduled_start).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                           {job.estimated_duration && ` · ${job.estimated_duration}`}
                         </span>
                       )}
@@ -155,15 +156,15 @@ export default function ClientJobsPage() {
                       </span>
                     </div>
                   </div>
-                  {job.total_value > 0 && (
+                  {job.estimated_value > 0 && (
                     <div className="text-right shrink-0">
                       <p className="text-xs text-gray-400 flex items-center gap-0.5 justify-end"><DollarSign size={10} />Estimate</p>
-                      <p className="font-bold text-gray-900">${Number(job.total_value).toLocaleString()}</p>
+                      <p className="font-bold text-gray-900">${Number(job.estimated_value).toLocaleString()}</p>
                     </div>
                   )}
                 </div>
-                {job.notes && (
-                  <p className="text-xs text-gray-400 mt-3 pt-3 border-t border-gray-100 line-clamp-2">{job.notes}</p>
+                {job.description && (
+                  <p className="text-xs text-gray-400 mt-3 pt-3 border-t border-gray-100 line-clamp-2">{job.description}</p>
                 )}
               </div>
             ))}

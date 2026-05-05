@@ -152,10 +152,11 @@ function NewJob() {
         priority,
         lead_source: leadSource || null,
         site_address: siteAddress.trim() || null,
-        scheduled_at: scheduledAt,
+        address_line1: siteAddress.trim() || null,
+        scheduled_start: scheduledAt,
         estimated_duration: estimatedDuration || null,
-        notes: notes.trim() || null,
-        total_value: subtotal,
+        description: notes.trim() || null,
+        estimated_value: subtotal,
       }).select('id').single();
 
       if (jobError) throw jobError;
