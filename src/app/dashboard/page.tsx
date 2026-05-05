@@ -1,6 +1,6 @@
 'use client'
 import { useState, useEffect } from 'react';
-import { LogOut, Menu, X } from 'lucide-react';
+import { LogOut, Menu, X, Plus, Users, CalendarDays, TrendingUp, Briefcase, ChevronRight, Clock } from 'lucide-react';
 import Link from 'next/link';
 import { supabase } from '../../lib/supabase-client';
 
@@ -9,22 +9,42 @@ const handleLogout = async () => {
   window.location.href = '/login';
 };
 
-interface DashboardStats {
-  total_revenue: number;
-  active_jobs: number;
-  new_leads: number;
-  avg_value: number;
+const STAGES = ['Lead', 'Quoted', 'Active', 'Completed'];
+
+const STAGE_COLORS: Record<string, string> = {
+  Lead:      'bg-yellow-400',
+  Quoted:    'bg-blue-400',
+  Active:    'bg-teal-500',
+  Completed: 'bg-gray-400',
+};
+
+const STAGE_BADGE: Record<string, string> = {
+  Lead:      'bg-yellow-50 text-yellow-700 border-yellow-200',
+  Quoted:    'bg-blue-50 text-blue-700 border-blue-200',
+  Active:    'bg-teal-50 text-teal-700 border-teal-200',
+  Completed: 'bg-gray-100 text-gray-600 border-gray-200',
+};
+
+interface Pipeline {
+  id: string;
+  project_name: string;
+  stage: string;
+  value: number;
+  created_at: string;
+}
+
+interface Client {
+  id: string;
+  first_name: string;
+  last_name: string;
+  created_at: string;
 }
 
 export default function Dashboard() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [stats, setStats] = useState<DashboardStats>({
-    total_revenue: 0,
-    active_jobs: 0,
-    new_leads: 0,
-    avg_value: 0,
-  });
+  const [pipelines, setPipelines] = useState<Pipeline[]>([]);
+  const [clients, setClients] = useState<Client[]>([]);
 
   useEffect(() => {
     async function fetchDashboard() {
@@ -32,31 +52,15 @@ export default function Dashboard() {
         const { data: { session } } = await supabase.auth.getSession();
         if (!session) { setLoading(false); return; }
 
-        const contractorId = session.user.id;
+        const id = session.user.id;
 
-        // Fetch pipeline stats from Supabase directly
-        const { data: pipelines } = await supabase
-          .from('pl_pipelines')
-          .select('stage, value')
-          .eq('contractor_id', contractorId);
+        const [{ data: pipelineData }, { data: clientData }] = await Promise.all([
+          supabase.from('pl_pipelines').select('id, project_name, stage, value, created_at').eq('contractor_id', id).order('created_at', { ascending: false }),
+          supabase.from('clients').select('id, first_name, last_name, created_at').eq('contractor_id', id).neq('is_deleted', true).order('created_at', { ascending: false }),
+        ]);
 
-        if (pipelines) {
-          const active = pipelines.filter(p => p.stage === 'Active');
-          const leads = pipelines.filter(p => p.stage === 'Lead');
-          const totalRevenue = pipelines
-            .filter(p => p.stage === 'Completed')
-            .reduce((sum, p) => sum + (Number(p.value) || 0), 0);
-          const avgValue = active.length > 0
-            ? active.reduce((sum, p) => sum + (Number(p.value) || 0), 0) / active.length
-            : 0;
-
-          setStats({
-            total_revenue: totalRevenue,
-            active_jobs: active.length,
-            new_leads: leads.length,
-            avg_value: Math.round(avgValue),
-          });
-        }
+        if (pipelineData) setPipelines(pipelineData);
+        if (clientData) setClients(clientData);
       } catch (err) {
         console.error('Failed to fetch dashboard', err);
       } finally {
@@ -65,6 +69,21 @@ export default function Dashboard() {
     }
     fetchDashboard();
   }, []);
+
+  const totalRevenue = pipelines.filter(p => p.stage === 'Completed').reduce((sum, p) => sum + (Number(p.value) || 0), 0);
+  const activeJobs = pipelines.filter(p => p.stage === 'Active').length;
+  const newLeads = pipelines.filter(p => p.stage === 'Lead').length;
+  const totalCustomers = clients.length;
+
+  const stageCounts = STAGES.map(s => ({ stage: s, count: pipelines.filter(p => p.stage === s).length }));
+  const totalPipelines = pipelines.length || 1;
+
+  const recentActivity = [
+    ...pipelines.slice(0, 5).map(p => ({ type: 'job' as const, label: p.project_name, sub: p.stage, date: p.created_at, href: '/dashboard' })),
+    ...clients.slice(0, 5).map(c => ({ type: 'customer' as const, label: `${c.first_name} ${c.last_name}`, sub: 'New Customer', date: c.created_at, href: `/customers/${c.id}` })),
+  ]
+    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+    .slice(0, 8);
 
   const navLinks = [
     { name: 'Schedule', href: '/dispatch' },
@@ -109,31 +128,183 @@ export default function Dashboard() {
       </nav>
 
       <main className="max-w-7xl mx-auto p-6 md:p-8 space-y-6">
-        <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          {loading ? (
-            <div className="col-span-4 p-8 text-center text-gray-500 italic">Updating Dashboard...</div>
-          ) : (
-            <>
-              <div className="card p-5">
-                <p className="text-[10px] uppercase font-bold text-gray-500 tracking-wider mb-2">Revenue</p>
-                <p className="text-2xl font-bold text-gray-900">${stats.total_revenue.toLocaleString()}</p>
+
+        {/* Header */}
+        <div>
+          <p className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-1">Overview</p>
+          <h2 className="text-2xl font-bold text-gray-900">Dashboard</h2>
+        </div>
+
+        {loading ? (
+          <div className="flex justify-center py-20">
+            <div className="w-8 h-8 border-2 border-gray-200 border-t-teal-600 rounded-full animate-spin" />
+          </div>
+        ) : (
+          <>
+            {/* KPI Stats */}
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+                <p className="text-[10px] uppercase font-bold text-gray-400 tracking-wider mb-2">Revenue</p>
+                <p className="text-2xl font-bold text-gray-900">${totalRevenue.toLocaleString()}</p>
+                <p className="text-xs text-gray-400 mt-1">Completed jobs</p>
               </div>
-              <div className="card p-5">
-                <p className="text-[10px] uppercase font-bold text-gray-500 tracking-wider mb-2">Active Jobs</p>
-                <p className="text-2xl font-bold text-gray-900">{stats.active_jobs}</p>
+              <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+                <p className="text-[10px] uppercase font-bold text-gray-400 tracking-wider mb-2">Active Jobs</p>
+                <p className="text-2xl font-bold text-teal-600">{activeJobs}</p>
+                <p className="text-xs text-gray-400 mt-1">In progress</p>
               </div>
-              <div className="card p-5">
-                <p className="text-[10px] uppercase font-bold text-gray-500 tracking-wider mb-2">New Leads</p>
-                <p className="text-2xl font-bold text-gray-900">{stats.new_leads}</p>
+              <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+                <p className="text-[10px] uppercase font-bold text-gray-400 tracking-wider mb-2">New Leads</p>
+                <p className="text-2xl font-bold text-yellow-500">{newLeads}</p>
+                <p className="text-xs text-gray-400 mt-1">Awaiting quote</p>
               </div>
-              <div className="card p-5">
-                <p className="text-[10px] uppercase font-bold text-gray-500 tracking-wider mb-2">Avg Job Value</p>
-                <p className="text-2xl font-bold text-gray-900">${stats.avg_value.toLocaleString()}</p>
+              <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+                <p className="text-[10px] uppercase font-bold text-gray-400 tracking-wider mb-2">Customers</p>
+                <p className="text-2xl font-bold text-gray-900">{totalCustomers}</p>
+                <p className="text-xs text-gray-400 mt-1">Total in CRM</p>
               </div>
-            </>
-          )}
-        </section>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+              {/* Pipeline Breakdown */}
+              <div className="lg:col-span-2 bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+                <div className="flex items-center justify-between mb-5">
+                  <div>
+                    <h3 className="font-bold text-gray-900">Pipeline</h3>
+                    <p className="text-xs text-gray-400 mt-0.5">{pipelines.length} total jobs</p>
+                  </div>
+                  <TrendingUp size={18} className="text-gray-300" />
+                </div>
+
+                {pipelines.length === 0 ? (
+                  <div className="text-center py-8 text-gray-400 text-sm">No jobs yet. Create your first job to see the pipeline.</div>
+                ) : (
+                  <>
+                    {/* Stacked bar */}
+                    <div className="flex h-3 rounded-full overflow-hidden gap-0.5 mb-5">
+                      {stageCounts.filter(s => s.count > 0).map(s => (
+                        <div
+                          key={s.stage}
+                          className={`${STAGE_COLORS[s.stage]} transition-all`}
+                          style={{ width: `${(s.count / totalPipelines) * 100}%` }}
+                        />
+                      ))}
+                    </div>
+
+                    {/* Stage rows */}
+                    <div className="space-y-3">
+                      {stageCounts.map(s => (
+                        <div key={s.stage} className="flex items-center justify-between">
+                          <div className="flex items-center gap-2.5">
+                            <div className={`w-2.5 h-2.5 rounded-full ${STAGE_COLORS[s.stage]}`} />
+                            <span className="text-sm text-gray-700 font-medium">{s.stage}</span>
+                          </div>
+                          <div className="flex items-center gap-3">
+                            <div className="w-24 h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                              <div
+                                className={`h-full ${STAGE_COLORS[s.stage]} rounded-full`}
+                                style={{ width: `${(s.count / totalPipelines) * 100}%` }}
+                              />
+                            </div>
+                            <span className="text-sm font-bold text-gray-900 w-4 text-right">{s.count}</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </>
+                )}
+
+                {/* Recent jobs list */}
+                {pipelines.length > 0 && (
+                  <div className="mt-6 pt-5 border-t border-gray-100 space-y-2">
+                    <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-3">Recent Jobs</p>
+                    {pipelines.slice(0, 4).map(p => (
+                      <div key={p.id} className="flex items-center justify-between py-1.5">
+                        <div className="flex items-center gap-3 min-w-0">
+                          <Briefcase size={13} className="text-gray-300 shrink-0" />
+                          <span className="text-sm text-gray-700 truncate">{p.project_name}</span>
+                        </div>
+                        <span className={`inline-flex items-center px-2 py-0.5 rounded-full border text-[10px] font-bold uppercase tracking-wide ml-3 shrink-0 ${STAGE_BADGE[p.stage] ?? 'bg-gray-100 text-gray-600 border-gray-200'}`}>
+                          {p.stage}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Right column */}
+              <div className="space-y-6">
+
+                {/* Quick Actions */}
+                <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+                  <h3 className="font-bold text-gray-900 mb-4">Quick Actions</h3>
+                  <div className="space-y-2">
+                    <Link href="/new-job" className="flex items-center justify-between w-full p-3 rounded-xl bg-teal-600 hover:bg-teal-700 text-white transition">
+                      <div className="flex items-center gap-2.5">
+                        <Plus size={15} />
+                        <span className="text-sm font-bold">New Job</span>
+                      </div>
+                      <ChevronRight size={14} />
+                    </Link>
+                    <Link href="/customers/new" className="flex items-center justify-between w-full p-3 rounded-xl border border-gray-200 hover:bg-gray-50 text-gray-700 transition">
+                      <div className="flex items-center gap-2.5">
+                        <Users size={15} className="text-gray-400" />
+                        <span className="text-sm font-semibold">Add Customer</span>
+                      </div>
+                      <ChevronRight size={14} className="text-gray-400" />
+                    </Link>
+                    <Link href="/dispatch" className="flex items-center justify-between w-full p-3 rounded-xl border border-gray-200 hover:bg-gray-50 text-gray-700 transition">
+                      <div className="flex items-center gap-2.5">
+                        <CalendarDays size={15} className="text-gray-400" />
+                        <span className="text-sm font-semibold">View Schedule</span>
+                      </div>
+                      <ChevronRight size={14} className="text-gray-400" />
+                    </Link>
+                    <Link href="/customers" className="flex items-center justify-between w-full p-3 rounded-xl border border-gray-200 hover:bg-gray-50 text-gray-700 transition">
+                      <div className="flex items-center gap-2.5">
+                        <Briefcase size={15} className="text-gray-400" />
+                        <span className="text-sm font-semibold">Customer Hub</span>
+                      </div>
+                      <ChevronRight size={14} className="text-gray-400" />
+                    </Link>
+                  </div>
+                </div>
+
+                {/* Recent Activity */}
+                <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+                  <h3 className="font-bold text-gray-900 mb-4">Recent Activity</h3>
+                  {recentActivity.length === 0 ? (
+                    <p className="text-sm text-gray-400 text-center py-4">No activity yet.</p>
+                  ) : (
+                    <div className="space-y-3">
+                      {recentActivity.map((item, i) => (
+                        <Link key={i} href={item.href} className="flex items-start gap-3 hover:bg-gray-50 rounded-lg p-1.5 -mx-1.5 transition">
+                          <div className={`w-7 h-7 rounded-full flex items-center justify-center shrink-0 mt-0.5 ${item.type === 'job' ? 'bg-teal-100' : 'bg-blue-100'}`}>
+                            {item.type === 'job'
+                              ? <Briefcase size={12} className="text-teal-600" />
+                              : <Users size={12} className="text-blue-600" />
+                            }
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <p className="text-sm font-semibold text-gray-800 truncate">{item.label}</p>
+                            <p className="text-xs text-gray-400 flex items-center gap-1 mt-0.5">
+                              <Clock size={9} />
+                              {item.sub} · {new Date(item.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                            </p>
+                          </div>
+                        </Link>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+              </div>
+            </div>
+          </>
+        )}
       </main>
     </div>
-  )
+  );
 }
