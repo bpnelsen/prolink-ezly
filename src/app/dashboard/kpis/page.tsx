@@ -122,7 +122,7 @@ export default function KpisPage() {
 
   // Largest open job
   const openJobs = pipelines.filter(p => ['Lead', 'Quoted', 'Active'].includes(p.stage));
-  const largestOpen = openJobs.reduce<Pipeline | null>((max, p) => (!max || Number(p.estimated_value) > Number(max.total_value)) ? p : max, null);
+  const largestOpen = openJobs.reduce<Pipeline | null>((max, p) => (!max || Number(p.estimated_value) > Number(max.estimated_value)) ? p : max, null);
 
   // Customers
   const customersThisMonth = clients.filter(c => c.created_at >= thisMonthStart && c.created_at <= thisMonthEnd).length;
