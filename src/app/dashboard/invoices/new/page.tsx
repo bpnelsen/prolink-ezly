@@ -1,7 +1,7 @@
 'use client'
 import { useState, useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { Plus, Trash2, Search, FileText, Briefcase, ArrowLeft } from 'lucide-react'
+import { Plus, Trash2, Search, FileText, Briefcase, ArrowLeft, Eye, X as XIcon } from 'lucide-react'
 import Breadcrumbs from '../../../../components/Breadcrumbs'
 import { supabase } from '../../../../lib/supabase-client'
 
@@ -91,6 +91,7 @@ function NewInvoice() {
   const [lineItems, setLineItems] = useState<LineItem[]>([
     { id: 1, description: '', qty: 1, unit: 'ea', rate: 0 },
   ])
+  const [showPreview, setShowPreview] = useState(false)
 
   // Fetch clients + completed jobs
   useEffect(() => {
@@ -501,9 +502,13 @@ function NewInvoice() {
           </div>
 
           {/* Actions */}
-          <div className="flex gap-3 pb-8">
+          <div className="flex gap-3 pb-8 flex-wrap">
             <button type="button" onClick={() => router.back()}
               className="px-6 py-3.5 rounded-xl border border-gray-200 text-gray-600 font-semibold text-sm hover:bg-gray-50">Cancel</button>
+            <button type="button" onClick={() => setShowPreview(true)}
+              className="flex items-center gap-1.5 px-5 py-3.5 rounded-xl border border-gray-200 text-gray-700 font-semibold text-sm hover:bg-gray-50">
+              <Eye size={14} /> Preview Invoice
+            </button>
             <div className="flex-1" />
             <button type="button" onClick={() => handleSave(false)} disabled={loading}
               className="px-6 py-3.5 rounded-xl border border-gray-200 text-gray-700 font-semibold text-sm hover:bg-gray-50 disabled:opacity-50">
@@ -516,6 +521,126 @@ function NewInvoice() {
           </div>
         </div>
       </div>
+
+      {/* Invoice Preview Slide-over */}
+      {showPreview && (
+        <div className="fixed inset-0 z-50 flex">
+          {/* Backdrop */}
+          <div className="flex-1 bg-black/40" onClick={() => setShowPreview(false)} />
+          {/* Panel */}
+          <div className="w-full max-w-2xl bg-white shadow-2xl flex flex-col overflow-hidden">
+            {/* Panel header */}
+            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 shrink-0">
+              <p className="font-bold text-gray-900">Invoice Preview</p>
+              <button onClick={() => setShowPreview(false)} className="text-gray-400 hover:text-gray-700 transition">
+                <XIcon size={18} />
+              </button>
+            </div>
+            {/* Preview content */}
+            <div className="flex-1 overflow-y-auto bg-gray-100 p-6">
+              <div className="bg-white shadow-sm" style={{ fontFamily: 'Arial, sans-serif' }}>
+                {/* Header */}
+                <div className="flex items-start justify-between p-8 pb-4 gap-6 flex-wrap">
+                  <div>
+                    <p className="text-xl font-bold text-gray-900">Your Business</p>
+                    <p className="text-sm text-gray-500 mt-0.5">Preview — details from your profile will appear here</p>
+                  </div>
+                  <div className="border border-gray-300 text-xs min-w-[200px]">
+                    <div className="flex">
+                      <span className="px-3 py-2 font-bold text-gray-600 border-r border-gray-300 w-28">INVOICE</span>
+                      <span className="px-3 py-2 text-gray-800">#DRAFT</span>
+                    </div>
+                    <div className="flex border-t border-gray-300">
+                      <span className="px-3 py-2 font-bold text-gray-600 border-r border-gray-300 w-28">INVOICE DATE</span>
+                      <span className="px-3 py-2 text-gray-800">{issueDate ? new Date(issueDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—'}</span>
+                    </div>
+                    <div className="flex border-t border-gray-300">
+                      <span className="px-3 py-2 font-bold text-gray-600 border-r border-gray-300 w-28">DUE</span>
+                      <span className="px-3 py-2 text-gray-800">{dueDate ? new Date(dueDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'Upon receipt'}</span>
+                    </div>
+                    <div className="flex border-t border-gray-300 bg-gray-50">
+                      <span className="px-3 py-2 font-bold text-gray-600 border-r border-gray-300 w-28">AMOUNT DUE</span>
+                      <span className="px-3 py-2 font-bold text-blue-600">${(subtotal + subtotal * (taxRate / 100) - discount).toFixed(2)}</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Bill to */}
+                {selectedClient && (
+                  <div className="px-8 pb-4">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400 mb-1">Bill To</p>
+                    <p className="text-sm font-semibold text-gray-800">{selectedClient.first_name} {selectedClient.last_name}</p>
+                    {selectedClient.email && <p className="text-xs text-gray-500">{selectedClient.email}</p>}
+                    {selectedClient.phone && <p className="text-xs text-gray-500">{selectedClient.phone}</p>}
+                  </div>
+                )}
+
+                {/* Line items */}
+                <div className="px-8 pb-8">
+                  <p className="text-xs font-bold uppercase tracking-widest text-gray-700 mb-2">Invoice</p>
+                  <table className="w-full border-collapse text-sm">
+                    <thead>
+                      <tr className="bg-gray-600 text-white">
+                        <th className="text-left px-3 py-2 font-semibold text-xs">Services</th>
+                        <th className="text-right px-3 py-2 font-semibold text-xs w-12">Qty</th>
+                        <th className="text-right px-3 py-2 font-semibold text-xs w-24">Unit Price</th>
+                        <th className="text-right px-3 py-2 font-semibold text-xs w-24">Amount</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {lineItems.filter(i => i.description.trim()).map((item, idx) => (
+                        <tr key={item.id} className={idx % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
+                          <td className="px-3 py-2.5 text-gray-800">{item.description}</td>
+                          <td className="px-3 py-2.5 text-right text-gray-600">{item.qty}</td>
+                          <td className="px-3 py-2.5 text-right text-gray-600">${Number(item.rate).toFixed(2)}</td>
+                          <td className="px-3 py-2.5 text-right font-semibold text-gray-900">${(item.qty * item.rate).toFixed(2)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+
+                  {/* Totals */}
+                  <div className="mt-4 flex justify-end">
+                    <div className="w-56 space-y-1.5 text-sm">
+                      <div className="flex justify-between">
+                        <span className="text-gray-500">Subtotal</span>
+                        <span className="font-semibold">${subtotal.toFixed(2)}</span>
+                      </div>
+                      {taxRate > 0 && (
+                        <div className="flex justify-between">
+                          <span className="text-gray-500">Tax ({taxRate}%)</span>
+                          <span className="font-semibold">${(subtotal * taxRate / 100).toFixed(2)}</span>
+                        </div>
+                      )}
+                      {discount > 0 && (
+                        <div className="flex justify-between">
+                          <span className="text-gray-500">Discount</span>
+                          <span className="font-semibold">−${discount.toFixed(2)}</span>
+                        </div>
+                      )}
+                      <div className="flex justify-between font-bold border-t border-gray-300 pt-2 text-base">
+                        <span>Total</span>
+                        <span className="text-blue-600">${(subtotal + subtotal * taxRate / 100 - discount).toFixed(2)}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Notes */}
+                  {notes && (
+                    <div className="mt-6 p-3 bg-gray-50 border border-gray-200 text-sm text-gray-700">
+                      <p className="font-semibold text-xs uppercase tracking-wider text-gray-400 mb-1">Notes</p>
+                      <p className="whitespace-pre-wrap">{notes}</p>
+                    </div>
+                  )}
+                  {terms && (
+                    <div className="mt-4 text-xs text-gray-500 border-t border-gray-200 pt-4 whitespace-pre-wrap">{terms}</div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
