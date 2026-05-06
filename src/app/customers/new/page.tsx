@@ -17,6 +17,9 @@ export default function NewCustomer() {
     email: '',
     address_line1: '',
     address_line2: '',
+    city: '',
+    state: '',
+    zip_code: '',
     notes: '',
   });
 
@@ -46,6 +49,9 @@ export default function NewCustomer() {
         email: form.email.trim() || null,
         address_line1: form.address_line1.trim() || null,
         address_line2: form.address_line2.trim() || null,
+        city: form.city.trim() || null,
+        state: form.state.trim() || null,
+        zip_code: form.zip_code.trim() || null,
         notes: form.notes.trim() || null,
       });
 
@@ -133,6 +139,26 @@ export default function NewCustomer() {
                 <input value={form.address_line2} onChange={handleChange('address_line2')}
                   className="w-full bg-gray-50 p-3 rounded-xl border border-gray-200 text-sm focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 transition"
                   placeholder="Apt, Suite, Unit..." />
+              </div>
+              <div className="grid grid-cols-3 gap-3">
+                <div className="col-span-1">
+                  <label className="block text-xs font-semibold text-gray-600 mb-1.5">City</label>
+                  <input value={form.city} onChange={handleChange('city')}
+                    className="w-full bg-gray-50 p-3 rounded-xl border border-gray-200 text-sm focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 transition"
+                    placeholder="Salt Lake City" />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-gray-600 mb-1.5">State</label>
+                  <input value={form.state} onChange={handleChange('state')} maxLength={2}
+                    className="w-full bg-gray-50 p-3 rounded-xl border border-gray-200 text-sm focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 transition"
+                    placeholder="UT" />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-gray-600 mb-1.5">ZIP</label>
+                  <input value={form.zip_code} onChange={handleChange('zip_code')}
+                    className="w-full bg-gray-50 p-3 rounded-xl border border-gray-200 text-sm focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 transition"
+                    placeholder="84101" />
+                </div>
               </div>
               <div>
                 <label className="block text-xs font-semibold text-gray-600 mb-1.5">Notes</label>
