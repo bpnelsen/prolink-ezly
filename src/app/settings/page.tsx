@@ -69,7 +69,6 @@ const SETTINGS_CARDS = [
     desc: 'Manage your Prolink plan and monthly charges',
     href: '/settings/billing',
     icon: CreditCard,
-    soon: true,
   },
   {
     title: 'Payouts',

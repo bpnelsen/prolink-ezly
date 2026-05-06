@@ -2,18 +2,57 @@
 
 export const dynamic = 'force-dynamic'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { CheckCircle } from 'lucide-react'
+import { useSearchParams } from 'next/navigation'
+import { CheckCircle, Zap } from 'lucide-react'
 import { supabase } from '../../lib/supabase-client'
 import ProlinkLogoDark from '../../components/ProlinkLogoDark'
 
-type Step = 1 | 2 | 3
+type Step = 1 | 2 | 3 | 4
+type Plan = 'trial' | 'starter' | 'pro' | 'business'
+
+const PLANS = [
+  {
+    id: 'starter' as Plan,
+    name: 'Starter',
+    price: 29,
+    desc: 'For solo contractors just starting out.',
+    features: ['Up to 25 customers', 'Basic invoicing', 'Email support'],
+    color: 'border-gray-200',
+    badge: '',
+  },
+  {
+    id: 'pro' as Plan,
+    name: 'Pro',
+    price: 49,
+    desc: 'For growing contractors who want more.',
+    features: ['Unlimited customers', 'Full invoicing + payments', 'Job management + scheduling', 'Business analytics'],
+    color: 'border-teal-500',
+    badge: 'Most Popular',
+  },
+  {
+    id: 'business' as Plan,
+    name: 'Business',
+    price: 149,
+    desc: 'For teams with multiple crews.',
+    features: ['Everything in Pro', 'Multi-user access', 'API access', 'Dedicated support'],
+    color: 'border-gray-200',
+    badge: '',
+  },
+]
 
 export default function SignupPage() {
+  const searchParams = useSearchParams()
   const [step, setStep] = useState<Step>(1)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [selectedPlan, setSelectedPlan] = useState<Plan>('trial')
+
+  useEffect(() => {
+    const p = searchParams.get('plan') as Plan | null
+    if (p && ['starter', 'pro', 'business'].includes(p)) setSelectedPlan(p)
+  }, [searchParams])
 
   const [formData, setFormData] = useState({
     email: '',
@@ -47,7 +86,8 @@ export default function SignupPage() {
   const steps: { num: Step; label: string }[] = [
     { num: 1, label: 'Account' },
     { num: 2, label: 'Business' },
-    { num: 3, label: 'Expertise' }
+    { num: 3, label: 'Expertise' },
+    { num: 4, label: 'Plan' },
   ]
 
 const handleChange = (e: any) => {
@@ -104,6 +144,12 @@ const handleChange = (e: any) => {
         phone: formData.phone || null,
         service_areas: formData.serviceAreas || null,
         trade: formData.specialties.length > 0 ? formData.specialties[0] : null,
+        plan: selectedPlan,
+        plan_status: 'active',
+        trial_ends_at: selectedPlan === 'trial'
+          ? new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString()
+          : null,
+        plan_started_at: new Date().toISOString(),
       })
 
       window.location.href = '/dashboard'
@@ -376,11 +422,103 @@ const handleChange = (e: any) => {
                 </button>
                 <button
                   type="button"
+                  onClick={() => setStep(4)}
+                  disabled={formData.specialties.length === 0 || !formData.phone}
+                  className="flex-1 py-3 bg-[#14b8a6] text-white rounded-xl font-semibold hover:bg-[#0d9e8c] disabled:bg-gray-200 disabled:text-gray-400 transition text-sm"
+                >
+                  Choose Plan →
+                </button>
+              </div>
+            </div>
+          )}
+
+          {step === 4 && (
+            <div className="space-y-5">
+              <div>
+                <h1 className="text-2xl font-bold text-[#0f1d35]">Choose Your Plan</h1>
+                <p className="text-gray-500 text-sm mt-1">Start free for 14 days. No credit card required.</p>
+              </div>
+
+              <div className="space-y-3">
+                {/* Trial option */}
+                <button
+                  type="button"
+                  onClick={() => setSelectedPlan('trial')}
+                  className={`w-full text-left p-4 rounded-xl border-2 transition ${
+                    selectedPlan === 'trial' ? 'border-[#0f1d35] bg-[#0f1d35]/5' : 'border-gray-200 hover:border-gray-300'
+                  }`}
+                >
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <Zap size={14} className="text-teal-500" />
+                        <span className="font-bold text-sm text-gray-900">14-Day Free Trial</span>
+                        <span className="text-[10px] font-bold bg-teal-100 text-teal-700 px-2 py-0.5 rounded-full">Recommended</span>
+                      </div>
+                      <p className="text-xs text-gray-500 mt-0.5 ml-5">Try everything free, pick a plan later</p>
+                    </div>
+                    <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${selectedPlan === 'trial' ? 'border-[#0f1d35]' : 'border-gray-300'}`}>
+                      {selectedPlan === 'trial' && <div className="w-2 h-2 rounded-full bg-[#0f1d35]" />}
+                    </div>
+                  </div>
+                </button>
+
+                {/* Paid plans */}
+                {PLANS.map(plan => (
+                  <button
+                    key={plan.id}
+                    type="button"
+                    onClick={() => setSelectedPlan(plan.id)}
+                    className={`w-full text-left p-4 rounded-xl border-2 transition ${
+                      selectedPlan === plan.id
+                        ? 'border-[#14b8a6] bg-teal-50'
+                        : 'border-gray-200 hover:border-gray-300'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="font-bold text-sm text-gray-900">{plan.name}</span>
+                          {plan.badge && (
+                            <span className="text-[10px] font-bold bg-orange-100 text-orange-600 px-2 py-0.5 rounded-full">{plan.badge}</span>
+                          )}
+                          <span className="text-sm font-bold text-gray-700 ml-auto mr-4">${plan.price}<span className="text-xs font-normal text-gray-400">/mo</span></span>
+                        </div>
+                        <ul className="mt-1.5 space-y-0.5">
+                          {plan.features.slice(0, 2).map(f => (
+                            <li key={f} className="text-xs text-gray-500 flex items-center gap-1">
+                              <span className="text-teal-500">✦</span> {f}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                      <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 ml-2 ${selectedPlan === plan.id ? 'border-teal-500' : 'border-gray-300'}`}>
+                        {selectedPlan === plan.id && <div className="w-2 h-2 rounded-full bg-teal-500" />}
+                      </div>
+                    </div>
+                  </button>
+                ))}
+              </div>
+
+              {selectedPlan !== 'trial' && (
+                <p className="text-xs text-gray-400 text-center">Billing starts after your 14-day trial. Cancel anytime.</p>
+              )}
+
+              <div className="flex gap-3 pt-1">
+                <button
+                  type="button"
+                  onClick={() => setStep(3)}
+                  className="flex-1 py-3 bg-white border-2 border-gray-200 text-gray-700 rounded-xl font-semibold hover:border-gray-300 transition text-sm"
+                >
+                  Back
+                </button>
+                <button
+                  type="button"
                   onClick={handleEmailSignup}
-                  disabled={loading || formData.specialties.length === 0 || !formData.phone}
+                  disabled={loading}
                   className="flex-1 py-3 bg-[#0f1d35] text-white rounded-xl font-semibold hover:bg-[#0a1628] disabled:bg-gray-200 disabled:text-gray-400 transition text-sm"
                 >
-                  {loading ? 'Creating Account...' : 'Create Account'}
+                  {loading ? 'Creating Account...' : 'Create Account →'}
                 </button>
               </div>
             </div>
