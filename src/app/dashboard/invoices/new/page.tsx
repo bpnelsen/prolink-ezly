@@ -257,6 +257,7 @@ function NewInvoice() {
             qty: i.qty,
             unit: i.unit,
             rate: i.rate,
+            unit_price: i.rate,
             amount: i.qty * i.rate,
             position: idx,
           }))
