@@ -1,12 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server'
 
 export async function POST(req: NextRequest) {
+  const apiKey = process.env.ANTHROPIC_API_KEY
+  if (!apiKey) {
+    return NextResponse.json({ error: 'ANTHROPIC_API_KEY is not configured in environment variables.' }, { status: 500 })
+  }
+
   const { questionnaire } = await req.json()
 
   const { business_name, owner_name, tagline, about_story, services, service_areas,
     phone, email, years_experience, licensed, insured, sections } = questionnaire
 
-  const sectionList = sections.join(', ')
+  const sectionList = (sections as string[]).join(', ')
 
   const prompt = `You are a professional website copywriter for contractor businesses. Generate compelling, conversion-focused website copy.
 
@@ -15,7 +20,7 @@ Business Info:
 - Owner: ${owner_name}
 - Tagline: ${tagline || 'Quality Work, Every Time'}
 - About: ${about_story || 'A trusted local contractor serving the community.'}
-- Services: ${services.join(', ')}
+- Services: ${(services as string[]).join(', ')}
 - Service Areas: ${service_areas}
 - Phone: ${phone}
 - Email: ${email || ''}
@@ -34,19 +39,18 @@ Return ONLY a valid JSON object with this exact structure (include only sections
     "cta_secondary": "Call ${phone}"
   },
   "services": [
-    { "name": "Service Name", "description": "2-sentence description of this service", "icon": "🔧" },
-    ... one entry per service (max 6)
+    { "name": "Service Name", "description": "2-sentence description of this service", "icon": "🔧" }
   ],
   "about": {
     "headline": "Short headline about the business",
-    "body": "3-4 sentences about the business story, values, and what makes them different. Mention years of experience, licensing, and insurance."
+    "body": "3-4 sentences about the business story, values, and what makes them different."
   },
   "gallery": {
     "headline": "Our Work Speaks for Itself",
     "subheadline": "Browse completed projects from satisfied customers across ${service_areas}"
   },
   "reviews": [
-    { "name": "First Last", "location": "City, State", "text": "2-3 sentence glowing testimonial about the work quality and professionalism", "rating": 5 },
+    { "name": "First Last", "location": "City, State", "text": "2-3 sentence glowing testimonial", "rating": 5 },
     { "name": "First Last", "location": "City, State", "text": "2-3 sentence testimonial", "rating": 5 },
     { "name": "First Last", "location": "City, State", "text": "2-3 sentence testimonial", "rating": 5 }
   ],
@@ -56,20 +60,19 @@ Return ONLY a valid JSON object with this exact structure (include only sections
   }
 }
 
-Use real-sounding names for reviews. Make everything specific to this contractor's trade and location. Return only valid JSON, no other text.`
+Use real-sounding names for reviews. Make everything specific to this contractor's trade and location. Return only valid JSON, no markdown, no other text.`
 
-  const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+  const response = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
     headers: {
-      'Authorization': `Bearer ${process.env.OPENROUTER_API_KEY}`,
-      'Content-Type': 'application/json',
-      'HTTP-Referer': 'https://useezly.com',
-      'X-Title': 'Prolink Website Builder',
+      'x-api-key': apiKey,
+      'anthropic-version': '2023-06-01',
+      'content-type': 'application/json',
     },
     body: JSON.stringify({
-      model: 'google/gemini-flash-1.5',
+      model: 'claude-haiku-4-5-20251001',
+      max_tokens: 2048,
       messages: [{ role: 'user', content: prompt }],
-      temperature: 0.7,
     }),
   })
 
@@ -79,7 +82,7 @@ Use real-sounding names for reviews. Make everything specific to this contractor
   }
 
   const data = await response.json()
-  const raw = data.choices?.[0]?.message?.content ?? '{}'
+  const raw = data.content?.[0]?.text ?? '{}'
 
   let content: Record<string, unknown>
   try {
