@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 
 export async function POST(req: NextRequest) {
-  const apiKey = process.env.ANTHROPIC_API_KEY
+  const apiKey = process.env.OPENROUTER_API_KEY
   if (!apiKey) {
-    return NextResponse.json({ error: 'ANTHROPIC_API_KEY is not configured in environment variables.' }, { status: 500 })
+    return NextResponse.json({ error: 'OPENROUTER_API_KEY is not configured in environment variables.' }, { status: 500 })
   }
 
   const { questionnaire } = await req.json()
@@ -62,17 +62,18 @@ Return ONLY a valid JSON object with this exact structure (include only sections
 
 Use real-sounding names for reviews. Make everything specific to this contractor's trade and location. Return only valid JSON, no markdown, no other text.`
 
-  const response = await fetch('https://api.anthropic.com/v1/messages', {
+  const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
     method: 'POST',
     headers: {
-      'x-api-key': apiKey,
-      'anthropic-version': '2023-06-01',
-      'content-type': 'application/json',
+      'Authorization': `Bearer ${apiKey}`,
+      'Content-Type': 'application/json',
+      'HTTP-Referer': 'https://useezly.com',
+      'X-Title': 'Prolink Website Builder',
     },
     body: JSON.stringify({
-      model: 'claude-haiku-4-5-20251001',
-      max_tokens: 2048,
+      model: 'google/gemini-3.1-flash-lite-preview',
       messages: [{ role: 'user', content: prompt }],
+      temperature: 0.7,
     }),
   })
 
@@ -82,7 +83,7 @@ Use real-sounding names for reviews. Make everything specific to this contractor
   }
 
   const data = await response.json()
-  const raw = data.content?.[0]?.text ?? '{}'
+  const raw = data.choices?.[0]?.message?.content ?? '{}'
 
   let content: Record<string, unknown>
   try {
