@@ -1,19 +1,28 @@
 'use client'
 import Link from 'next/link';
-import { ChevronRight } from 'lucide-react';
+import { ChevronRight, Home } from 'lucide-react';
 
-export default function Breadcrumbs({ items }: { items: { label: string, href: string }[] }) {
+export default function Breadcrumbs({ items }: { items: { label: string; href: string }[] }) {
   return (
-    <nav className="flex items-center space-x-2 text-xs font-bold text-gray-500 mb-6">
-      <Link href="/dashboard" className="hover:text-[#00bfa5]">Home</Link>
-      {items.map((item, i) => (
-        <div key={i} className="flex items-center space-x-2">
-            <ChevronRight size={14} />
-            <Link href={item.href} className={`${i === items.length - 1 ? 'text-[#1a1a1a]' : 'hover:text-[#00bfa5]'}`}>
+    <div className="bg-white border-b border-gray-100">
+      <nav className="max-w-7xl mx-auto px-6 md:px-8 py-3.5 flex items-center gap-1.5 text-sm">
+        <Link href="/dashboard" className="flex items-center gap-1.5 text-gray-400 hover:text-teal-600 transition-colors font-medium">
+          <Home size={14} />
+          <span>Home</span>
+        </Link>
+        {items.map((item, i) => (
+          <div key={i} className="flex items-center gap-1.5">
+            <ChevronRight size={14} className="text-gray-300" />
+            {i === items.length - 1 ? (
+              <span className="text-gray-800 font-semibold">{item.label}</span>
+            ) : (
+              <Link href={item.href} className="text-gray-400 hover:text-teal-600 transition-colors font-medium">
                 {item.label}
-            </Link>
-        </div>
-      ))}
-    </nav>
+              </Link>
+            )}
+          </div>
+        ))}
+      </nav>
+    </div>
   );
 }
