@@ -2,7 +2,7 @@
 -- (Only run these if RLS is enabled)
 
 -- Users can read/write their own contractor profile
-CREATE POLICY "Users can manage own contractor profile" ON public.pl_contractors
+CREATE POLICY "Users can manage own contractor profile" ON public.customers
   FOR ALL USING (auth.uid() = id);
 
 -- Contractors can read/write their own pipeline data/leads

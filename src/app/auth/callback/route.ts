@@ -39,8 +39,8 @@ export async function GET(request: Request) {
     full_name: email?.split('@')[0] || 'Contractor',
   })
 
-  // Upsert pl_contractors row
-  await supabaseAdmin.from('pl_contractors').upsert({
+  // Upsert customers row
+  await supabaseAdmin.from('customers').upsert({
     id: userId,
   })
 
