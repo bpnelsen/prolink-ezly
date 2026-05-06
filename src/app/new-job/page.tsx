@@ -1,7 +1,7 @@
 'use client'
 import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { CheckCircle2, Plus, Trash2, Search } from 'lucide-react';
+import { CheckCircle2, Plus, Trash2, Search, Users } from 'lucide-react';
 import Breadcrumbs from '../../components/Breadcrumbs';
 import { supabase } from '../../lib/supabase-client';
 
@@ -23,9 +23,38 @@ interface Client {
   address_line2: string | null;
 }
 
+interface Technician {
+  id: string;
+  name: string;
+  availability_days: string[];
+  max_hours_per_day: number;
+}
+
 const TRADES = ['Electrical', 'Plumbing', 'HVAC', 'Roofing', 'Kitchen Remodel', 'Bath Reno', 'Deck Build', 'Flooring', 'Painting', 'Landscaping', 'General Contractor', 'Other'];
 const LEAD_SOURCES = ['Referral', 'Website', 'Phone Call', 'Returning Customer', 'Social Media', 'Door Knock', 'Google', 'Other'];
 const PRIORITIES = ['Low', 'Medium', 'High'];
+const DURATION_OPTIONS = ['1 hour', '2 hours', '4 hours', 'Full day', '2 days', '3–5 days', '1–2 weeks', '2–4 weeks', '1+ month'];
+
+function durationToHours(duration: string): number {
+  const durationMap: Record<string, number> = {
+    '1 hour': 1,
+    '2 hours': 2,
+    '4 hours': 4,
+    'Full day': 8,
+    '2 days': 16,
+    '3–5 days': 32,
+    '1–2 weeks': 80,
+    '2–4 weeks': 160,
+    '1+ month': 160,
+  };
+  return durationMap[duration] || 8;
+}
+
+function getDayName(dateStr: string): string {
+  if (!dateStr) return '';
+  const date = new Date(dateStr + 'T00:00:00');
+  return date.toLocaleDateString('en-US', { weekday: 'short' });
+}
 
 export default function NewJobPage() {
   return (
@@ -54,6 +83,9 @@ function NewJob() {
   const [clientSearch, setClientSearch] = useState('');
   const [showClientDropdown, setShowClientDropdown] = useState(false);
 
+  const [technicians, setTechnicians] = useState<Technician[]>([]);
+  const [selectedTechnician, setSelectedTechnician] = useState('');
+
   const [title, setTitle] = useState('');
   const [trade, setTrade] = useState('');
   const [priority, setPriority] = useState('low');
@@ -70,18 +102,29 @@ function NewJob() {
   ]);
 
   useEffect(() => {
-    const fetchClients = async () => {
+    const fetchData = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) return;
-      const { data } = await supabase
-        .from('clients')
-        .select('id, first_name, last_name, phone, email, address_line1, address_line2')
-        .eq('contractor_id', session.user.id)
-        .neq('is_deleted', true)
-        .order('first_name');
-      if (data) setClients(data);
+
+      const [{ data: clientData }, { data: techData }] = await Promise.all([
+        supabase
+          .from('clients')
+          .select('id, first_name, last_name, phone, email, address_line1, address_line2')
+          .eq('contractor_id', session.user.id)
+          .neq('is_deleted', true)
+          .order('first_name'),
+        supabase
+          .from('technicians')
+          .select('id, name, availability_days, max_hours_per_day')
+          .eq('contractor_id', session.user.id)
+          .eq('is_active', true)
+          .order('name'),
+      ]);
+
+      if (clientData) setClients(clientData);
+      if (techData) setTechnicians(techData);
     };
-    fetchClients();
+    fetchData();
   }, []);
 
   useEffect(() => {
@@ -139,9 +182,18 @@ function NewJob() {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) { setError('You must be logged in.'); setLoading(false); return; }
 
-      const scheduledAt = scheduledDate
-        ? new Date(`${scheduledDate}${scheduledTime ? 'T' + scheduledTime : ''}`).toISOString()
-        : null;
+      let scheduledStart: string | null = null;
+      let scheduledEnd: string | null = null;
+
+      if (scheduledDate) {
+        scheduledStart = new Date(`${scheduledDate}${scheduledTime ? 'T' + scheduledTime : 'T08:00'}`).toISOString();
+        if (estimatedDuration) {
+          const durationHours = durationToHours(estimatedDuration);
+          const endDate = new Date(scheduledStart);
+          endDate.setHours(endDate.getHours() + durationHours);
+          scheduledEnd = endDate.toISOString();
+        }
+      }
 
       const { data: job, error: jobError } = await supabase.from('jobs').insert({
         contractor_id: session.user.id,
@@ -153,10 +205,13 @@ function NewJob() {
         lead_source: leadSource || null,
         site_address: siteAddress.trim() || null,
         address_line1: siteAddress.trim() || null,
-        scheduled_start: scheduledAt,
+        scheduled_start: scheduledStart,
+        scheduled_end: scheduledEnd,
         estimated_duration: estimatedDuration || null,
         description: notes.trim() || null,
         estimated_value: subtotal,
+        technician_id: selectedTechnician || null,
+        status: 'pending',
       }).select('id').single();
 
       if (jobError) throw jobError;
@@ -358,12 +413,41 @@ function NewJob() {
                 <select value={estimatedDuration} onChange={e => setEstimatedDuration(e.target.value)}
                   className="w-full bg-gray-50 p-3 rounded-xl border border-gray-200 text-sm focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 transition">
                   <option value="">Select...</option>
-                  <option>1 hour</option><option>2 hours</option><option>4 hours</option>
-                  <option>Full day</option><option>2 days</option><option>3–5 days</option>
-                  <option>1–2 weeks</option><option>2–4 weeks</option><option>1+ month</option>
+                  {DURATION_OPTIONS.map(opt => <option key={opt}>{opt}</option>)}
                 </select>
               </div>
             </div>
+          </div>
+
+          {/* Technician Assignment */}
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+            <div className="flex items-center gap-2 mb-5">
+              <Users size={18} className="text-teal-600" />
+              <h2 className="font-bold text-gray-900">Assign Technician</h2>
+            </div>
+            {scheduledDate && (
+              <div className="mb-5 p-3 bg-teal-50 border border-teal-200 rounded-xl text-sm text-teal-800">
+                <span className="font-semibold">{getDayName(scheduledDate)}, {new Date(scheduledDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>
+                {scheduledTime && <span> at {scheduledTime}</span>}
+                {estimatedDuration && <span> — {estimatedDuration}</span>}
+              </div>
+            )}
+            <select value={selectedTechnician} onChange={e => setSelectedTechnician(e.target.value)}
+              className="w-full bg-gray-50 p-3 rounded-xl border border-gray-200 text-sm focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 transition">
+              <option value="">Select a technician...</option>
+              {technicians.map(tech => {
+                const dayName = getDayName(scheduledDate);
+                const isAvailable = !scheduledDate || tech.availability_days.includes(dayName);
+                return (
+                  <option key={tech.id} value={tech.id} disabled={!isAvailable}>
+                    {tech.name} {isAvailable ? `(${tech.max_hours_per_day}h/day)` : '(Not available this day)'}
+                  </option>
+                );
+              })}
+            </select>
+            {technicians.length === 0 && (
+              <p className="mt-3 text-xs text-gray-400">No technicians available. <a href="/dashboard" className="text-teal-600 hover:text-teal-700">Set up your team</a>.</p>
+            )}
           </div>
 
           {/* Line Items */}
