@@ -3,8 +3,9 @@ import { useState, useEffect } from 'react';
 import {
   LayoutDashboard, CalendarDays, Users, Briefcase,
   BarChart2, LogOut, Bell, Search,
-  Plus, TrendingUp, Clock, ChevronRight, Menu, X, Globe, UserCog, FileText
+  Plus, TrendingUp, Clock, ChevronRight, Menu, X, Globe, UserCog, FileText, Shield
 } from 'lucide-react';
+import { ADMIN_EMAIL } from '../../lib/admin';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { supabase } from '../../lib/supabase-client';
@@ -67,10 +68,11 @@ const NAV_GROWTH = [
   { label: 'Analytics', href: '/dashboard/kpis', icon: BarChart2 },
 ];
 
-function Sidebar({ open, onClose, userName }: { open: boolean; onClose: () => void; userName: string }) {
+function Sidebar({ open, onClose, userName, userEmail }: { open: boolean; onClose: () => void; userName: string; userEmail: string }) {
   const pathname = usePathname();
 
   const isActive = (href: string) => pathname === href;
+  const showAdmin = userEmail === ADMIN_EMAIL;
 
   return (
     <>
@@ -140,6 +142,29 @@ function Sidebar({ open, onClose, userName }: { open: boolean; onClose: () => vo
             </ul>
           </div>
 
+          {/* Admin (only for admin email) */}
+          {showAdmin && (
+            <div>
+              <p className="text-[10px] font-bold uppercase tracking-widest text-purple-400/80 px-2 mb-2">Admin</p>
+              <ul className="space-y-0.5">
+                <li>
+                  <Link
+                    href="/dashboard/admin"
+                    onClick={onClose}
+                    className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-semibold transition-colors ${
+                      pathname.startsWith('/dashboard/admin')
+                        ? 'bg-purple-500/20 text-white'
+                        : 'text-white/60 hover:bg-white/5 hover:text-white'
+                    }`}
+                  >
+                    <Shield size={17} className={pathname.startsWith('/dashboard/admin') ? 'text-purple-400' : ''} />
+                    Platform Admin
+                  </Link>
+                </li>
+              </ul>
+            </div>
+          )}
+
           {/* Growth */}
           <div>
             <p className="text-[10px] font-bold uppercase tracking-widest text-white/30 px-2 mb-2">Growth</p>
@@ -185,6 +210,7 @@ export default function Dashboard() {
   const [clients, setClients] = useState<Client[]>([]);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [userName, setUserName] = useState('');
+  const [userEmail, setUserEmail] = useState('');
 
   useEffect(() => {
     async function fetchDashboard() {
@@ -194,6 +220,7 @@ export default function Dashboard() {
 
         const id = session.user.id;
         setUserName(session.user.email?.split('@')[0] ?? 'there');
+        setUserEmail(session.user.email ?? '');
 
         const [{ data: jobData }, { data: clientData }, { data: taskData }] = await Promise.all([
           supabase.from('jobs').select('id, title, stage, estimated_value, created_at').eq('contractor_id', id).order('created_at', { ascending: false }),
@@ -256,7 +283,7 @@ export default function Dashboard() {
 
   return (
     <div className="flex h-screen bg-gray-100 overflow-hidden">
-      <Sidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} userName={userName} />
+      <Sidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} userName={userName} userEmail={userEmail} />
 
       {/* Main */}
       <div className="flex-1 flex flex-col min-w-0 overflow-auto">

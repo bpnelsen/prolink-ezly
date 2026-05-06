@@ -81,20 +81,19 @@ export default function WebsiteBuilderPage() {
       const uid = session.user.id
       const meta = session.user.user_metadata ?? {}
 
-      const [{ data: profile }, { data: contractor }, { data: site }] = await Promise.all([
+      const [{ data: profile }, { data: site }] = await Promise.all([
         supabase.from('profiles').select('*').eq('id', uid).single(),
-        supabase.from('pl_contractors').select('*').eq('id', uid).single(),
         supabase.from('contractor_websites').select('*').eq('contractor_id', uid).single(),
       ])
 
       const bName = profile?.business_name || meta.business_name || ''
       const oName = profile?.full_name || meta.full_name || ''
-      const phone = contractor?.phone || meta.phone || ''
-      const serviceAreas = contractor?.service_areas || ''
-      const specialties: string[] = contractor?.specialties || []
-      const years = contractor?.years_experience || ''
-      const licensed = contractor?.licensed === 'yes'
-      const insured = contractor?.insured === 'yes'
+      const phone = profile?.phone || meta.phone || ''
+      const serviceAreas = ''
+      const specialties: string[] = []
+      const years = ''
+      const licensed = false
+      const insured = false
 
       if (site) {
         setExistingSiteId(site.id)
