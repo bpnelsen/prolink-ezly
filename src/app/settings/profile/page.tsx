@@ -129,7 +129,7 @@ export default function ProfilePage() {
 
       const [{ data: profile }, { data: contractor }, { data: site }] = await Promise.all([
         supabase.from('profiles').select('full_name, email').eq('id', user.id).single(),
-        supabase.from('pl_contractors').select('*').eq('id', user.id).single(),
+        supabase.from('customers').select('*').eq('id', user.id).single(),
         supabase.from('pl_sites').select('slug').eq('contractor_id', user.id).maybeSingle(),
       ])
 
@@ -218,7 +218,7 @@ export default function ProfilePage() {
 
     const [profileErr, contractorErr] = await Promise.all([
       supabase.from('profiles').update({ full_name: form.owner_name.trim() || null }).eq('id', user.id).then(r => r.error),
-      supabase.from('pl_contractors').upsert({
+      supabase.from('customers').upsert({
         id: user.id,
         business_name: form.business_name.trim() || null,
         phone: form.phone.trim() || null,

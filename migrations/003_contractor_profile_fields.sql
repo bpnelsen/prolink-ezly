@@ -1,51 +1,82 @@
--- Migration 003: Expand pl_contractors with full profile fields
+-- Migration 003: Create customers table (Prolink SaaS subscriber profiles)
 -- Run this in Supabase SQL editor
 
--- Add new columns to pl_contractors
-ALTER TABLE public.pl_contractors
-  ADD COLUMN IF NOT EXISTS owner_name TEXT,
-  ADD COLUMN IF NOT EXISTS logo_url TEXT,
-  ADD COLUMN IF NOT EXISTS license_number TEXT,
-  ADD COLUMN IF NOT EXISTS license_expiration DATE,
-  ADD COLUMN IF NOT EXISTS insurance_provider TEXT,
-  ADD COLUMN IF NOT EXISTS insurance_policy_number TEXT,
-  ADD COLUMN IF NOT EXISTS insurance_expiration DATE,
-  ADD COLUMN IF NOT EXISTS entity_type TEXT DEFAULT 'sole_proprietor',
-  ADD COLUMN IF NOT EXISTS ein TEXT,
-  ADD COLUMN IF NOT EXISTS service_areas TEXT,
-  ADD COLUMN IF NOT EXISTS brand_color TEXT DEFAULT '#14b8a6',
-  ADD COLUMN IF NOT EXISTS default_payment_terms TEXT DEFAULT 'net_30',
-  ADD COLUMN IF NOT EXISTS default_tax_rate DECIMAL(5,2) DEFAULT 0,
-  ADD COLUMN IF NOT EXISTS default_invoice_notes TEXT,
-  ADD COLUMN IF NOT EXISTS facebook_url TEXT,
-  ADD COLUMN IF NOT EXISTS instagram_url TEXT,
-  ADD COLUMN IF NOT EXISTS nextdoor_url TEXT,
-  ADD COLUMN IF NOT EXISTS notify_new_jobs BOOLEAN DEFAULT true,
-  ADD COLUMN IF NOT EXISTS notify_payments BOOLEAN DEFAULT true,
-  ADD COLUMN IF NOT EXISTS monday_hours TEXT,
-  ADD COLUMN IF NOT EXISTS tuesday_hours TEXT,
-  ADD COLUMN IF NOT EXISTS wednesday_hours TEXT,
-  ADD COLUMN IF NOT EXISTS thursday_hours TEXT,
-  ADD COLUMN IF NOT EXISTS friday_hours TEXT,
-  ADD COLUMN IF NOT EXISTS saturday_hours TEXT,
-  ADD COLUMN IF NOT EXISTS sunday_hours TEXT;
+CREATE TABLE IF NOT EXISTS public.customers (
+  id UUID REFERENCES public.profiles(id) PRIMARY KEY,
 
--- Ensure RLS is enabled
-ALTER TABLE public.pl_contractors ENABLE ROW LEVEL SECURITY;
+  -- Business identity
+  business_name TEXT,
+  owner_name TEXT,
+  logo_url TEXT,
+  phone TEXT,
+  trade TEXT,
+  years_in_business INTEGER,
+  entity_type TEXT DEFAULT 'sole_proprietor',
+  ein TEXT,
+  description TEXT,
+  status TEXT DEFAULT 'available',
 
--- Drop existing policies if any, then recreate
-DROP POLICY IF EXISTS "Contractors can read own row" ON public.pl_contractors;
-DROP POLICY IF EXISTS "Contractors can update own row" ON public.pl_contractors;
-DROP POLICY IF EXISTS "Contractors can insert own row" ON public.pl_contractors;
+  -- Credentials
+  license_number TEXT,
+  license_expiration DATE,
+  insurance_provider TEXT,
+  insurance_policy_number TEXT,
+  insurance_expiration DATE,
 
-CREATE POLICY "Contractors can read own row"
-  ON public.pl_contractors FOR SELECT
+  -- Location
+  street_address TEXT,
+  city TEXT,
+  state TEXT,
+  zip_code TEXT,
+  service_areas TEXT,
+
+  -- Online presence
+  website TEXT,
+  facebook_url TEXT,
+  instagram_url TEXT,
+  nextdoor_url TEXT,
+
+  -- Brand & invoice defaults
+  brand_color TEXT DEFAULT '#14b8a6',
+  default_payment_terms TEXT DEFAULT 'net_30',
+  default_tax_rate DECIMAL(5,2) DEFAULT 0,
+  default_invoice_notes TEXT,
+
+  -- Business hours (stored as "HH:MM AM|HH:MM AM" or "Closed")
+  monday_hours TEXT,
+  tuesday_hours TEXT,
+  wednesday_hours TEXT,
+  thursday_hours TEXT,
+  friday_hours TEXT,
+  saturday_hours TEXT,
+  sunday_hours TEXT,
+
+  -- Notifications
+  notify_new_jobs BOOLEAN DEFAULT true,
+  notify_payments BOOLEAN DEFAULT true,
+
+  -- Admin fields
+  rating DECIMAL DEFAULT 0.0,
+  reviews_count INTEGER DEFAULT 0,
+
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now())
+);
+
+-- RLS
+ALTER TABLE public.customers ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Customers can read own row" ON public.customers;
+DROP POLICY IF EXISTS "Customers can update own row" ON public.customers;
+DROP POLICY IF EXISTS "Customers can insert own row" ON public.customers;
+
+CREATE POLICY "Customers can read own row"
+  ON public.customers FOR SELECT
   USING (auth.uid() = id);
 
-CREATE POLICY "Contractors can update own row"
-  ON public.pl_contractors FOR UPDATE
+CREATE POLICY "Customers can update own row"
+  ON public.customers FOR UPDATE
   USING (auth.uid() = id);
 
-CREATE POLICY "Contractors can insert own row"
-  ON public.pl_contractors FOR INSERT
+CREATE POLICY "Customers can insert own row"
+  ON public.customers FOR INSERT
   WITH CHECK (auth.uid() = id);

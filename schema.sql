@@ -9,7 +9,7 @@ CREATE TABLE IF NOT EXISTS public.profiles (
 );
 
 -- ProLink Differentiated Tables (Prefix: pl_)
-CREATE TABLE IF NOT EXISTS public.pl_contractors (
+CREATE TABLE IF NOT EXISTS public.customers (
   id UUID REFERENCES public.profiles(id) PRIMARY KEY,
   business_name TEXT,
   rating DECIMAL DEFAULT 0.0,
@@ -29,7 +29,7 @@ CREATE TABLE IF NOT EXISTS public.pl_contractors (
 
 CREATE TABLE IF NOT EXISTS public.pl_pipelines (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  contractor_id UUID REFERENCES public.pl_contractors(id),
+  contractor_id UUID REFERENCES public.customers(id),
   project_name TEXT,
   stage TEXT DEFAULT 'Lead', -- 'Lead', 'Proposal', 'Active', 'Completed'
   value DECIMAL DEFAULT 0.0,
@@ -39,7 +39,7 @@ CREATE TABLE IF NOT EXISTS public.pl_pipelines (
 
 CREATE TABLE IF NOT EXISTS public.pl_vetting_records (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  contractor_id UUID REFERENCES public.pl_contractors(id),
+  contractor_id UUID REFERENCES public.customers(id),
   engine_result JSONB, -- Stores the automated audit report
   vetted_by UUID REFERENCES public.profiles(id),
   vetted_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now())
@@ -76,7 +76,7 @@ CREATE TABLE IF NOT EXISTS public.tasks (
 
 -- Enable Row Level Security (RLS)
 ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.pl_contractors ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.customers ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.pl_pipelines ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.pl_vetting_records ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.clients ENABLE ROW LEVEL SECURITY;
@@ -89,13 +89,13 @@ CREATE INDEX IF NOT EXISTS idx_pl_pipelines_contractor_id ON public.pl_pipelines
 CREATE INDEX IF NOT EXISTS idx_pl_pipelines_stage ON public.pl_pipelines(stage);
 
 -- RLS Policies
-CREATE POLICY "Users can read own prolink info" ON public.pl_contractors
+CREATE POLICY "Users can read own prolink info" ON public.customers
   FOR SELECT USING (auth.uid() = id);
 
-CREATE POLICY "Users can update own prolink info" ON public.pl_contractors
+CREATE POLICY "Users can update own prolink info" ON public.customers
   FOR UPDATE USING (auth.uid() = id);
 
-CREATE POLICY "Users can insert own prolink info" ON public.pl_contractors
+CREATE POLICY "Users can insert own prolink info" ON public.customers
   FOR INSERT WITH CHECK (auth.uid() = id);
 
 CREATE POLICY "Contractors can CRUD their clients" ON public.clients
