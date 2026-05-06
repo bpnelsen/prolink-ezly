@@ -336,9 +336,9 @@ export default function Dashboard() {
   const searchResults = searchQuery.trim().length >= 2 ? (() => {
     const q = searchQuery.toLowerCase();
     const matchedJobs = jobs
-      .filter(j => j.title?.toLowerCase().includes(q) || j.stage?.toLowerCase().includes(q))
+      .filter(j => j.title?.toLowerCase().includes(q) || j.status?.toLowerCase().includes(q))
       .slice(0, 4)
-      .map(j => ({ type: 'job' as const, label: j.title, sub: j.stage || 'Job', href: `/dashboard/jobs/${j.id}` }));
+      .map(j => ({ type: 'job' as const, label: j.title, sub: STAGE_LABELS[j.status] || j.status || 'Job', href: `/dashboard/jobs/${j.id}` }));
     const matchedClients = clients
       .filter(c => `${c.first_name} ${c.last_name}`.toLowerCase().includes(q))
       .slice(0, 4)
