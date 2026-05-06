@@ -125,16 +125,23 @@ h1,h2,h3,h4 { font-family: 'Inter', sans-serif; }
   transition: color .2s;
 }
 .nav-links a:hover { color: var(--navy); }
-.nav-actions { display: flex; align-items: center; gap: 12px; }
+.nav-actions { display: flex; align-items: center; gap: 10px; }
 .btn-ghost {
   font-family: 'Inter', sans-serif;
-  font-size: 14px; font-weight: 600;
-  color: var(--navy); background: none; border: none;
-  cursor: pointer; padding: 8px 12px; border-radius: 8px;
+  font-size: 14px; font-weight: 700;
+  color: var(--navy);
+  background: none;
+  border: 2px solid var(--navy);
+  cursor: pointer; padding: 8px 18px; border-radius: 10px;
   text-decoration: none;
-  transition: background .2s, color .2s;
+  transition: background .2s, color .2s, box-shadow .2s;
+  letter-spacing: .01em;
 }
-.btn-ghost:hover { background: var(--gray-100); }
+.btn-ghost:hover {
+  background: var(--navy);
+  color: #fff;
+  box-shadow: 0 4px 14px rgba(15,58,125,.25);
+}
 .btn-primary {
   font-family: 'Inter', sans-serif;
   font-size: 14px; font-weight: 700;
@@ -984,6 +991,9 @@ body.theme-light {
         <a href="#how-it-works" class="btn-outline-white">See How It Works</a>
       </div>
       <p class="hero-disclaimer"><strong>14-day free trial &nbsp;·&nbsp; Cancel anytime</strong></p>
+      <a href="/login" style="display:inline-flex;align-items:center;gap:6px;margin-top:14px;font-family:'Inter',sans-serif;font-size:13px;font-weight:600;color:rgba(255,255,255,.65);text-decoration:none;border-bottom:1px solid rgba(255,255,255,.25);padding-bottom:1px;transition:color .2s,border-color .2s;" onmouseover="this.style.color='#fff';this.style.borderColor='rgba(255,255,255,.6)'" onmouseout="this.style.color='rgba(255,255,255,.65)';this.style.borderColor='rgba(255,255,255,.25)'">
+        Already have an account? &nbsp;<strong style="color:#fff;">Sign In →</strong>
+      </a>
     </div>
 
     <!-- Dashboard mockup -->
@@ -1460,6 +1470,10 @@ body.theme-light {
       <a href="/signup" class="btn-navy" style="font-size:15px">Start Your Free Trial →</a>
       <a href="/contact" class="btn-outline-white" style="font-size:15px">Talk to Sales</a>
     </div>
+    <p style="margin-top:24px;font-family:'Inter',sans-serif;font-size:14px;color:rgba(255,255,255,.5);">
+      Already a member?
+      <a href="/login" style="color:#fff;font-weight:700;text-decoration:none;border-bottom:1px solid rgba(255,255,255,.4);padding-bottom:1px;margin-left:4px;">Sign In to your dashboard →</a>
+    </p>
   </div>
 </section>
 
