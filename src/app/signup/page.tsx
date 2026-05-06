@@ -86,7 +86,26 @@ const handleChange = (e: any) => {
       if (authError) throw authError
       if (!data.user) throw new Error('No user returned from sign up')
 
-      // Profiles and customers are created in the auth callback (server-side)
+      const userId = data.user.id
+
+      // Create profiles row
+      await supabase.from('profiles').upsert({
+        id: userId,
+        email: formData.email,
+        full_name: formData.ownerName || formData.email.split('@')[0],
+        role: 'contractor',
+      })
+
+      // Create customers row with all signup data
+      await supabase.from('customers').upsert({
+        id: userId,
+        business_name: formData.businessName || null,
+        owner_name: formData.ownerName || null,
+        phone: formData.phone || null,
+        service_areas: formData.serviceAreas || null,
+        trade: formData.specialties.length > 0 ? formData.specialties[0] : null,
+      })
+
       window.location.href = '/dashboard'
     } catch (err: any) {
       setError(err.message || 'Signup failed')

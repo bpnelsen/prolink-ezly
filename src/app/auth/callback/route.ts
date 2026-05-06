@@ -30,18 +30,22 @@ export async function GET(request: Request) {
 
   const userId = data.session.user.id
   const email = data.session.user.email
+  const meta = data.session.user.user_metadata || {}
 
   // Upsert profiles row (uses service role — bypasses RLS)
   await supabaseAdmin.from('profiles').upsert({
     id: userId,
     email: email,
-    role: 'contractor',
-    full_name: email?.split('@')[0] || 'Contractor',
+    role: meta.role || 'contractor',
+    full_name: meta.full_name || email?.split('@')[0] || 'Contractor',
   })
 
-  // Upsert customers row
+  // Upsert customers row with any metadata from signup
   await supabaseAdmin.from('customers').upsert({
     id: userId,
+    business_name: meta.business_name || null,
+    owner_name: meta.full_name || null,
+    phone: meta.phone || null,
   })
 
   // Look up role for redirect decision
