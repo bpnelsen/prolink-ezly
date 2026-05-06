@@ -2,7 +2,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import {
   ChevronLeft, ChevronRight, Users, Plus, X, MapPin,
-  Trash2, UserCheck, AlertCircle
+  Trash2, UserCheck, AlertCircle, FileText
 } from 'lucide-react'
 import Link from 'next/link'
 import Breadcrumbs from '../../components/Breadcrumbs'
@@ -670,7 +670,11 @@ function JobModal({ job, technicians, onClose, onUpdate, onDelete }: {
           ) : (
             <>
               <button onClick={onClose} className="px-4 py-2 rounded-lg border border-gray-200 text-xs font-semibold text-gray-600 hover:bg-gray-50">Close</button>
-              <button onClick={() => setEditing(true)} className="px-4 py-2 rounded-lg bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold">Edit Job</button>
+              <button onClick={() => setEditing(true)} className="px-4 py-2 rounded-lg border border-gray-200 text-xs font-semibold text-gray-700 hover:bg-gray-50">Edit Job</button>
+              <Link href={`/dashboard/invoices/new?job_id=${job.id}`}
+                className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold transition">
+                <FileText size={13} /> Create Invoice
+              </Link>
             </>
           )}
         </div>

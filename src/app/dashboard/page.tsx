@@ -55,7 +55,7 @@ const NAV_MAIN = [
   { label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
   { label: 'Schedule', href: '/dispatch', icon: CalendarDays },
   { label: 'Customers', href: '/customers', icon: Users },
-  { label: 'Jobs', href: '/new-job', icon: Briefcase },
+  { label: 'Jobs', href: '/dashboard/jobs', icon: Briefcase },
   { label: 'Invoices', href: '/dashboard/invoices', icon: FileText },
   { label: 'Team', href: '/dashboard/technicians', icon: UserCog },
 ];
