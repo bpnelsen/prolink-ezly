@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import {
   LayoutDashboard, CalendarDays, Users, Briefcase,
   Megaphone, BarChart2, LogOut, Bell, Search,
-  Plus, TrendingUp, Clock, ChevronRight, Menu, X
+  Plus, TrendingUp, Clock, ChevronRight, Menu, X, Globe
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -57,8 +57,12 @@ const NAV_MAIN = [
   { label: 'Jobs', href: '/new-job', icon: Briefcase },
 ];
 
+const NAV_MARKETING = [
+  { label: 'Website Builder', href: '/dashboard/website-builder', icon: Globe },
+  { label: 'Blog / Content', href: '/blog', icon: Megaphone },
+];
+
 const NAV_GROWTH = [
-  { label: 'Marketing', href: '/blog', icon: Megaphone },
   { label: 'Analytics', href: '/dashboard/kpis', icon: BarChart2 },
 ];
 
@@ -94,6 +98,29 @@ function Sidebar({ open, onClose, userName }: { open: boolean; onClose: () => vo
             <p className="text-[10px] font-bold uppercase tracking-widest text-white/30 px-2 mb-2">Main</p>
             <ul className="space-y-0.5">
               {NAV_MAIN.map(({ label, href, icon: Icon }) => (
+                <li key={href}>
+                  <Link
+                    href={href}
+                    onClick={onClose}
+                    className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-semibold transition-colors ${
+                      isActive(href)
+                        ? 'bg-white/10 text-white'
+                        : 'text-white/60 hover:bg-white/5 hover:text-white'
+                    }`}
+                  >
+                    <Icon size={17} className={isActive(href) ? 'text-teal-400' : ''} />
+                    {label}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          {/* Marketing */}
+          <div>
+            <p className="text-[10px] font-bold uppercase tracking-widest text-white/30 px-2 mb-2">Marketing</p>
+            <ul className="space-y-0.5">
+              {NAV_MARKETING.map(({ label, href, icon: Icon }) => (
                 <li key={href}>
                   <Link
                     href={href}
