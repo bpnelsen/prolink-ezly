@@ -35,7 +35,7 @@ export default function LoginPage() {
 }
   return (
     <div className="min-h-screen flex">
-      <div className="hidden lg:flex lg:w-1/2 bg-[#0f3a7d] flex-col justify-between p-12">
+      <div className="hidden lg:flex lg:w-1/2 bg-[#0f1d35] flex-col justify-between p-12">
         <Link href="/" className="flex items-center gap-3">
           <div className="w-8 h-8 bg-[#14b8a6] rounded-lg flex items-center justify-center">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
@@ -48,7 +48,7 @@ export default function LoginPage() {
           <h1 className="text-4xl font-bold text-white leading-tight mb-4">
             Run your business<br />like a pro.
           </h1>
-          <p className="text-blue-200 text-lg mb-10">
+          <p className="text-white/70 text-lg mb-10">
             The all-in-one platform built for contractors who want to win more jobs and get paid faster.
           </p>
           <div className="space-y-4">
@@ -59,24 +59,24 @@ export default function LoginPage() {
                     <path d="M2 6l3 3 5-5" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                   </svg>
                 </div>
-                <span className="text-blue-100 text-sm">{f}</span>
+                <span className="text-white/80 text-sm">{f}</span>
               </div>
             ))}
           </div>
         </div>
-        <p className="text-blue-300 text-xs">© 2026 Prolink by EZLY. All rights reserved.</p>
+        <p className="text-white/50 text-xs">© 2026 Prolink by EZLY. All rights reserved.</p>
       </div>
 
       <div className="w-full lg:w-1/2 flex items-center justify-center p-8 bg-[#f8fafc]">
         <div className="w-full max-w-md">
           <div className="lg:hidden text-center mb-8">
             <Link href="/" className="inline-flex items-center gap-2">
-              <div className="w-8 h-8 bg-[#0f3a7d] rounded-lg flex items-center justify-center">
+              <div className="w-8 h-8 bg-[#0f1d35] rounded-lg flex items-center justify-center">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
                   <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" fill="white"/>
                 </svg>
               </div>
-              <span className="text-[#0f3a7d] font-bold text-xl">Prolink</span>
+              <span className="text-[#0f1d35] font-bold text-xl">Prolink</span>
             </Link>
           </div>
 
@@ -94,14 +94,14 @@ export default function LoginPage() {
                 onChange={e => setEmail(e.target.value)}
                 placeholder="you@yourcompany.com"
                 required
-                className="w-full px-4 py-3.5 bg-white border border-gray-200 rounded-xl text-gray-900 text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0f3a7d] focus:border-transparent transition shadow-sm"
+                className="w-full px-4 py-3.5 bg-white border border-gray-200 rounded-xl text-gray-900 text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0f1d35] focus:border-transparent transition shadow-sm"
               />
             </div>
 
             <div>
               <div className="flex justify-between items-center mb-2">
                 <label className="block text-sm font-semibold text-gray-700">Password</label>
-                <Link href="/forgot-password" className="text-sm font-medium text-[#0f3a7d] hover:text-[#0c2e5c]">
+                <Link href="/forgot-password" className="text-sm font-medium text-[#0f1d35] hover:text-[#0a1628]">
                   Forgot password?
                 </Link>
               </div>
@@ -112,7 +112,7 @@ export default function LoginPage() {
                   onChange={e => setPassword(e.target.value)}
                   placeholder="••••••••"
                   required
-                  className="w-full px-4 py-3.5 bg-white border border-gray-200 rounded-xl text-gray-900 text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0f3a7d] focus:border-transparent transition shadow-sm pr-12"
+                  className="w-full px-4 py-3.5 bg-white border border-gray-200 rounded-xl text-gray-900 text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0f1d35] focus:border-transparent transition shadow-sm pr-12"
                 />
                 <button
                   type="button"
@@ -138,7 +138,7 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-3.5 bg-[#0f3a7d] hover:bg-[#0c2e5c] disabled:opacity-60 text-white font-semibold rounded-xl transition text-sm shadow-sm mt-2"
+              className="w-full py-3.5 bg-[#0f1d35] hover:bg-[#0a1628] disabled:opacity-60 text-white font-semibold rounded-xl transition text-sm shadow-sm mt-2"
             >
               {loading ? (
                 <span className="flex items-center justify-center gap-2">

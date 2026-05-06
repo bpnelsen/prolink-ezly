@@ -100,11 +100,11 @@ const handleChange = (e: any) => {
       <header className="bg-white border-b border-gray-100 py-4 px-6">
         <div className="max-w-5xl mx-auto flex justify-between items-center">
           <Link href="/" className="flex items-center gap-2">
-            <span className="text-[#0f3a7d] font-bold text-xl tracking-tight">Prolink</span>
+            <span className="text-[#0f1d35] font-bold text-xl tracking-tight">Prolink</span>
             <span className="text-gray-300 font-light">by</span>
             <span className="text-[#14b8a6] font-bold text-xl tracking-tight">EZLY</span>
           </Link>
-          <Link href="/" className="text-sm text-gray-400 hover:text-[#0f3a7d] transition-colors">
+          <Link href="/" className="text-sm text-gray-400 hover:text-[#0f1d35] transition-colors">
             ← Back to Home
           </Link>
         </div>
@@ -121,7 +121,7 @@ const handleChange = (e: any) => {
                     step > s.num
                       ? 'bg-[#14b8a6] border-[#14b8a6] text-white'
                       : step === s.num
-                      ? 'bg-[#0f3a7d] border-[#0f3a7d] text-white'
+                      ? 'bg-[#0f1d35] border-[#0f1d35] text-white'
                       : 'bg-white border-gray-300 text-gray-400'
                   }`}
                 >
@@ -129,7 +129,7 @@ const handleChange = (e: any) => {
                 </div>
                 <span
                   className={`text-xs mt-1.5 font-medium ${
-                    step >= s.num ? 'text-[#0f3a7d]' : 'text-gray-400'
+                    step >= s.num ? 'text-[#0f1d35]' : 'text-gray-400'
                   }`}
                 >
                   {s.label}
@@ -156,7 +156,7 @@ const handleChange = (e: any) => {
 
           {step === 1 && (
             <div className="space-y-5">
-              <h1 className="text-2xl font-bold text-[#0f3a7d]">Create Your Account</h1>
+              <h1 className="text-2xl font-bold text-[#0f1d35]">Create Your Account</h1>
               <p className="text-gray-500 text-sm">Start your account with email and a secure password.</p>
 
               <div>
@@ -188,7 +188,7 @@ const handleChange = (e: any) => {
                 type="button"
                 onClick={() => setStep(2)}
                 disabled={!formData.email || formData.password.length < 8 || loading}
-                className="w-full py-3 bg-[#0f3a7d] text-white rounded-xl font-semibold hover:bg-[#0c2e5c] disabled:bg-gray-200 disabled:text-gray-400 transition text-sm"
+                className="w-full py-3 bg-[#0f1d35] text-white rounded-xl font-semibold hover:bg-[#0a1628] disabled:bg-gray-200 disabled:text-gray-400 transition text-sm"
               >
                 Continue
               </button>
@@ -197,7 +197,7 @@ const handleChange = (e: any) => {
 
           {step === 2 && (
             <div className="space-y-6">
-              <h1 className="text-2xl font-bold text-[#0f3a7d]">Your Business Details</h1>
+              <h1 className="text-2xl font-bold text-[#0f1d35]">Your Business Details</h1>
               <p className="text-gray-500 text-sm">Tell us about your contracting business.</p>
 
               <div className="space-y-5">
@@ -267,7 +267,7 @@ const handleChange = (e: any) => {
 
           {step === 3 && (
             <div className="space-y-6">
-              <h1 className="text-2xl font-bold text-[#0f3a7d]">Your Expertise</h1>
+              <h1 className="text-2xl font-bold text-[#0f1d35]">Your Expertise</h1>
               <p className="text-gray-500 text-sm">Select specialties and answer a few questions.</p>
 
               <div>
@@ -362,7 +362,7 @@ const handleChange = (e: any) => {
                   type="button"
                   onClick={handleEmailSignup}
                   disabled={loading || formData.specialties.length === 0 || !formData.phone}
-                  className="flex-1 py-3 bg-[#0f3a7d] text-white rounded-xl font-semibold hover:bg-[#082860] disabled:bg-gray-200 disabled:text-gray-400 transition text-sm"
+                  className="flex-1 py-3 bg-[#0f1d35] text-white rounded-xl font-semibold hover:bg-[#0a1628] disabled:bg-gray-200 disabled:text-gray-400 transition text-sm"
                 >
                   {loading ? 'Creating Account...' : 'Create Account'}
                 </button>

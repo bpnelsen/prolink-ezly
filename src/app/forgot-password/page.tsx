@@ -49,7 +49,7 @@ export default function ForgotPasswordPage() {
             <button
               type="submit"
               disabled={status === 'loading'}
-              className="w-full bg-[#0f3a7d] text-white py-3 rounded-xl font-semibold hover:bg-[#0c2e5c]"
+              className="w-full bg-[#0f1d35] text-white py-3 rounded-xl font-semibold hover:bg-[#0a1628]"
             >
               {status === 'loading' ? 'Sending...' : 'Send reset link'}
             </button>
