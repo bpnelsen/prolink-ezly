@@ -1,6 +1,6 @@
 'use client'
 import { useState, useEffect } from 'react'
-import { FileText, Plus, MapPin, User, Calendar, DollarSign, Search } from 'lucide-react'
+import { FileText, Plus, MapPin, User, Calendar, DollarSign, Search, Eye, Edit2 } from 'lucide-react'
 import Link from 'next/link'
 import Breadcrumbs from '../../../components/Breadcrumbs'
 import { supabase } from '../../../lib/supabase-client'
@@ -168,10 +168,20 @@ export default function JobsPage() {
                   </span>
 
                   {/* Actions */}
-                  <Link href={`/dashboard/invoices/new?job_id=${job.id}`}
-                    className="flex items-center gap-1.5 px-3 py-2 bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold rounded-xl transition shrink-0">
-                    <FileText size={13} /> Invoice
-                  </Link>
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    <Link href={`/dashboard/jobs/${job.id}`}
+                      className="flex items-center gap-1 px-3 py-2 border border-gray-200 hover:bg-gray-50 text-gray-600 text-xs font-semibold rounded-xl transition">
+                      <Eye size={13} /> View
+                    </Link>
+                    <Link href={`/dashboard/jobs/${job.id}?edit=1`}
+                      className="flex items-center gap-1 px-3 py-2 border border-gray-200 hover:bg-gray-50 text-gray-600 text-xs font-semibold rounded-xl transition">
+                      <Edit2 size={13} /> Edit
+                    </Link>
+                    <Link href={`/dashboard/invoices/new?job_id=${job.id}`}
+                      className="flex items-center gap-1.5 px-3 py-2 bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold rounded-xl transition">
+                      <FileText size={13} /> Invoice
+                    </Link>
+                  </div>
                 </div>
               )
             })}
