@@ -12,27 +12,37 @@ import { usePathname } from 'next/navigation';
 import { supabase } from '../../lib/supabase-client';
 import ProlinkLogo from '../../components/ProlinkLogo';
 
-const STAGES = ['Lead', 'Quoted', 'Active', 'Completed'];
+const STAGES = ['pending', 'assigned', 'in_progress', 'completed', 'cancelled'];
 
 const STAGE_COLORS: Record<string, string> = {
-  Lead:      'bg-yellow-400',
-  Quoted:    'bg-blue-400',
-  Active:    'bg-teal-500',
-  Completed: 'bg-gray-400',
+  pending:     'bg-yellow-400',
+  assigned:    'bg-blue-400',
+  in_progress: 'bg-orange-400',
+  completed:   'bg-green-500',
+  cancelled:   'bg-gray-300',
+};
+
+const STAGE_LABELS: Record<string, string> = {
+  pending:     'Pending',
+  assigned:    'Assigned',
+  in_progress: 'In Progress',
+  completed:   'Completed',
+  cancelled:   'Cancelled',
 };
 
 const STAGE_BADGE: Record<string, string> = {
-  Lead:      'bg-yellow-50 text-yellow-700 border-yellow-200',
-  Quoted:    'bg-blue-50 text-blue-700 border-blue-200',
-  Active:    'bg-teal-50 text-teal-700 border-teal-200',
-  Completed: 'bg-gray-100 text-gray-600 border-gray-200',
+  pending:     'bg-yellow-50 text-yellow-700 border-yellow-200',
+  assigned:    'bg-blue-50 text-blue-700 border-blue-200',
+  in_progress: 'bg-orange-50 text-orange-700 border-orange-200',
+  completed:   'bg-green-50 text-green-700 border-green-200',
+  cancelled:   'bg-gray-100 text-gray-500 border-gray-200',
 };
 
 interface Job {
   id: string;
   title: string;
-  stage: string;
-  estimated_value: number;
+  status: string;
+  estimated_value: number | null;
   created_at: string;
 }
 
@@ -43,7 +53,15 @@ interface Client {
   created_at: string;
 }
 
-interface Task {
+interface Invoice {
+  id: string;
+  invoice_number: string;
+  status: string;
+  total: number;
+  balance_due: number;
+  amount_paid: number;
+  issue_date: string;
+  paid_at: string | null;
   client_id: string | null;
 }
 
@@ -237,9 +255,10 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [jobs, setJobs] = useState<Job[]>([]);
   const [clients, setClients] = useState<Client[]>([]);
-  const [tasks, setTasks] = useState<Task[]>([]);
+  const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [userName, setUserName] = useState('');
   const [userEmail, setUserEmail] = useState('');
+  const [businessName, setBusinessName] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [searchOpen, setSearchOpen] = useState(false);
   const [avatarOpen, setAvatarOpen] = useState(false);
@@ -251,18 +270,22 @@ export default function Dashboard() {
         if (!session) { setLoading(false); return; }
 
         const id = session.user.id;
-        setUserName(session.user.email?.split('@')[0] ?? 'there');
         setUserEmail(session.user.email ?? '');
 
-        const [{ data: jobData }, { data: clientData }, { data: taskData }] = await Promise.all([
-          supabase.from('jobs').select('id, title, stage, estimated_value, created_at').eq('contractor_id', id).order('created_at', { ascending: false }),
+        const [{ data: jobData }, { data: clientData }, { data: invoiceData }, { data: profileData }, { data: bizData }] = await Promise.all([
+          supabase.from('jobs').select('id, title, status, estimated_value, created_at').eq('contractor_id', id).order('created_at', { ascending: false }),
           supabase.from('clients').select('id, first_name, last_name, created_at').eq('contractor_id', id).neq('is_deleted', true).order('created_at', { ascending: false }),
-          supabase.from('tasks').select('client_id').eq('contractor_id', id),
+          supabase.from('invoices').select('id, invoice_number, status, total, balance_due, amount_paid, issue_date, paid_at, client_id').eq('contractor_id', id).order('issue_date', { ascending: false }),
+          supabase.from('profiles').select('full_name').eq('id', id).single(),
+          supabase.from('customers').select('business_name, owner_name').eq('id', id).single(),
         ]);
 
+        const displayName = bizData?.business_name || bizData?.owner_name || profileData?.full_name || session.user.email?.split('@')[0] || 'there';
+        setUserName(displayName);
+        setBusinessName(bizData?.business_name || '');
         if (jobData) setJobs(jobData);
         if (clientData) setClients(clientData);
-        if (taskData) setTasks(taskData);
+        if (invoiceData) setInvoices(invoiceData);
       } catch (err) {
         console.error('Failed to fetch dashboard', err);
       } finally {
@@ -273,33 +296,39 @@ export default function Dashboard() {
   }, []);
 
   const monthStart = startOfMonth();
-  const jobsThisMonth = jobs.filter(p => p.created_at >= monthStart).length;
+
+  // Invoice-based stats
+  const paidInvoices = invoices.filter(i => i.status === 'paid');
+  const paidThisMonth = paidInvoices.filter(i => i.paid_at && i.paid_at >= monthStart);
+  const revenueThisMonth = paidThisMonth.reduce((s, i) => s + Number(i.total), 0);
+  const revenueTotal = paidInvoices.reduce((s, i) => s + Number(i.total), 0);
+
+  const openInvoices = invoices.filter(i => ['sent', 'viewed', 'partially_paid', 'overdue'].includes(i.status));
+  const outstanding = openInvoices.reduce((s, i) => s + Number(i.balance_due), 0);
+
+  // Job-based stats
+  const activeJobs = jobs.filter(j => ['pending', 'assigned', 'in_progress'].includes(j.status));
+  const completedJobs = jobs.filter(j => j.status === 'completed');
+  const completedThisMonth = completedJobs.filter(j => j.created_at >= monthStart);
+  const pipelineValue = activeJobs.reduce((s, j) => s + (Number(j.estimated_value) || 0), 0);
+
+  const avgJobValue = paidInvoices.length > 0
+    ? Math.round(revenueTotal / paidInvoices.length)
+    : completedJobs.length > 0
+      ? Math.round(completedJobs.reduce((s, j) => s + (Number(j.estimated_value) || 0), 0) / completedJobs.length)
+      : 0;
+
+  // Customer stats
   const customersThisMonth = clients.filter(c => c.created_at >= monthStart).length;
-
-  const completedJobs = jobs.filter(p => p.stage === 'Completed');
-  const avgJobValue = completedJobs.length > 0
-    ? Math.round(completedJobs.reduce((sum, p) => sum + (Number(p.estimated_value) || 0), 0) / completedJobs.length)
-    : 0;
-
-  const clientTaskCounts = tasks.reduce<Record<string, number>>((acc, t) => {
-    if (t.client_id) acc[t.client_id] = (acc[t.client_id] || 0) + 1;
-    return acc;
-  }, {});
-  const clientsWithJobs = Object.keys(clientTaskCounts).length;
-  const repeatClients = Object.values(clientTaskCounts).filter(n => n >= 2).length;
-  const retentionRate = clientsWithJobs > 0 ? Math.round((repeatClients / clientsWithJobs) * 100) : 0;
-
-  const activeJobs = jobs.filter(p => p.stage === 'Active').length;
-  const newLeads = jobs.filter(p => p.stage === 'Lead').length;
   const totalCustomers = clients.length;
-  const totalRevenue = completedJobs.reduce((sum, p) => sum + (Number(p.estimated_value) || 0), 0);
 
-  const stageCounts = STAGES.map(s => ({ stage: s, count: jobs.filter(p => p.stage === s).length }));
+  const stageCounts = STAGES.map(s => ({ stage: s, count: jobs.filter(j => j.status === s).length }));
   const totalJobs = jobs.length || 1;
 
   const recentActivity = [
-    ...jobs.slice(0, 5).map(p => ({ type: 'job' as const, label: p.title, sub: p.stage, date: p.created_at, href: '/dashboard' })),
+    ...jobs.slice(0, 5).map(j => ({ type: 'job' as const, label: j.title, sub: STAGE_LABELS[j.status] || j.status, date: j.created_at, href: `/dashboard/jobs/${j.id}` })),
     ...clients.slice(0, 5).map(c => ({ type: 'customer' as const, label: `${c.first_name} ${c.last_name}`, sub: 'New Customer', date: c.created_at, href: `/customers/${c.id}` })),
+    ...invoices.slice(0, 3).map(i => ({ type: 'invoice' as const, label: i.invoice_number, sub: i.status === 'paid' ? `Paid $${Number(i.total).toLocaleString()}` : `$${Number(i.total).toLocaleString()} ${i.status}`, date: i.issue_date, href: `/dashboard/invoices/${i.id}` })),
   ]
     .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
     .slice(0, 8);
@@ -340,7 +369,7 @@ export default function Dashboard() {
               <Menu size={20} />
             </button>
             <div>
-              <h1 className="text-xl font-bold text-gray-900">Dashboard</h1>
+              <h1 className="text-xl font-bold text-gray-900">{businessName || 'Dashboard'}</h1>
               <p className="text-xs text-gray-400">{greeting()}, {userName}</p>
             </div>
           </div>
@@ -442,24 +471,30 @@ export default function Dashboard() {
                 </div>
                 <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                   <div className="bg-gray-50 rounded-xl p-4 border border-gray-100">
-                    <p className="text-[10px] uppercase font-bold text-gray-400 tracking-wider mb-2">Jobs This Month</p>
-                    <p className="text-2xl font-bold text-teal-600">{jobsThisMonth}</p>
-                    <p className="text-xs text-gray-400 mt-1">{jobs.length} total</p>
+                    <p className="text-[10px] uppercase font-bold text-gray-400 tracking-wider mb-2">Revenue This Month</p>
+                    <p className="text-2xl font-bold text-teal-600">
+                      ${revenueThisMonth >= 1000 ? `${(revenueThisMonth / 1000).toFixed(1)}k` : revenueThisMonth.toLocaleString()}
+                    </p>
+                    <p className="text-xs text-gray-400 mt-1">${revenueTotal >= 1000 ? `${(revenueTotal / 1000).toFixed(1)}k` : revenueTotal.toLocaleString()} all time</p>
+                  </div>
+                  <div className="bg-gray-50 rounded-xl p-4 border border-gray-100">
+                    <p className="text-[10px] uppercase font-bold text-gray-400 tracking-wider mb-2">Outstanding</p>
+                    <p className={`text-2xl font-bold ${outstanding > 0 ? 'text-orange-500' : 'text-gray-400'}`}>
+                      ${outstanding >= 1000 ? `${(outstanding / 1000).toFixed(1)}k` : outstanding.toLocaleString()}
+                    </p>
+                    <p className="text-xs text-gray-400 mt-1">{openInvoices.length} open invoice{openInvoices.length !== 1 ? 's' : ''}</p>
+                  </div>
+                  <div className="bg-gray-50 rounded-xl p-4 border border-gray-100">
+                    <p className="text-[10px] uppercase font-bold text-gray-400 tracking-wider mb-2">Active Jobs</p>
+                    <p className="text-2xl font-bold text-blue-600">{activeJobs.length}</p>
+                    <p className="text-xs text-gray-400 mt-1">
+                      ${pipelineValue >= 1000 ? `${(pipelineValue / 1000).toFixed(1)}k` : pipelineValue.toLocaleString()} pipeline
+                    </p>
                   </div>
                   <div className="bg-gray-50 rounded-xl p-4 border border-gray-100">
                     <p className="text-[10px] uppercase font-bold text-gray-400 tracking-wider mb-2">New Customers</p>
-                    <p className="text-2xl font-bold text-blue-600">{customersThisMonth}</p>
+                    <p className="text-2xl font-bold text-gray-900">{customersThisMonth}</p>
                     <p className="text-xs text-gray-400 mt-1">{totalCustomers} total</p>
-                  </div>
-                  <div className="bg-gray-50 rounded-xl p-4 border border-gray-100">
-                    <p className="text-[10px] uppercase font-bold text-gray-400 tracking-wider mb-2">Retention Rate</p>
-                    <p className="text-2xl font-bold text-emerald-600">{retentionRate}%</p>
-                    <p className="text-xs text-gray-400 mt-1">Repeat customers</p>
-                  </div>
-                  <div className="bg-gray-50 rounded-xl p-4 border border-gray-100">
-                    <p className="text-[10px] uppercase font-bold text-gray-400 tracking-wider mb-2">Avg Job Value</p>
-                    <p className="text-2xl font-bold text-gray-900">${avgJobValue.toLocaleString()}</p>
-                    <p className="text-xs text-gray-400 mt-1">Completed jobs</p>
                   </div>
                 </div>
               </div>
@@ -470,10 +505,10 @@ export default function Dashboard() {
                 <div className="lg:col-span-2 bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
                   <div className="flex items-center justify-between mb-5">
                     <div>
-                      <h3 className="font-bold text-gray-900">Pipeline</h3>
-                      <p className="text-xs text-gray-400 mt-0.5">{jobs.length} total jobs</p>
+                      <h3 className="font-bold text-gray-900">Job Pipeline</h3>
+                      <p className="text-xs text-gray-400 mt-0.5">{jobs.length} total · {completedThisMonth.length} completed this month</p>
                     </div>
-                    <TrendingUp size={18} className="text-gray-300" />
+                    <Link href="/dashboard/jobs" className="text-xs font-semibold text-teal-600 hover:text-teal-700">View All</Link>
                   </div>
 
                   {jobs.length === 0 ? (
@@ -487,11 +522,11 @@ export default function Dashboard() {
                         ))}
                       </div>
                       <div className="space-y-3">
-                        {stageCounts.map(s => (
+                        {stageCounts.filter(s => s.count > 0).map(s => (
                           <div key={s.stage} className="flex items-center justify-between">
                             <div className="flex items-center gap-2.5">
                               <div className={`w-2.5 h-2.5 rounded-full ${STAGE_COLORS[s.stage]}`} />
-                              <span className="text-sm text-gray-700 font-medium">{s.stage}</span>
+                              <span className="text-sm text-gray-700 font-medium">{STAGE_LABELS[s.stage]}</span>
                             </div>
                             <div className="flex items-center gap-3">
                               <div className="w-24 h-1.5 bg-gray-100 rounded-full overflow-hidden">
@@ -509,16 +544,16 @@ export default function Dashboard() {
                   {jobs.length > 0 && (
                     <div className="mt-6 pt-5 border-t border-gray-100 space-y-2">
                       <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-3">Recent Jobs</p>
-                      {jobs.slice(0, 4).map(p => (
-                        <div key={p.id} className="flex items-center justify-between py-1.5">
+                      {jobs.slice(0, 4).map(j => (
+                        <Link key={j.id} href={`/dashboard/jobs/${j.id}`} className="flex items-center justify-between py-1.5 hover:bg-gray-50 rounded-lg px-1 -mx-1 transition">
                           <div className="flex items-center gap-3 min-w-0">
                             <Briefcase size={13} className="text-gray-300 shrink-0" />
-                            <span className="text-sm text-gray-700 truncate">{p.title}</span>
+                            <span className="text-sm text-gray-700 truncate">{j.title}</span>
                           </div>
-                          <span className={`inline-flex items-center px-2 py-0.5 rounded-full border text-[10px] font-bold uppercase tracking-wide ml-3 shrink-0 ${STAGE_BADGE[p.stage] ?? 'bg-gray-100 text-gray-600 border-gray-200'}`}>
-                            {p.stage}
+                          <span className={`inline-flex items-center px-2 py-0.5 rounded-full border text-[10px] font-bold uppercase tracking-wide ml-3 shrink-0 ${STAGE_BADGE[j.status] ?? 'bg-gray-100 text-gray-600 border-gray-200'}`}>
+                            {STAGE_LABELS[j.status] || j.status}
                           </span>
-                        </div>
+                        </Link>
                       ))}
                     </div>
                   )}
@@ -558,8 +593,12 @@ export default function Dashboard() {
                       <div className="space-y-3">
                         {recentActivity.map((item, i) => (
                           <Link key={i} href={item.href} className="flex items-start gap-3 hover:bg-gray-50 rounded-lg p-1.5 -mx-1.5 transition">
-                            <div className={`w-7 h-7 rounded-full flex items-center justify-center shrink-0 mt-0.5 ${item.type === 'job' ? 'bg-teal-100' : 'bg-blue-100'}`}>
-                              {item.type === 'job' ? <Briefcase size={12} className="text-teal-600" /> : <Users size={12} className="text-blue-600" />}
+                            <div className={`w-7 h-7 rounded-full flex items-center justify-center shrink-0 mt-0.5 ${
+                              item.type === 'job' ? 'bg-teal-100' : item.type === 'invoice' ? 'bg-green-100' : 'bg-blue-100'
+                            }`}>
+                              {item.type === 'job' ? <Briefcase size={12} className="text-teal-600" />
+                                : item.type === 'invoice' ? <FileText size={12} className="text-green-600" />
+                                : <Users size={12} className="text-blue-600" />}
                             </div>
                             <div className="min-w-0 flex-1">
                               <p className="text-sm font-semibold text-gray-800 truncate">{item.label}</p>
