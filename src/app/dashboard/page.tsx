@@ -8,6 +8,7 @@ import {
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { supabase } from '../../lib/supabase-client';
+import ProlinkLogo from '../../components/ProlinkLogo';
 
 const STAGES = ['Lead', 'Quoted', 'Active', 'Completed'];
 
@@ -80,10 +81,8 @@ function Sidebar({ open, onClose, userName }: { open: boolean; onClose: () => vo
         md:translate-x-0 md:static md:flex
       `}>
         {/* Logo */}
-        <div className="px-5 py-6 flex items-center justify-between">
-          <span className="text-xl font-black tracking-tight">
-            <span className="text-teal-400">Pro</span><span className="text-white">link</span>
-          </span>
+        <div className="px-5 py-5 flex items-center justify-between">
+          <ProlinkLogo className="w-40 h-auto" />
           <button onClick={onClose} className="md:hidden text-white/50 hover:text-white">
             <X size={18} />
           </button>
