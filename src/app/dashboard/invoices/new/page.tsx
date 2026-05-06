@@ -254,11 +254,14 @@ function NewInvoice() {
           validItems.map((i, idx) => ({
             invoice_id: invoice.id,
             description: i.description.trim(),
+            quantity: i.qty,
             qty: i.qty,
             unit: i.unit,
-            rate: i.rate,
             unit_price: i.rate,
+            rate: i.rate,
+            total: i.qty * i.rate,
             amount: i.qty * i.rate,
+            sort_order: idx,
             position: idx,
           }))
         )
