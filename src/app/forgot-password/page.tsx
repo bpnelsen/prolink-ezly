@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { supabase } from '../../lib/supabase-client';
+import ProlinkLogoDark from '../../components/ProlinkLogoDark';
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState('');
@@ -27,6 +28,7 @@ export default function ForgotPasswordPage() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-[#f8fafc] p-6">
       <div className="w-full max-w-md bg-white rounded-xl shadow-lg p-8">
+        <div className="mb-6"><ProlinkLogoDark className="w-36 h-auto" /></div>
         <h1 className="text-2xl font-bold text-gray-900 mb-2">Forgot password?</h1>
         <p className="text-gray-600 mb-6">Enter your email and we'll send you a link to reset your password.</p>
 

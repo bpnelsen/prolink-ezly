@@ -3,6 +3,8 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { supabase } from '../../lib/supabase-client'
+import ProlinkLogo from '../../components/ProlinkLogo'
+import ProlinkLogoDark from '../../components/ProlinkLogoDark'
 
 export default function LoginPage() {
   const router = useRouter()
@@ -36,14 +38,7 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen flex">
       <div className="hidden lg:flex lg:w-1/2 bg-[#0f1d35] flex-col justify-between p-12">
-        <Link href="/" className="flex items-center gap-3">
-          <div className="w-8 h-8 bg-[#14b8a6] rounded-lg flex items-center justify-center">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-              <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" fill="white"/>
-            </svg>
-          </div>
-          <span className="text-white font-bold text-xl tracking-tight">Prolink</span>
-        </Link>
+        <Link href="/"><ProlinkLogo className="w-44 h-auto" /></Link>
         <div>
           <h1 className="text-4xl font-bold text-white leading-tight mb-4">
             Run your business<br />like a pro.
@@ -70,14 +65,7 @@ export default function LoginPage() {
       <div className="w-full lg:w-1/2 flex items-center justify-center p-8 bg-[#f8fafc]">
         <div className="w-full max-w-md">
           <div className="lg:hidden text-center mb-8">
-            <Link href="/" className="inline-flex items-center gap-2">
-              <div className="w-8 h-8 bg-[#0f1d35] rounded-lg flex items-center justify-center">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-                  <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" fill="white"/>
-                </svg>
-              </div>
-              <span className="text-[#0f1d35] font-bold text-xl">Prolink</span>
-            </Link>
+            <Link href="/"><ProlinkLogoDark className="w-40 h-auto mx-auto" /></Link>
           </div>
 
           <div className="mb-8">

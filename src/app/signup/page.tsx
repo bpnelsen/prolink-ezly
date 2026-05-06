@@ -6,6 +6,7 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { CheckCircle } from 'lucide-react'
 import { supabase } from '../../lib/supabase-client'
+import ProlinkLogoDark from '../../components/ProlinkLogoDark'
 
 type Step = 1 | 2 | 3
 
@@ -99,11 +100,7 @@ const handleChange = (e: any) => {
       {/* Header */}
       <header className="bg-white border-b border-gray-100 py-4 px-6">
         <div className="max-w-5xl mx-auto flex justify-between items-center">
-          <Link href="/" className="flex items-center gap-2">
-            <span className="text-[#0f1d35] font-bold text-xl tracking-tight">Prolink</span>
-            <span className="text-gray-300 font-light">by</span>
-            <span className="text-[#14b8a6] font-bold text-xl tracking-tight">EZLY</span>
-          </Link>
+          <Link href="/"><ProlinkLogoDark className="w-36 h-auto" /></Link>
           <Link href="/" className="text-sm text-gray-400 hover:text-[#0f1d35] transition-colors">
             ← Back to Home
           </Link>
