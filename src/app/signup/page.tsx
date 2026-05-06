@@ -2,7 +2,7 @@
 
 export const dynamic = 'force-dynamic'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
 import { CheckCircle, Zap } from 'lucide-react'
@@ -43,6 +43,14 @@ const PLANS = [
 ]
 
 export default function SignupPage() {
+  return (
+    <Suspense>
+      <SignupForm />
+    </Suspense>
+  )
+}
+
+function SignupForm() {
   const searchParams = useSearchParams()
   const [step, setStep] = useState<Step>(1)
   const [loading, setLoading] = useState(false)
