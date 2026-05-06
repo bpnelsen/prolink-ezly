@@ -265,7 +265,11 @@ function NewInvoice() {
 
       router.push(`/dashboard/invoices/${invoice.id}`)
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Failed to create invoice'
+      const msg = err instanceof Error
+        ? err.message
+        : (err as { message?: string; details?: string })?.message
+          || (err as { details?: string })?.details
+          || JSON.stringify(err)
       setError(msg)
       setLoading(false)
     }
