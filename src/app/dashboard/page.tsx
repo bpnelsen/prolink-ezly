@@ -3,7 +3,8 @@ import { useState, useEffect } from 'react';
 import {
   LayoutDashboard, CalendarDays, Users, Briefcase,
   BarChart2, LogOut, Bell, Search,
-  Plus, TrendingUp, Clock, ChevronRight, Menu, X, Globe, UserCog, FileText, Shield
+  Plus, TrendingUp, Clock, ChevronRight, Menu, X, Globe, UserCog, FileText, Shield,
+  Settings, User
 } from 'lucide-react';
 import { ADMIN_EMAIL } from '../../lib/admin';
 import Link from 'next/link';
@@ -66,6 +67,11 @@ const NAV_MARKETING = [
 
 const NAV_GROWTH = [
   { label: 'Analytics', href: '/dashboard/kpis', icon: BarChart2 },
+];
+
+const NAV_SETTINGS = [
+  { label: 'Company Profile', href: '/settings/profile', icon: User },
+  { label: 'Settings', href: '/settings', icon: Settings },
 ];
 
 function Sidebar({ open, onClose, userName, userEmail }: { open: boolean; onClose: () => void; userName: string; userEmail: string }) {
@@ -187,6 +193,29 @@ function Sidebar({ open, onClose, userName, userEmail }: { open: boolean; onClos
               ))}
             </ul>
           </div>
+
+          {/* Settings */}
+          <div>
+            <p className="text-[10px] font-bold uppercase tracking-widest text-white/30 px-2 mb-2">Settings</p>
+            <ul className="space-y-0.5">
+              {NAV_SETTINGS.map(({ label, href, icon: Icon }) => (
+                <li key={href}>
+                  <Link
+                    href={href}
+                    onClick={onClose}
+                    className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-semibold transition-colors ${
+                      isActive(href)
+                        ? 'bg-white/10 text-white'
+                        : 'text-white/60 hover:bg-white/5 hover:text-white'
+                    }`}
+                  >
+                    <Icon size={17} className={isActive(href) ? 'text-teal-400' : ''} />
+                    {label}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
         </nav>
 
         {/* Logout */}
@@ -213,6 +242,7 @@ export default function Dashboard() {
   const [userEmail, setUserEmail] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [searchOpen, setSearchOpen] = useState(false);
+  const [avatarOpen, setAvatarOpen] = useState(false);
 
   useEffect(() => {
     async function fetchDashboard() {
@@ -357,8 +387,36 @@ export default function Dashboard() {
             <button className="relative p-2 rounded-lg hover:bg-gray-100 transition">
               <Bell size={18} className="text-gray-500" />
             </button>
-            <div className="w-8 h-8 rounded-full bg-[#0f1d35] flex items-center justify-center text-white text-xs font-bold">
-              {initials}
+            <div className="relative">
+              <button
+                onClick={() => setAvatarOpen(v => !v)}
+                onBlur={() => setTimeout(() => setAvatarOpen(false), 150)}
+                className="w-8 h-8 rounded-full bg-[#0f1d35] flex items-center justify-center text-white text-xs font-bold hover:bg-[#1a3060] transition"
+              >
+                {initials}
+              </button>
+              {avatarOpen && (
+                <div className="absolute right-0 top-full mt-2 w-52 bg-white border border-gray-200 rounded-xl shadow-lg z-50 overflow-hidden">
+                  <div className="px-4 py-3 border-b border-gray-100">
+                    <p className="text-xs font-bold text-gray-800 truncate">{userName}</p>
+                    <p className="text-[10px] text-gray-400 truncate">{userEmail}</p>
+                  </div>
+                  <Link href="/settings/profile" className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition">
+                    <User size={14} className="text-gray-400" /> Company Profile
+                  </Link>
+                  <Link href="/settings" className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition">
+                    <Settings size={14} className="text-gray-400" /> Settings
+                  </Link>
+                  <div className="border-t border-gray-100">
+                    <button
+                      onClick={async () => { await supabase.auth.signOut(); window.location.href = '/login'; }}
+                      className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 transition w-full text-left"
+                    >
+                      <LogOut size={14} /> Sign Out
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </header>
