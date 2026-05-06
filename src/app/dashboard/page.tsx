@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import {
   LayoutDashboard, CalendarDays, Users, Briefcase,
   BarChart2, LogOut, Bell, Search,
-  Plus, TrendingUp, Clock, ChevronRight, Menu, X, Globe
+  Plus, TrendingUp, Clock, ChevronRight, Menu, X, Globe, UserCog
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -55,6 +55,7 @@ const NAV_MAIN = [
   { label: 'Schedule', href: '/dispatch', icon: CalendarDays },
   { label: 'Customers', href: '/customers', icon: Users },
   { label: 'Jobs', href: '/new-job', icon: Briefcase },
+  { label: 'Team', href: '/dashboard/technicians', icon: UserCog },
 ];
 
 const NAV_MARKETING = [
