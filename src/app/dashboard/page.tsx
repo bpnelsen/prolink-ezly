@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import {
   LayoutDashboard, CalendarDays, Users, Briefcase,
-  Megaphone, BarChart2, LogOut, Bell, Search,
+  BarChart2, LogOut, Bell, Search,
   Plus, TrendingUp, Clock, ChevronRight, Menu, X, Globe
 } from 'lucide-react';
 import Link from 'next/link';
@@ -59,7 +59,6 @@ const NAV_MAIN = [
 
 const NAV_MARKETING = [
   { label: 'Website Builder', href: '/dashboard/website-builder', icon: Globe },
-  { label: 'Blog / Content', href: '/blog', icon: Megaphone },
 ];
 
 const NAV_GROWTH = [
