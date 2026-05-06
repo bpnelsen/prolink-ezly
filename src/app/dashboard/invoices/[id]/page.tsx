@@ -15,10 +15,14 @@ interface LineItem {
   id: string
   description: string
   qty: number
+  quantity: number
   unit: string
   rate: number
+  unit_price: number
   amount: number
+  total: number
   position: number
+  sort_order: number
 }
 
 interface Payment {
@@ -331,9 +335,9 @@ export default function InvoiceDetailPage({ params }: { params: { id: string } }
                   <td className="py-3">
                     <p className="text-sm text-gray-800">{item.description}</p>
                   </td>
-                  <td className="py-3 text-right text-sm text-gray-600">{item.qty} {item.unit}</td>
-                  <td className="py-3 text-right text-sm text-gray-600">${Number(item.rate).toFixed(2)}</td>
-                  <td className="py-3 text-right text-sm font-semibold text-gray-900">${Number(item.amount).toFixed(2)}</td>
+                  <td className="py-3 text-right text-sm text-gray-600">{item.qty ?? item.quantity} {item.unit}</td>
+                  <td className="py-3 text-right text-sm text-gray-600">${Number(item.rate ?? item.unit_price).toFixed(2)}</td>
+                  <td className="py-3 text-right text-sm font-semibold text-gray-900">${Number(item.amount ?? item.total).toFixed(2)}</td>
                 </tr>
               ))}
               {lineItems.length === 0 && (

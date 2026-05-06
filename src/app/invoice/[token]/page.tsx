@@ -7,10 +7,14 @@ interface LineItem {
   id: string
   description: string
   qty: number
+  quantity: number
   unit: string
   rate: number
+  unit_price: number
   amount: number
+  total: number
   position: number
+  sort_order: number
 }
 
 interface Payment {
@@ -309,9 +313,9 @@ export default function PublicInvoicePage({ params }: { params: { token: string 
                 {lineItems.map((item, idx) => (
                   <tr key={item.id} className={idx % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
                     <td className="px-3 py-3 text-gray-800">{item.description}</td>
-                    <td className="px-3 py-3 text-right text-gray-600">{item.qty}</td>
-                    <td className="px-3 py-3 text-right text-gray-600">${Number(item.rate).toFixed(2)}</td>
-                    <td className="px-3 py-3 text-right font-semibold text-gray-900">${Number(item.amount).toFixed(2)}</td>
+                    <td className="px-3 py-3 text-right text-gray-600">{item.qty ?? item.quantity}</td>
+                    <td className="px-3 py-3 text-right text-gray-600">${Number(item.rate ?? item.unit_price).toFixed(2)}</td>
+                    <td className="px-3 py-3 text-right font-semibold text-gray-900">${Number(item.amount ?? item.total).toFixed(2)}</td>
                   </tr>
                 ))}
               </tbody>
