@@ -211,6 +211,8 @@ export default function Dashboard() {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [userName, setUserName] = useState('');
   const [userEmail, setUserEmail] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchOpen, setSearchOpen] = useState(false);
 
   useEffect(() => {
     async function fetchDashboard() {
@@ -272,6 +274,19 @@ export default function Dashboard() {
     .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
     .slice(0, 8);
 
+  const searchResults = searchQuery.trim().length >= 2 ? (() => {
+    const q = searchQuery.toLowerCase();
+    const matchedJobs = jobs
+      .filter(j => j.title?.toLowerCase().includes(q) || j.stage?.toLowerCase().includes(q))
+      .slice(0, 4)
+      .map(j => ({ type: 'job' as const, label: j.title, sub: j.stage || 'Job', href: `/dashboard/jobs/${j.id}` }));
+    const matchedClients = clients
+      .filter(c => `${c.first_name} ${c.last_name}`.toLowerCase().includes(q))
+      .slice(0, 4)
+      .map(c => ({ type: 'customer' as const, label: `${c.first_name} ${c.last_name}`, sub: 'Customer', href: `/customers/${c.id}` }));
+    return [...matchedJobs, ...matchedClients];
+  })() : [];
+
   const greeting = () => {
     const h = new Date().getHours();
     if (h < 12) return 'Good morning';
@@ -301,11 +316,43 @@ export default function Dashboard() {
           </div>
           <div className="flex items-center gap-3">
             <div className="relative hidden sm:block">
-              <Search size={14} className="absolute left-3 top-2.5 text-gray-400" />
+              <Search size={14} className="absolute left-3 top-2.5 text-gray-400 pointer-events-none" />
               <input
-                className="bg-gray-50 border border-gray-200 rounded-lg pl-9 pr-4 py-2 text-sm w-56 focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 transition"
+                value={searchQuery}
+                onChange={e => { setSearchQuery(e.target.value); setSearchOpen(true); }}
+                onFocus={() => setSearchOpen(true)}
+                onBlur={() => setTimeout(() => setSearchOpen(false), 150)}
+                onKeyDown={e => {
+                  if (e.key === 'Escape') { setSearchOpen(false); setSearchQuery(''); }
+                  if (e.key === 'Enter' && searchResults.length > 0) window.location.href = searchResults[0].href;
+                }}
+                className="bg-gray-50 border border-gray-200 rounded-lg pl-9 pr-4 py-2 text-sm w-64 focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 transition outline-none"
                 placeholder="Search jobs, customers..."
               />
+              {searchOpen && searchResults.length > 0 && (
+                <div className="absolute top-full mt-1 left-0 w-80 bg-white border border-gray-200 rounded-xl shadow-lg z-50 overflow-hidden">
+                  {searchResults.map((r, i) => (
+                    <a key={i} href={r.href}
+                      className="flex items-center gap-3 px-4 py-3 hover:bg-gray-50 border-b border-gray-100 last:border-0 transition">
+                      <div className={`w-7 h-7 rounded-lg flex items-center justify-center text-xs font-bold shrink-0 ${r.type === 'job' ? 'bg-teal-100 text-teal-700' : 'bg-blue-100 text-blue-700'}`}>
+                        {r.type === 'job' ? 'J' : 'C'}
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-sm font-semibold text-gray-800 truncate">{r.label}</p>
+                        <p className="text-xs text-gray-400">{r.sub}</p>
+                      </div>
+                    </a>
+                  ))}
+                  {searchQuery.trim().length >= 2 && searchResults.length === 0 && (
+                    <p className="px-4 py-3 text-sm text-gray-400">No results for &ldquo;{searchQuery}&rdquo;</p>
+                  )}
+                </div>
+              )}
+              {searchOpen && searchQuery.trim().length >= 2 && searchResults.length === 0 && (
+                <div className="absolute top-full mt-1 left-0 w-80 bg-white border border-gray-200 rounded-xl shadow-lg z-50 p-4">
+                  <p className="text-sm text-gray-400">No results for &ldquo;{searchQuery}&rdquo;</p>
+                </div>
+              )}
             </div>
             <button className="relative p-2 rounded-lg hover:bg-gray-100 transition">
               <Bell size={18} className="text-gray-500" />
