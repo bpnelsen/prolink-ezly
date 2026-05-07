@@ -1,6 +1,7 @@
 import './globals.css'
 import ForemanWrapper from '@/components/ForemanWrapper'
 import { AppProvider } from '../context/AppContext'
+import { Analytics } from '@vercel/analytics/next'
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -14,6 +15,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           {children}
           <ForemanWrapper />
         </AppProvider>
+        <Analytics />
       </body>
     </html>
   );
