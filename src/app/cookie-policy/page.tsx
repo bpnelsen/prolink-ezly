@@ -1,3 +1,7 @@
+'use client'
+
+import { MarketingFooter } from '@/components/marketing/MarketingFooter'
+
 // LEGAL REVIEW NEEDED — this boilerplate must be reviewed by legal counsel before launch.
 // It is intended as a starting point only and does not constitute legal advice.
 
@@ -5,7 +9,8 @@ export const metadata = { title: 'Cookie policy' }
 
 export default function CookiePolicyPage() {
   return (
-    <div className="max-w-3xl mx-auto px-6 py-12">
+    <>
+      <div className="max-w-3xl mx-auto px-6 py-12">
       <nav aria-label="Breadcrumb" className="text-sm text-gray-500 mb-6">
         <ol className="flex items-center gap-2">
           <li><a href="/" className="text-[#0f3a7d] hover:underline">Home</a></li>
@@ -58,5 +63,7 @@ export default function CookiePolicyPage() {
         <a href="/" className="text-[#0f3a7d] hover:underline">&larr; Back to home</a>
       </div>
     </div>
+      <MarketingFooter />
+    </>
   )
 }

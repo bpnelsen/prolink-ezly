@@ -12,11 +12,11 @@
   "dependencies": {
     "@supabase/supabase-js": "^2.45.6",
     "lucide-react": "^0.400.0",
-    "next": "14.2.3",
+    "next": "^14.2.35",
     "react": "^18",
     "react-dom": "^18",
     "resend": "^6.12.3",
-    "twilio": "^5.13.1"
+    "twilio": "^6.0.2"
   },
   "devDependencies": {
     "@types/node": "^20",
