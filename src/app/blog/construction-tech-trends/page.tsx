@@ -1,6 +1,15 @@
 export default function ConstructionTechTrends() {
   return (
     <main className="max-w-3xl mx-auto px-6 py-12">
+      <nav aria-label="Breadcrumb" className="text-sm text-gray-500 mb-6">
+        <ol className="flex items-center gap-2">
+          <li><a href="/" className="text-[#0f3a7d] hover:underline">Home</a></li>
+          <li aria-hidden="true">/</li>
+          <li><a href="/blog" className="text-[#0f3a7d] hover:underline">Blog</a></li>
+          <li aria-hidden="true">/</li>
+          <li className="text-gray-700 line-clamp-1" aria-current="page">Construction Tech Trends: 2026</li>
+        </ol>
+      </nav>
       <img src="/blog/construction-tech-trends.jpg" alt="" className="w-full rounded-2xl mb-8 object-cover" style={{ height:"320px", width:"100%" }} />
       <h1 className="text-3xl font-black text-[#0f3a7d] mb-4">Construction Tech Trends: 2026</h1>
       <p className="text-gray-500 mb-8">What's helping businesses scale in 2026.</p>
