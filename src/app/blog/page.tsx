@@ -121,6 +121,14 @@ export default function BlogPage() {
 
       <main className="max-w-5xl mx-auto px-6 py-10 md:py-14">
 
+        <nav aria-label="Breadcrumb" className="text-sm text-gray-500 mb-6">
+          <ol className="flex items-center gap-2">
+            <li><Link href="/" className="text-[#0f3a7d] hover:underline">Home</Link></li>
+            <li aria-hidden="true">/</li>
+            <li className="text-gray-700" aria-current="page">Blog</li>
+          </ol>
+        </nav>
+
         {/* ── FEATURED POST ── */}
         <Link href={`/blog/${featured.slug}`} className="group block mb-12">
           <div className="bg-white rounded-2xl overflow-hidden border border-gray-100 shadow-sm hover:shadow-xl hover:border-[#14b8a6]/30 transition-all duration-300">
