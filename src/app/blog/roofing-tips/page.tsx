@@ -1,6 +1,11 @@
+'use client'
+
+import { MarketingFooter } from '@/components/marketing/MarketingFooter'
+
 export default function RoofingTips() {
   return (
-    <main className="max-w-3xl mx-auto px-6 py-12">
+    <>
+      <main className="max-w-3xl mx-auto px-6 py-12">
       <nav aria-label="Breadcrumb" className="text-sm text-gray-500 mb-6">
         <ol className="flex items-center gap-2">
           <li><a href="/" className="text-[#0f3a7d] hover:underline">Home</a></li>
@@ -27,5 +32,7 @@ export default function RoofingTips() {
         <p>Invest in coil roofing nailers that are lightweight but durable, and keep backup seal kits ready to prevent maintenance downtime.</p>
       </div>
     </main>
+      <MarketingFooter />
+    </>
   )
 }

@@ -1,6 +1,11 @@
+'use client'
+
+import { MarketingFooter } from '@/components/marketing/MarketingFooter'
+
 export default function VettingContractorPage() {
   return (
-    <main className="max-w-3xl mx-auto px-6 py-12">
+    <>
+      <main className="max-w-3xl mx-auto px-6 py-12">
       <nav aria-label="Breadcrumb" className="text-sm text-gray-500 mb-6">
         <ol className="flex items-center gap-2">
           <li><a href="/" className="text-[#0f3a7d] hover:underline">Home</a></li>
@@ -23,5 +28,7 @@ export default function VettingContractorPage() {
         <p>Use detailed, standardized agreements for every job to reduce communication friction.</p>
       </div>
     </main>
+      <MarketingFooter />
+    </>
   )
 }

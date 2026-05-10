@@ -1,8 +1,11 @@
 'use client'
 
+import { MarketingFooter } from '@/components/marketing/MarketingFooter'
+
 export default function TermsOfServicePage() {
   return (
-    <main className="max-w-3xl mx-auto px-6 py-12">
+    <>
+      <main className="max-w-3xl mx-auto px-6 py-12">
       <h1 className="text-3xl font-black text-[#0f3a7d] mb-4">Terms of Service</h1>
       <p className="text-gray-600 mb-8">Last updated: {new Date().toISOString().slice(0, 10)}</p>
 
@@ -63,5 +66,7 @@ export default function TermsOfServicePage() {
         </p>
       </div>
     </main>
+      <MarketingFooter />
+    </>
   )
 }

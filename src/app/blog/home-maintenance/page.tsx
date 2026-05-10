@@ -1,6 +1,11 @@
+'use client'
+
+import { MarketingFooter } from '@/components/marketing/MarketingFooter'
+
 export default function HomeMaintenance() {
   return (
-    <main className="max-w-3xl mx-auto px-6 py-12">
+    <>
+      <main className="max-w-3xl mx-auto px-6 py-12">
       <nav aria-label="Breadcrumb" className="text-sm text-gray-500 mb-6">
         <ol className="flex items-center gap-2">
           <li><a href="/" className="text-[#0f3a7d] hover:underline">Home</a></li>
@@ -25,5 +30,7 @@ export default function HomeMaintenance() {
         <p>Technicians on-site for maintenance are perfectly positioned to spot and quote minor repairs before they escalate.</p>
       </div>
     </main>
+      <MarketingFooter />
+    </>
   )
 }

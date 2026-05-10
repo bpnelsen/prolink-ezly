@@ -1,6 +1,7 @@
 'use client'
 import Link from 'next/link'
 import { ArrowRight, Clock } from 'lucide-react'
+import { MarketingFooter } from '@/components/marketing/MarketingFooter'
 
 const posts = [
   {
@@ -90,7 +91,8 @@ export default function BlogPage() {
   const rest = posts.filter(p => !p.featured)
 
   return (
-    <div className="min-h-screen bg-[#f8fafc]">
+    <>
+      <div className="min-h-screen bg-[#f8fafc]">
       {/* ── HERO BAND ── */}
       <div className="relative overflow-hidden bg-[#0f3a7d]">
         {/* Subtle dot grid */}
@@ -208,5 +210,7 @@ export default function BlogPage() {
         </div>
       </main>
     </div>
+      <MarketingFooter />
+    </>
   )
 }
