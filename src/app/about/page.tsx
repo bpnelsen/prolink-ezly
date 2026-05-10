@@ -1,6 +1,14 @@
 export default function AboutPage() {
   return (
     <div className="max-w-3xl mx-auto px-6 py-12">
+      <nav aria-label="Breadcrumb" className="text-sm text-gray-500 mb-6">
+        <ol className="flex items-center gap-2">
+          <li><a href="/" className="text-[#0f3a7d] hover:underline">Home</a></li>
+          <li aria-hidden="true">/</li>
+          <li className="text-gray-700" aria-current="page">About</li>
+        </ol>
+      </nav>
+
       <h1 className="text-3xl font-black text-[#0f3a7d] mb-6">About EZLY</h1>
 
       <p className="text-gray-700 mb-6">
@@ -36,6 +44,10 @@ export default function AboutPage() {
       <p className="text-gray-700">
         Questions, feedback, or want to see a demo? <a href="/contact" className="text-[#0f3a7d] underline">Reach out</a> — a real person on our team will get back to you.
       </p>
+
+      <div className="mt-12 pt-6 border-t border-gray-200">
+        <a href="/" className="text-[#0f3a7d] hover:underline">&larr; Back to home</a>
+      </div>
     </div>
   )
 }
