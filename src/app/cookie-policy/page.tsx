@@ -1,5 +1,3 @@
-'use client'
-
 import { MarketingFooter } from '@/components/marketing/MarketingFooter'
 
 // LEGAL REVIEW NEEDED — this boilerplate must be reviewed by legal counsel before launch.
