@@ -1,5 +1,6 @@
 'use client'
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, Suspense } from 'react'
+import { useSearchParams, useRouter } from 'next/navigation'
 import {
   ChevronLeft, ChevronRight, Users, Plus, X, MapPin,
   Trash2, UserCheck, AlertCircle, FileText
@@ -84,6 +85,22 @@ function fmtDate(date: Date, opts?: Intl.DateTimeFormatOptions): string {
 }
 
 export default function DispatchPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="w-8 h-8 border-2 border-gray-200 border-t-teal-600 rounded-full animate-spin" />
+      </div>
+    }>
+      <Dispatch />
+    </Suspense>
+  )
+}
+
+function Dispatch() {
+  const searchParams = useSearchParams()
+  const router = useRouter()
+  const scheduleJobId = searchParams.get('schedule')
+
   const [view, setView] = useState<ViewType>('week')
   const [currentDate, setCurrentDate] = useState(new Date())
   const [technicians, setTechnicians] = useState<Technician[]>([])
@@ -126,6 +143,33 @@ export default function DispatchPage() {
   }, [])
 
   useEffect(() => { fetchData() }, [fetchData])
+
+  // If a ?schedule=<jobId> param is present (e.g. arriving from the New Job
+  // success screen), fetch that specific job — it may not yet have a
+  // scheduled_start, so it won't appear in the main jobs query — and open
+  // it in the modal so the user can pick a time and technician.
+  useEffect(() => {
+    if (!scheduleJobId) return
+    let cancelled = false
+    ;(async () => {
+      const { data, error } = await supabase
+        .from('jobs')
+        .select(`
+          id, title, description, trade, stage, status, priority,
+          scheduled_start, scheduled_end, estimated_duration, estimated_value,
+          site_address, technician_id, client_id,
+          technicians (name),
+          clients (first_name, last_name, phone)
+        `)
+        .eq('id', scheduleJobId)
+        .maybeSingle()
+      if (cancelled || error || !data) return
+      setSelectedJob(data as unknown as Job)
+      // Drop the query param so a refresh doesn't re-open the modal
+      router.replace('/dispatch')
+    })()
+    return () => { cancelled = true }
+  }, [scheduleJobId, router])
 
   // Filter jobs
   const filteredJobs = jobs.filter(j => {
