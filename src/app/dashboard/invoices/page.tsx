@@ -128,19 +128,19 @@ export default function InvoicesPage() {
       <div className="max-w-7xl mx-auto p-4 md:p-6">
         {/* Header */}
         <div className="flex items-start justify-between mb-6 flex-wrap gap-3">
-          <div>
+          <div className="min-w-0">
             <p className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-1">Finance</p>
-            <h1 className="text-2xl font-bold text-gray-900">Invoices</h1>
+            <h1 className="text-xl md:text-2xl font-bold text-gray-900">Invoices</h1>
             <p className="text-sm text-gray-500 mt-0.5">Bill customers, track payments, and manage revenue.</p>
           </div>
           <Link href="/dashboard/invoices/new"
-            className="flex items-center gap-1.5 px-4 py-2.5 bg-teal-600 hover:bg-teal-700 text-white rounded-xl text-sm font-bold transition shadow-sm">
-            <Plus size={14} /> New Invoice
+            className="flex items-center gap-1.5 px-3 sm:px-4 py-2.5 bg-teal-600 hover:bg-teal-700 text-white rounded-xl text-sm font-bold transition shadow-sm whitespace-nowrap">
+            <Plus size={14} /> <span className="hidden sm:inline">New Invoice</span><span className="sm:hidden">New</span>
           </Link>
         </div>
 
         {/* Stats */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6">
           <StatCard
             icon={<DollarSign size={18} className="text-teal-600" />}
             label="Outstanding"
@@ -208,7 +208,77 @@ export default function InvoicesPage() {
           </div>
         ) : (
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-            <div className="overflow-x-auto">
+            {/* Mobile: card stack */}
+            <ul className="md:hidden divide-y divide-gray-100">
+              {filtered.map(inv => {
+                const overdueFlag = isOverdue(inv)
+                const status = overdueFlag ? 'overdue' : inv.status
+                const style = STATUS_STYLES[status]
+                const Icon = style.icon
+                const customerName = inv.clients ? `${inv.clients.first_name} ${inv.clients.last_name}` : 'No customer'
+                return (
+                  <li key={inv.id} className="relative">
+                    <Link href={`/dashboard/invoices/${inv.id}`} className="block p-4 hover:bg-gray-50">
+                      <div className="flex items-start justify-between gap-3 mb-1">
+                        <div className="min-w-0 flex-1">
+                          <p className="text-sm font-bold text-gray-900">{inv.invoice_number}</p>
+                          <p className="text-xs text-gray-500 truncate mt-0.5">{customerName}</p>
+                        </div>
+                        <div className="text-right shrink-0">
+                          <p className="text-sm font-bold text-gray-900">${Number(inv.total || 0).toLocaleString()}</p>
+                          {inv.balance_due > 0 ? (
+                            <p className={`text-[10px] font-semibold ${overdueFlag ? 'text-red-600' : 'text-gray-500'}`}>
+                              ${Number(inv.balance_due).toLocaleString()} due
+                            </p>
+                          ) : (
+                            <p className="text-[10px] text-green-600 font-semibold">PAID</p>
+                          )}
+                        </div>
+                      </div>
+                      <div className="flex items-center justify-between gap-2 mt-2">
+                        <span className={`inline-flex items-center gap-1 px-2 py-0.5 ${style.bg} ${style.text} ${style.border} border rounded-full text-[10px] font-bold`}>
+                          <Icon size={10} /> {style.label}
+                        </span>
+                        {inv.due_date && (
+                          <span className={`text-[10px] ${overdueFlag ? 'text-red-600 font-semibold' : 'text-gray-400'}`}>
+                            Due {new Date(inv.due_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                          </span>
+                        )}
+                      </div>
+                    </Link>
+                    <button onClick={(e) => { e.stopPropagation(); setOpenMenuId(openMenuId === inv.id ? null : inv.id) }}
+                      className="absolute top-2 right-2 p-2 rounded-lg hover:bg-gray-100 text-gray-400 transition"
+                      aria-label="Invoice actions">
+                      <MoreVertical size={14} />
+                    </button>
+                    {openMenuId === inv.id && (
+                      <div onClick={e => e.stopPropagation()}
+                        className="absolute right-3 top-10 z-30 bg-white border border-gray-200 rounded-xl shadow-lg py-1 min-w-[180px]">
+                        <Link href={`/dashboard/invoices/${inv.id}`}
+                          className="flex items-center gap-2 px-3 py-2 text-xs font-semibold text-gray-700 hover:bg-gray-50">
+                          <Eye size={12} /> View / Edit
+                        </Link>
+                        <button onClick={() => copyPortalLink(inv.public_token)}
+                          className="w-full text-left flex items-center gap-2 px-3 py-2 text-xs font-semibold text-gray-700 hover:bg-gray-50">
+                          <Copy size={12} /> Copy Portal Link
+                        </button>
+                        <Link href={`/invoice/${inv.public_token}`} target="_blank"
+                          className="flex items-center gap-2 px-3 py-2 text-xs font-semibold text-gray-700 hover:bg-gray-50">
+                          <Eye size={12} /> View as Customer
+                        </Link>
+                        <button onClick={() => deleteInvoice(inv.id)}
+                          className="w-full text-left flex items-center gap-2 px-3 py-2 text-xs font-semibold text-red-600 hover:bg-red-50 border-t border-gray-100">
+                          <Trash2 size={12} /> Delete
+                        </button>
+                      </div>
+                    )}
+                  </li>
+                )
+              })}
+            </ul>
+
+            {/* Desktop: table */}
+            <div className="hidden md:block overflow-x-auto">
               <table className="w-full">
                 <thead>
                   <tr className="border-b border-gray-100 bg-gray-50">

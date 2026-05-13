@@ -70,8 +70,8 @@ export default function NewCustomer() {
     return (
       <div className="min-h-screen bg-gray-50">
         <Breadcrumbs items={[{ label: 'Customers', href: '/customers' }, { label: 'New Customer', href: '/customers/new' }]} />
-        <div className="max-w-3xl mx-auto p-4 md:p-8">
-          <div className="bg-white rounded-2xl border border-gray-100 p-12 text-center shadow-sm">
+        <div className="max-w-3xl mx-auto p-4 md:p-8 pt-14 md:pt-8">
+          <div className="bg-white rounded-2xl border border-gray-100 p-8 sm:p-12 text-center shadow-sm">
             <div className="w-16 h-16 bg-teal-100 rounded-full flex items-center justify-center mx-auto mb-4">
               <CheckCircle2 className="w-8 h-8 text-teal-600" />
             </div>
@@ -86,19 +86,19 @@ export default function NewCustomer() {
   return (
     <div className="min-h-screen bg-gray-50">
       <Breadcrumbs items={[{ label: 'Customers', href: '/customers' }, { label: 'New Customer', href: '/customers/new' }]} />
-      <div className="max-w-3xl mx-auto p-4 md:p-8">
+      <div className="max-w-3xl mx-auto p-4 md:p-8 pt-14 md:pt-8">
         <p className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-1">Customer Hub</p>
-        <h2 className="text-2xl font-bold text-gray-900 mb-8">Add New Customer</h2>
+        <h2 className="text-xl md:text-2xl font-bold text-gray-900 mb-6 md:mb-8">Add New Customer</h2>
 
         {error && (
           <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl text-red-700 text-sm">{error}</div>
         )}
 
-        <form onSubmit={handleSubmit} className="bg-white rounded-2xl border border-gray-100 p-8 shadow-sm">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+        <form onSubmit={handleSubmit} className="bg-white rounded-2xl border border-gray-100 p-4 sm:p-6 md:p-8 shadow-sm">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">
             <div className="space-y-5">
               <h3 className="font-bold text-sm text-gray-500 uppercase tracking-wide">Personal Details</h3>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-semibold text-gray-600 mb-1.5">First Name *</label>
                   <input required value={form.first_name} onChange={handleChange('first_name')}
@@ -140,8 +140,8 @@ export default function NewCustomer() {
                   className="w-full bg-gray-50 p-3 rounded-xl border border-gray-200 text-sm focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 transition"
                   placeholder="Apt, Suite, Unit..." />
               </div>
-              <div className="grid grid-cols-3 gap-3">
-                <div className="col-span-1">
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                <div className="col-span-2 sm:col-span-1">
                   <label className="block text-xs font-semibold text-gray-600 mb-1.5">City</label>
                   <input value={form.city} onChange={handleChange('city')}
                     className="w-full bg-gray-50 p-3 rounded-xl border border-gray-200 text-sm focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 transition"
@@ -169,7 +169,7 @@ export default function NewCustomer() {
             </div>
           </div>
 
-          <div className="flex gap-3 mt-8 max-w-md">
+          <div className="flex gap-3 mt-8 max-w-md w-full">
             <button type="button" onClick={() => router.back()}
               className="flex-1 py-3.5 rounded-xl border border-gray-200 text-gray-600 font-semibold text-sm hover:bg-gray-50 transition">
               Cancel

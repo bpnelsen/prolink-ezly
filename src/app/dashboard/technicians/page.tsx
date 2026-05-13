@@ -147,22 +147,22 @@ export default function TechniciansPage() {
     <div className="min-h-screen bg-gray-50" onClick={() => setOpenMenuId(null)}>
       <Breadcrumbs items={[{ label: 'Team', href: '/dashboard/technicians' }]} />
 
-      <div className="max-w-7xl mx-auto p-4 md:p-6">
+      <div className="max-w-7xl mx-auto p-4 md:p-6 pt-14 md:pt-6">
         {/* Header */}
         <div className="flex items-start justify-between mb-6 flex-wrap gap-3">
-          <div>
+          <div className="min-w-0">
             <p className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-1">Operations</p>
-            <h1 className="text-2xl font-bold text-gray-900">Team Management</h1>
+            <h1 className="text-xl md:text-2xl font-bold text-gray-900">Team Management</h1>
             <p className="text-sm text-gray-500 mt-0.5">Manage technicians, track performance, and monitor capacity.</p>
           </div>
           <button onClick={() => setShowAddModal(true)}
-            className="flex items-center gap-1.5 px-4 py-2.5 bg-teal-600 hover:bg-teal-700 text-white rounded-xl text-sm font-bold transition shadow-sm">
+            className="flex items-center gap-1.5 px-4 py-2.5 bg-teal-600 hover:bg-teal-700 text-white rounded-xl text-sm font-bold transition shadow-sm whitespace-nowrap">
             <Plus size={14} /> Add Technician
           </button>
         </div>
 
         {/* Stats cards */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6">
           <StatCard
             icon={<Users size={18} className="text-teal-600" />}
             label="Active Technicians"
@@ -259,15 +259,15 @@ export default function TechniciansPage() {
                             </div>
                             <div className="min-w-0">
                               <p className="text-sm font-semibold text-gray-900 truncate">{tech.name}</p>
-                              <div className="flex items-center gap-2 text-[10px] text-gray-400">
+                              <div className="flex flex-col sm:flex-row sm:items-center sm:gap-2 text-[10px] text-gray-400 min-w-0">
                                 {tech.email && (
-                                  <span className="flex items-center gap-1 truncate">
+                                  <span className="flex items-center gap-1 min-w-0">
                                     <Mail size={9} className="shrink-0" />
                                     <span className="truncate">{tech.email}</span>
                                   </span>
                                 )}
                                 {tech.phone && (
-                                  <span className="flex items-center gap-1 truncate">
+                                  <span className="flex items-center gap-1 min-w-0">
                                     <Phone size={9} className="shrink-0" />
                                     <span className="truncate">{tech.phone}</span>
                                   </span>
@@ -435,17 +435,17 @@ function TechnicianModal({ tech, onClose, onSaved }: {
   }
 
   return (
-    <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4" onClick={onClose}>
-      <div className="bg-white rounded-2xl shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
-        <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between sticky top-0 bg-white">
+    <div className="fixed inset-0 bg-black/40 z-50 flex items-end sm:items-center justify-center sm:p-4" onClick={onClose}>
+      <div className="bg-white rounded-t-2xl sm:rounded-2xl shadow-xl max-w-md w-full max-h-[92vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+        <div className="px-4 sm:px-6 py-4 border-b border-gray-100 flex items-center justify-between sticky top-0 bg-white">
           <div className="flex items-center gap-2">
             <Users size={18} className="text-teal-600" />
             <h2 className="text-lg font-bold text-gray-900">{isEdit ? 'Edit Technician' : 'Add Technician'}</h2>
           </div>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-700"><X size={18} /></button>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-700" aria-label="Close"><X size={18} /></button>
         </div>
 
-        <div className="p-6 space-y-4">
+        <div className="p-4 sm:p-6 space-y-4">
           {error && (
             <div className="flex items-start gap-2 p-3 bg-red-50 border border-red-200 rounded-xl">
               <AlertCircle size={14} className="text-red-500 mt-0.5 shrink-0" />
@@ -459,7 +459,7 @@ function TechnicianModal({ tech, onClose, onSaved }: {
               className="w-full bg-gray-50 px-3 py-2.5 rounded-xl border border-gray-200 text-sm focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20" />
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label className="block text-xs font-semibold text-gray-600 mb-1.5">Email</label>
               <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="mike@example.com"
@@ -518,7 +518,7 @@ function TechnicianModal({ tech, onClose, onSaved }: {
           )}
         </div>
 
-        <div className="px-6 py-4 border-t border-gray-100 flex justify-end gap-2 sticky bottom-0 bg-white">
+        <div className="px-4 sm:px-6 py-4 border-t border-gray-100 flex justify-end gap-2 sticky bottom-0 bg-white">
           <button onClick={onClose} className="px-4 py-2 rounded-lg border border-gray-200 text-xs font-semibold text-gray-600 hover:bg-gray-50">Cancel</button>
           <button onClick={handleSave} disabled={saving || !name.trim()}
             className="px-4 py-2 rounded-lg bg-teal-600 hover:bg-teal-700 disabled:opacity-50 text-white text-xs font-bold">

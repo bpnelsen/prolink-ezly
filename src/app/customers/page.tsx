@@ -111,14 +111,14 @@ export default function CustomersPage() {
       <Breadcrumbs items={[{ label: 'Dashboard', href: '/dashboard' }, { label: 'Customers', href: '/customers' }]} />
       <main className="max-w-6xl mx-auto p-4 md:p-8">
 
-        <div className="flex items-center justify-between mb-6">
-          <div>
+        <div className="flex items-center justify-between mb-6 gap-3">
+          <div className="min-w-0">
             <p className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-1">CRM</p>
-            <h2 className="text-2xl font-bold text-gray-900">Customers</h2>
+            <h2 className="text-xl md:text-2xl font-bold text-gray-900">Customers</h2>
           </div>
           <Link href="/customers/new"
-            className="flex items-center gap-2 px-4 py-2.5 bg-teal-600 hover:bg-teal-700 text-white text-sm font-bold rounded-xl shadow-sm transition">
-            <Plus size={15} /> New Customer
+            className="flex items-center gap-1.5 px-3 sm:px-4 py-2.5 bg-teal-600 hover:bg-teal-700 text-white text-sm font-bold rounded-xl shadow-sm transition whitespace-nowrap shrink-0">
+            <Plus size={15} /> <span className="hidden sm:inline">New Customer</span><span className="sm:hidden">New</span>
           </Link>
         </div>
 
@@ -150,24 +150,34 @@ export default function CustomersPage() {
             {filtered.map(c => {
               const location = [c.city, c.state].filter(Boolean).join(', ') || c.address_line1
               return (
-                <div key={c.id} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 flex items-center gap-4 hover:border-gray-200 transition">
-                  {/* Avatar */}
-                  <div className="w-10 h-10 bg-teal-100 rounded-full flex items-center justify-center shrink-0 text-teal-700 font-bold text-sm">
-                    {c.first_name[0]}{c.last_name[0]}
-                  </div>
+                <div key={c.id} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 flex flex-col md:flex-row md:items-center gap-3 md:gap-4 hover:border-gray-200 transition">
+                  {/* Top row on mobile: avatar + name + menu */}
+                  <div className="flex items-center gap-3 md:contents">
+                    {/* Avatar */}
+                    <Link href={`/customers/${c.id}`} className="w-10 h-10 bg-teal-100 rounded-full flex items-center justify-center shrink-0 text-teal-700 font-bold text-sm">
+                      {c.first_name[0]}{c.last_name[0]}
+                    </Link>
 
-                  {/* Main info */}
-                  <div className="flex-1 min-w-0">
-                    <p className="font-semibold text-gray-900 text-sm">{c.first_name} {c.last_name}</p>
-                    <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-0.5">
-                      {c.phone && <span className="flex items-center gap-1 text-xs text-gray-500"><Phone size={10} /> {c.phone}</span>}
-                      {c.email && <span className="flex items-center gap-1 text-xs text-gray-500"><Mail size={10} /> {c.email}</span>}
-                      {location && <span className="flex items-center gap-1 text-xs text-gray-500"><MapPin size={10} /> {location}</span>}
+                    {/* Main info */}
+                    <div className="flex-1 min-w-0">
+                      <Link href={`/customers/${c.id}`} className="block">
+                        <p className="font-semibold text-gray-900 text-sm truncate">{c.first_name} {c.last_name}</p>
+                      </Link>
+                      <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-0.5">
+                        {c.phone && <span className="flex items-center gap-1 text-xs text-gray-500 min-w-0"><Phone size={10} className="shrink-0" /> <span className="truncate">{c.phone}</span></span>}
+                        {c.email && <span className="flex items-center gap-1 text-xs text-gray-500 min-w-0"><Mail size={10} className="shrink-0" /> <span className="truncate">{c.email}</span></span>}
+                        {location && <span className="flex items-center gap-1 text-xs text-gray-500 min-w-0"><MapPin size={10} className="shrink-0" /> <span className="truncate">{location}</span></span>}
+                      </div>
+                    </div>
+
+                    {/* Mobile-only menu */}
+                    <div className="md:hidden">
+                      <RowMenu clientId={c.id} onDelete={fetchClients} />
                     </div>
                   </div>
 
-                  {/* Stats */}
-                  <div className="hidden sm:flex items-center gap-4 shrink-0">
+                  {/* Stats (desktop only) */}
+                  <div className="hidden md:flex items-center gap-4 shrink-0">
                     {(c.job_count ?? 0) > 0 && (
                       <div className="text-center">
                         <p className="text-sm font-bold text-gray-800">{c.job_count}</p>
@@ -183,7 +193,7 @@ export default function CustomersPage() {
                   </div>
 
                   {/* Actions */}
-                  <div className="flex items-center gap-1.5 shrink-0">
+                  <div className="flex items-center gap-1.5 md:shrink-0 flex-wrap">
                     <Link href={`/customers/${c.id}`}
                       className="flex items-center gap-1 px-3 py-2 border border-gray-200 hover:bg-gray-50 text-gray-600 text-xs font-semibold rounded-xl transition">
                       <Eye size={12} /> View
@@ -196,7 +206,9 @@ export default function CustomersPage() {
                       className="flex items-center gap-1.5 px-3 py-2 bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold rounded-xl transition">
                       <FileText size={12} /> Invoice
                     </Link>
-                    <RowMenu clientId={c.id} onDelete={fetchClients} />
+                    <div className="hidden md:block">
+                      <RowMenu clientId={c.id} onDelete={fetchClients} />
+                    </div>
                   </div>
                 </div>
               )

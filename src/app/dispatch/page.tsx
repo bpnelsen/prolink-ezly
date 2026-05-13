@@ -184,41 +184,41 @@ export default function DispatchPage() {
     <div className="min-h-screen bg-gray-50">
       <Breadcrumbs items={[{ label: 'Dispatch', href: '/dispatch' }]} />
 
-      <div className="max-w-7xl mx-auto p-4 md:p-6">
+      <div className="max-w-7xl mx-auto p-4 md:p-6 pt-14 md:pt-6">
         {/* Header */}
         <div className="mb-5">
           <p className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-1">Operations</p>
-          <h1 className="text-2xl font-bold text-gray-900">Dispatch Board</h1>
+          <h1 className="text-xl md:text-2xl font-bold text-gray-900">Dispatch Board</h1>
           <p className="text-sm text-gray-500 mt-0.5">Schedule, assign, and track jobs across your team.</p>
         </div>
 
         {/* Toolbar */}
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-3 mb-4 flex items-center gap-3 flex-wrap">
-          {/* View toggle */}
-          <div className="inline-flex bg-gray-100 rounded-xl p-0.5">
-            {(['day', 'week', 'month'] as ViewType[]).map(v => (
-              <button key={v} onClick={() => setView(v)}
-                className={`px-4 py-1.5 text-xs font-semibold rounded-lg capitalize transition ${
-                  view === v ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'
-                }`}>
-                {v}
-              </button>
-            ))}
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-3 mb-4 flex flex-col md:flex-row md:items-center md:flex-wrap gap-3">
+          {/* Row 1 on mobile: view + date nav */}
+          <div className="flex items-center gap-2 flex-wrap">
+            <div className="inline-flex bg-gray-100 rounded-xl p-0.5">
+              {(['day', 'week', 'month'] as ViewType[]).map(v => (
+                <button key={v} onClick={() => setView(v)}
+                  className={`px-3 md:px-4 py-1.5 text-xs font-semibold rounded-lg capitalize transition ${
+                    view === v ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'
+                  }`}>
+                  {v}
+                </button>
+              ))}
+            </div>
+
+            <div className="flex items-center gap-1 md:ml-auto">
+              <button onClick={navigatePrev} className="p-2 rounded-lg hover:bg-gray-100 text-gray-500" aria-label="Previous"><ChevronLeft size={16} /></button>
+              <button onClick={navigateToday} className="px-2 md:px-3 py-1.5 text-xs font-semibold rounded-lg hover:bg-gray-100 text-gray-700">Today</button>
+              <button onClick={navigateNext} className="p-2 rounded-lg hover:bg-gray-100 text-gray-500" aria-label="Next"><ChevronRight size={16} /></button>
+            </div>
+            <span className="text-sm font-bold text-gray-800 truncate">{dateLabel}</span>
           </div>
 
-          {/* Date nav */}
-          <div className="flex items-center gap-1 ml-auto">
-            <button onClick={navigatePrev} className="p-2 rounded-lg hover:bg-gray-100 text-gray-500"><ChevronLeft size={16} /></button>
-            <button onClick={navigateToday} className="px-3 py-1.5 text-xs font-semibold rounded-lg hover:bg-gray-100 text-gray-700">Today</button>
-            <button onClick={navigateNext} className="p-2 rounded-lg hover:bg-gray-100 text-gray-500"><ChevronRight size={16} /></button>
-            <span className="ml-2 text-sm font-bold text-gray-800">{dateLabel}</span>
-          </div>
-
-          {/* Spacer for action buttons */}
-          <div className="flex items-center gap-2">
-            {/* Filters */}
+          {/* Row 2 on mobile: filters + actions */}
+          <div className="flex items-center gap-2 flex-wrap">
             <select value={statusFilter} onChange={e => setStatusFilter(e.target.value as 'all' | JobStatus)}
-              className="text-xs font-semibold bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20">
+              className="flex-1 min-w-0 md:flex-none text-xs font-semibold bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20">
               <option value="all">All Statuses</option>
               <option value="pending">Pending</option>
               <option value="assigned">Assigned</option>
@@ -226,21 +226,24 @@ export default function DispatchPage() {
               <option value="completed">Completed</option>
             </select>
             <select value={selectedTechId} onChange={e => setSelectedTechId(e.target.value)}
-              className="text-xs font-semibold bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20">
+              className="flex-1 min-w-0 md:flex-none text-xs font-semibold bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20">
               <option value="all">All Technicians</option>
               {technicians.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
             </select>
 
             <button onClick={() => setShowAddTech(true)}
-              className="flex items-center gap-1.5 px-3 py-2 border border-gray-200 rounded-lg text-xs font-semibold text-gray-700 hover:bg-gray-50 transition">
-              <UserCheck size={13} /> Add Tech
+              className="flex items-center gap-1.5 px-3 py-2 border border-gray-200 rounded-lg text-xs font-semibold text-gray-700 hover:bg-gray-50 transition whitespace-nowrap">
+              <UserCheck size={13} /> <span className="hidden sm:inline">Add Tech</span>
             </button>
             <Link href="/new-job"
-              className="flex items-center gap-1.5 px-3 py-2 bg-teal-600 hover:bg-teal-700 text-white rounded-lg text-xs font-bold transition">
+              className="flex items-center gap-1.5 px-3 py-2 bg-teal-600 hover:bg-teal-700 text-white rounded-lg text-xs font-bold transition whitespace-nowrap">
               <Plus size={13} /> New Job
             </Link>
           </div>
         </div>
+
+        {/* Mobile hint that calendars scroll horizontally */}
+        <p className="md:hidden text-[11px] text-gray-400 mb-2 px-1">Tip: swipe horizontally to see more.</p>
 
         {/* Status legend */}
         <div className="flex items-center gap-4 mb-4 text-xs text-gray-500 flex-wrap">
@@ -559,27 +562,27 @@ function JobModal({ job, technicians, onClose, onUpdate, onDelete }: {
   const customerName = job.clients ? `${job.clients.first_name} ${job.clients.last_name}` : 'No customer'
 
   return (
-    <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4" onClick={onClose}>
-      <div className="bg-white rounded-2xl shadow-xl max-w-lg w-full max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+    <div className="fixed inset-0 bg-black/40 z-50 flex items-end sm:items-center justify-center sm:p-4" onClick={onClose}>
+      <div className="bg-white rounded-t-2xl sm:rounded-2xl shadow-xl max-w-lg w-full max-h-[92vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
         {/* Header */}
-        <div className={`px-6 py-4 border-b border-gray-100 flex items-center justify-between ${colors.bg}`}>
+        <div className={`px-4 sm:px-6 py-4 border-b border-gray-100 flex items-center justify-between ${colors.bg}`}>
           <div className="flex items-center gap-2">
             <div className={`w-2 h-2 rounded-full ${colors.dot}`} />
             <span className={`text-xs font-bold uppercase tracking-wider ${colors.text}`}>{colors.label}</span>
           </div>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-700 transition"><X size={18} /></button>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-700 transition" aria-label="Close"><X size={18} /></button>
         </div>
 
         {/* Body */}
-        <div className="p-6 space-y-4">
+        <div className="p-4 sm:p-6 space-y-4">
           {!editing ? (
             <>
               <div>
-                <h2 className="text-xl font-bold text-gray-900">{job.title}</h2>
+                <h2 className="text-lg sm:text-xl font-bold text-gray-900 break-words">{job.title}</h2>
                 {job.trade && <p className="text-sm text-gray-500 mt-0.5">{job.trade}</p>}
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <InfoRow label="Customer" value={customerName} />
                 <InfoRow label="Phone" value={job.clients?.phone || '—'} />
                 <InfoRow label="Technician" value={job.technicians?.name || 'Unassigned'} />
@@ -656,7 +659,7 @@ function JobModal({ job, technicians, onClose, onUpdate, onDelete }: {
         </div>
 
         {/* Footer actions */}
-        <div className="px-6 py-4 border-t border-gray-100 flex items-center gap-2">
+        <div className="px-4 sm:px-6 py-4 border-t border-gray-100 flex items-center gap-2 flex-wrap">
           <button onClick={() => onDelete(job.id)}
             className="flex items-center gap-1.5 px-3 py-2 text-xs font-semibold text-red-600 hover:bg-red-50 rounded-lg transition">
             <Trash2 size={13} /> Delete
@@ -669,10 +672,10 @@ function JobModal({ job, technicians, onClose, onUpdate, onDelete }: {
             </>
           ) : (
             <>
-              <button onClick={onClose} className="px-4 py-2 rounded-lg border border-gray-200 text-xs font-semibold text-gray-600 hover:bg-gray-50">Close</button>
-              <button onClick={() => setEditing(true)} className="px-4 py-2 rounded-lg border border-gray-200 text-xs font-semibold text-gray-700 hover:bg-gray-50">Edit Job</button>
+              <button onClick={onClose} className="px-3 sm:px-4 py-2 rounded-lg border border-gray-200 text-xs font-semibold text-gray-600 hover:bg-gray-50">Close</button>
+              <button onClick={() => setEditing(true)} className="px-3 sm:px-4 py-2 rounded-lg border border-gray-200 text-xs font-semibold text-gray-700 hover:bg-gray-50">Edit Job</button>
               <Link href={`/dashboard/invoices/new?job_id=${job.id}`}
-                className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold transition">
+                className="flex items-center gap-1.5 px-3 sm:px-4 py-2 rounded-lg bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold transition whitespace-nowrap">
                 <FileText size={13} /> Create Invoice
               </Link>
             </>
@@ -737,17 +740,17 @@ function AddTechnicianModal({ onClose, onAdded }: { onClose: () => void; onAdded
   }
 
   return (
-    <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4" onClick={onClose}>
-      <div className="bg-white rounded-2xl shadow-xl max-w-md w-full" onClick={e => e.stopPropagation()}>
-        <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
+    <div className="fixed inset-0 bg-black/40 z-50 flex items-end sm:items-center justify-center sm:p-4" onClick={onClose}>
+      <div className="bg-white rounded-t-2xl sm:rounded-2xl shadow-xl max-w-md w-full max-h-[92vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+        <div className="px-4 sm:px-6 py-4 border-b border-gray-100 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Users size={18} className="text-teal-600" />
             <h2 className="text-lg font-bold text-gray-900">Add Technician</h2>
           </div>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-700"><X size={18} /></button>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-700" aria-label="Close"><X size={18} /></button>
         </div>
 
-        <div className="p-6 space-y-4">
+        <div className="p-4 sm:p-6 space-y-4">
           {error && (
             <div className="flex items-start gap-2 p-3 bg-red-50 border border-red-200 rounded-xl">
               <AlertCircle size={14} className="text-red-500 mt-0.5 shrink-0" />
@@ -760,7 +763,7 @@ function AddTechnicianModal({ onClose, onAdded }: { onClose: () => void; onAdded
               className="w-full bg-gray-50 px-3 py-2.5 rounded-xl border border-gray-200 text-sm focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20" />
           </Field>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <Field label="Email">
               <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="mike@example.com"
                 className="w-full bg-gray-50 px-3 py-2.5 rounded-xl border border-gray-200 text-sm focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20" />
@@ -796,7 +799,7 @@ function AddTechnicianModal({ onClose, onAdded }: { onClose: () => void; onAdded
           </Field>
         </div>
 
-        <div className="px-6 py-4 border-t border-gray-100 flex justify-end gap-2">
+        <div className="px-4 sm:px-6 py-4 border-t border-gray-100 flex justify-end gap-2">
           <button onClick={onClose} className="px-4 py-2 rounded-lg border border-gray-200 text-xs font-semibold text-gray-600 hover:bg-gray-50">Cancel</button>
           <button onClick={handleSave} disabled={saving || !name.trim()}
             className="px-4 py-2 rounded-lg bg-teal-600 hover:bg-teal-700 disabled:opacity-50 text-white text-xs font-bold">

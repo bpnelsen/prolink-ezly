@@ -228,33 +228,33 @@ export default function WebsiteBuilderPage() {
   }
 
   return (
-    <div className="max-w-5xl mx-auto px-6 py-8">
+    <div className="max-w-5xl mx-auto px-4 sm:px-6 py-6 sm:py-8 pt-14 md:pt-8">
       {/* Header */}
-      <div className="mb-8">
+      <div className="mb-6 md:mb-8">
         <div className="flex items-center gap-3 mb-2">
-          <div className="w-9 h-9 rounded-xl bg-teal-50 flex items-center justify-center">
+          <div className="w-9 h-9 rounded-xl bg-teal-50 flex items-center justify-center shrink-0">
             <Globe size={18} className="text-teal-600" />
           </div>
-          <h1 className="text-2xl font-bold text-gray-900">Website Builder</h1>
+          <h1 className="text-xl md:text-2xl font-bold text-gray-900">Website Builder</h1>
         </div>
         <p className="text-gray-500 text-sm">AI-powered websites for your contracting business — live in minutes.</p>
       </div>
 
       {/* Progress */}
-      <div className="flex items-center gap-2 mb-8">
+      <div className="flex items-center gap-1 sm:gap-2 mb-6 md:mb-8 overflow-x-auto -mx-1 px-1 pb-1">
         {(['questionnaire', 'generating', 'editing', 'published'] as Step[]).map((s, i) => {
           const labels = ['Setup', 'Generating', 'Review & Edit', 'Published']
           const done = ['questionnaire', 'generating', 'editing', 'published'].indexOf(step) > i
           const active = step === s
           return (
-            <div key={s} className="flex items-center gap-2">
-              <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold transition-all ${
+            <div key={s} className="flex items-center gap-1 sm:gap-2 shrink-0">
+              <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold transition-all whitespace-nowrap ${
                 done ? 'bg-teal-100 text-teal-700' : active ? 'bg-[#0f1d35] text-white' : 'bg-gray-100 text-gray-400'
               }`}>
                 {done ? <Check size={11} /> : <span>{i + 1}</span>}
                 {labels[i]}
               </div>
-              {i < 3 && <ChevronRight size={14} className="text-gray-300" />}
+              {i < 3 && <ChevronRight size={14} className="text-gray-300 shrink-0" />}
             </div>
           )
         })}
