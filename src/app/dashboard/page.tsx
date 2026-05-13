@@ -1,5 +1,5 @@
 'use client'
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import {
   CalendarDays, Users, Briefcase, BarChart2, LogOut,
   Bell, Search, Plus, TrendingUp, Clock, ChevronRight,
@@ -79,37 +79,48 @@ export default function Dashboard() {
   const [searchOpen, setSearchOpen] = useState(false);
   const [avatarOpen, setAvatarOpen] = useState(false);
 
-  useEffect(() => {
-    async function fetchDashboard() {
-      try {
-        const { data: { session } } = await supabase.auth.getSession();
-        if (!session) { setLoading(false); return; }
+  const fetchDashboard = useCallback(async () => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) { setLoading(false); return; }
 
-        const id = session.user.id;
-        setUserEmail(session.user.email ?? '');
+      const id = session.user.id;
+      setUserEmail(session.user.email ?? '');
 
-        const [{ data: jobData }, { data: clientData }, { data: invoiceData }, { data: profileData }, { data: bizData }] = await Promise.all([
-          supabase.from('jobs').select('id, title, status, estimated_value, created_at').eq('contractor_id', id).order('created_at', { ascending: false }),
-          supabase.from('clients').select('id, first_name, last_name, created_at').eq('contractor_id', id).neq('is_deleted', true).order('created_at', { ascending: false }),
-          supabase.from('invoices').select('id, invoice_number, status, total, balance_due, amount_paid, issue_date, paid_at, client_id').eq('contractor_id', id).order('issue_date', { ascending: false }),
-          supabase.from('profiles').select('full_name').eq('id', id).single(),
-          supabase.from('customers').select('business_name, owner_name').eq('id', id).single(),
-        ]);
+      const [{ data: jobData }, { data: clientData }, { data: invoiceData }, { data: profileData }, { data: bizData }] = await Promise.all([
+        supabase.from('jobs').select('id, title, status, estimated_value, created_at').eq('contractor_id', id).order('created_at', { ascending: false }),
+        supabase.from('clients').select('id, first_name, last_name, created_at').eq('contractor_id', id).neq('is_deleted', true).order('created_at', { ascending: false }),
+        supabase.from('invoices').select('id, invoice_number, status, total, balance_due, amount_paid, issue_date, paid_at, client_id').eq('contractor_id', id).order('issue_date', { ascending: false }),
+        supabase.from('profiles').select('full_name').eq('id', id).single(),
+        supabase.from('customers').select('business_name, owner_name').eq('id', id).single(),
+      ]);
 
-        const displayName = bizData?.business_name || bizData?.owner_name || profileData?.full_name || session.user.email?.split('@')[0] || 'there';
-        setUserName(displayName);
-        setBusinessName(bizData?.business_name || '');
-        if (jobData) setJobs(jobData);
-        if (clientData) setClients(clientData);
-        if (invoiceData) setInvoices(invoiceData);
-      } catch (err) {
-        console.error('Failed to fetch dashboard', err);
-      } finally {
-        setLoading(false);
-      }
+      const displayName = bizData?.business_name || bizData?.owner_name || profileData?.full_name || session.user.email?.split('@')[0] || 'there';
+      setUserName(displayName);
+      setBusinessName(bizData?.business_name || '');
+      if (jobData) setJobs(jobData);
+      if (clientData) setClients(clientData);
+      if (invoiceData) setInvoices(invoiceData);
+    } catch (err) {
+      console.error('Failed to fetch dashboard', err);
+    } finally {
+      setLoading(false);
     }
-    fetchDashboard();
   }, []);
+
+  useEffect(() => { fetchDashboard(); }, [fetchDashboard]);
+
+  // Re-fetch when the dashboard becomes visible again (e.g. after editing
+  // a job on the detail page) so the pipeline / recent jobs aren't stale.
+  useEffect(() => {
+    const onVisible = () => { if (document.visibilityState === 'visible') fetchDashboard(); };
+    document.addEventListener('visibilitychange', onVisible);
+    window.addEventListener('focus', fetchDashboard);
+    return () => {
+      document.removeEventListener('visibilitychange', onVisible);
+      window.removeEventListener('focus', fetchDashboard);
+    };
+  }, [fetchDashboard]);
 
   const monthStart = startOfMonth();
 

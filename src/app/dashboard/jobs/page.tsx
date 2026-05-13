@@ -1,5 +1,5 @@
 'use client'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { FileText, Plus, MapPin, User, Calendar, DollarSign, Search, Eye, Edit2 } from 'lucide-react'
 import Link from 'next/link'
 import Breadcrumbs from '../../../components/Breadcrumbs'
@@ -35,22 +35,33 @@ export default function JobsPage() {
   const [filter, setFilter] = useState<'all' | JobStatus>('all')
   const [search, setSearch] = useState('')
 
-  useEffect(() => {
-    const load = async () => {
-      const { data: { session } } = await supabase.auth.getSession()
-      if (!session) return
+  const load = useCallback(async () => {
+    const { data: { session } } = await supabase.auth.getSession()
+    if (!session) return
 
-      const { data } = await supabase
-        .from('jobs')
-        .select('id, title, status, trade, site_address, estimated_value, scheduled_start, created_at, clients(first_name, last_name), technicians(name)')
-        .eq('contractor_id', session.user.id)
-        .order('created_at', { ascending: false })
+    const { data } = await supabase
+      .from('jobs')
+      .select('id, title, status, trade, site_address, estimated_value, scheduled_start, created_at, clients(first_name, last_name), technicians(name)')
+      .eq('contractor_id', session.user.id)
+      .order('created_at', { ascending: false })
 
-      setJobs((data as unknown as Job[]) || [])
-      setLoading(false)
-    }
-    load()
+    setJobs((data as unknown as Job[]) || [])
+    setLoading(false)
   }, [])
+
+  useEffect(() => { load() }, [load])
+
+  // Re-fetch when the tab becomes visible again, so edits made on the
+  // job-detail page show up here without a full refresh.
+  useEffect(() => {
+    const onVisible = () => { if (document.visibilityState === 'visible') load() }
+    document.addEventListener('visibilitychange', onVisible)
+    window.addEventListener('focus', load)
+    return () => {
+      document.removeEventListener('visibilitychange', onVisible)
+      window.removeEventListener('focus', load)
+    }
+  }, [load])
 
   const filtered = jobs.filter(j => {
     const matchesStatus = filter === 'all' || j.status === filter
