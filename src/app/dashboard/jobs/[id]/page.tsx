@@ -6,6 +6,7 @@ import Link from 'next/link'
 import Breadcrumbs from '../../../../components/Breadcrumbs'
 import ContractFormModal from '../../../../components/contracts/ContractFormModal'
 import { supabase } from '../../../../lib/supabase-client'
+import { markJobsChanged } from '../../../../lib/data-events'
 
 type JobStatus = 'pending' | 'assigned' | 'in_progress' | 'completed' | 'cancelled'
 
@@ -191,6 +192,7 @@ function JobDetail({ params }: { params: { id: string } }) {
         )
       }
       await load()
+      markJobsChanged()
       setEditing(false)
       setSaved(true)
       setTimeout(() => setSaved(false), 3000)
