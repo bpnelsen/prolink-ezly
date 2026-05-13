@@ -8,6 +8,7 @@ import {
 import Link from 'next/link'
 import Breadcrumbs from '../../components/Breadcrumbs'
 import { supabase } from '../../lib/supabase-client'
+import { markJobsChanged } from '../../lib/data-events'
 
 type ViewType = 'day' | 'week' | 'month'
 type JobStatus = 'pending' | 'assigned' | 'in_progress' | 'completed'
@@ -212,6 +213,7 @@ function Dispatch() {
     if (!error) {
       setJobs(prev => prev.map(j => j.id === jobId ? { ...j, ...updates } : j))
       if (selectedJob?.id === jobId) setSelectedJob(prev => prev ? { ...prev, ...updates } : null)
+      markJobsChanged()
     }
   }
 
@@ -221,6 +223,7 @@ function Dispatch() {
     if (!error) {
       setJobs(prev => prev.filter(j => j.id !== jobId))
       setSelectedJob(null)
+      markJobsChanged()
     }
   }
 

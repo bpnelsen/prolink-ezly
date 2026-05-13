@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { supabase } from '../../lib/supabase-client';
+import { useRefetchOnJobsChange } from '../../lib/data-events';
 
 const STAGES = ['pending', 'assigned', 'in_progress', 'completed', 'cancelled'];
 
@@ -110,17 +111,9 @@ export default function Dashboard() {
 
   useEffect(() => { fetchDashboard(); }, [fetchDashboard]);
 
-  // Re-fetch when the dashboard becomes visible again (e.g. after editing
-  // a job on the detail page) so the pipeline / recent jobs aren't stale.
-  useEffect(() => {
-    const onVisible = () => { if (document.visibilityState === 'visible') fetchDashboard(); };
-    document.addEventListener('visibilitychange', onVisible);
-    window.addEventListener('focus', fetchDashboard);
-    return () => {
-      document.removeEventListener('visibilitychange', onVisible);
-      window.removeEventListener('focus', fetchDashboard);
-    };
-  }, [fetchDashboard]);
+  // Re-fetch the moment any other page edits / creates / deletes a job
+  // so pipeline counts and recent jobs aren't stale on revisit.
+  useRefetchOnJobsChange(fetchDashboard);
 
   const monthStart = startOfMonth();
 

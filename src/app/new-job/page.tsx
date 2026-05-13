@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { CheckCircle2, Plus, Trash2, Search, Users, CalendarDays, ArrowRight } from 'lucide-react';
 import Breadcrumbs from '../../components/Breadcrumbs';
 import { supabase } from '../../lib/supabase-client';
+import { markJobsChanged } from '../../lib/data-events';
 
 interface LineItem {
   id: number;
@@ -233,6 +234,7 @@ function NewJob() {
       }
 
       setCreatedJobId(job?.id ?? null);
+      markJobsChanged();
       setSuccess(true);
     } catch (err: any) {
       setLoading(false);
