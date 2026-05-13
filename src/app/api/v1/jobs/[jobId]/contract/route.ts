@@ -25,7 +25,9 @@ export async function POST(req: NextRequest, { params }: { params: { jobId: stri
   if (!job) return notFound('Job not found')
 
   const template = await getActiveTemplate(supabase, body.governing_law_state || null)
-  if (!template) return serverError('No active contract template found.')
+  if (!template) return serverError(
+    'No active contract template found and unable to seed a default. Check that SUPABASE_SERVICE_ROLE_KEY is configured.'
+  )
 
   // Generate contract number (PL-YYYY-NNNN)
   const { data: numData, error: numErr } = await supabase.rpc('next_contract_number', { c_id: user.id })

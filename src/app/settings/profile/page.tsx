@@ -66,6 +66,7 @@ export default function ProfilePage() {
   const [loading, setLoading] = useState(false)
   const [saved, setSaved] = useState(false)
   const [uploadingLogo, setUploadingLogo] = useState(false)
+  const [logoError, setLogoError] = useState<string>('')
   const [siteSlug, setSiteSlug] = useState<string | null>(null)
   const fileRef = useRef<HTMLInputElement>(null)
 
@@ -194,17 +195,66 @@ export default function ProfilePage() {
   const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
-    setUploadingLogo(true)
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) { setUploadingLogo(false); return }
-    const ext = file.name.split('.').pop()
-    const path = `logos/${user.id}.${ext}`
-    const { error } = await supabase.storage.from('contractor-assets').upload(path, file, { upsert: true })
-    if (!error) {
-      const { data: { publicUrl } } = supabase.storage.from('contractor-assets').getPublicUrl(path)
-      setForm(prev => ({ ...prev, logo_url: publicUrl }))
+
+    setLogoError('')
+
+    // Basic guardrails so we fail fast with a useful message.
+    if (!file.type.startsWith('image/')) {
+      setLogoError('Please choose an image file (PNG, JPG, SVG, or WEBP).')
+      return
     }
-    setUploadingLogo(false)
+    if (file.size > 5 * 1024 * 1024) {
+      setLogoError('Image is larger than 5 MB. Please pick a smaller file.')
+      return
+    }
+
+    setUploadingLogo(true)
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) {
+        setLogoError('You must be signed in to upload a logo.')
+        return
+      }
+      const ext = (file.name.split('.').pop() || 'png').toLowerCase()
+      const path = `logos/${user.id}.${ext}`
+      const { error } = await supabase.storage
+        .from('contractor-assets')
+        .upload(path, file, { upsert: true, contentType: file.type })
+
+      if (error) {
+        // Surface the underlying reason — most often "Bucket not found"
+        // (the contractor-assets bucket needs to be created in Supabase
+        // Storage with public read access) or an RLS policy issue.
+        const msg = (error.message || '').toLowerCase()
+        if (msg.includes('bucket') && msg.includes('not')) {
+          setLogoError('Logo storage isn\'t set up yet. Ask an admin to create a public "contractor-assets" bucket in Supabase Storage.')
+        } else if (msg.includes('row-level security') || msg.includes('permission') || msg.includes('not authorized')) {
+          setLogoError('Permission denied uploading the logo. Check the storage policies on the "contractor-assets" bucket.')
+        } else {
+          setLogoError(`Couldn't upload logo: ${error.message}`)
+        }
+        return
+      }
+
+      const { data: { publicUrl } } = supabase.storage.from('contractor-assets').getPublicUrl(path)
+      // Cache-bust so an updated logo appears immediately
+      const bustedUrl = `${publicUrl}?v=${Date.now()}`
+      setForm(prev => ({ ...prev, logo_url: bustedUrl }))
+
+      // Persist the URL right away so users don't have to remember to
+      // click Save just to keep the logo they just uploaded.
+      const { error: saveErr } = await supabase
+        .from('customers')
+        .upsert({ id: user.id, logo_url: bustedUrl }, { onConflict: 'id' })
+      if (saveErr) {
+        setLogoError(`Logo uploaded but couldn't be saved to your profile: ${saveErr.message}`)
+      }
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Unknown error'
+      setLogoError(`Couldn't upload logo: ${message}`)
+    } finally {
+      setUploadingLogo(false)
+    }
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -288,23 +338,39 @@ export default function ProfilePage() {
             <h3 className={sectionHeadingCls}>Identity &amp; Contact</h3>
 
             {/* Logo Upload */}
-            <div className="flex items-center gap-5">
-              <div className="relative">
-                <div className="w-20 h-20 rounded-2xl bg-gray-100 border-2 border-dashed border-gray-300 overflow-hidden flex items-center justify-center">
-                  {form.logo_url
-                    ? <img src={form.logo_url} alt="Logo" className="w-full h-full object-cover" />
-                    : <Camera size={22} className="text-gray-400" />}
+            <div>
+              <div className="flex items-center gap-5">
+                <div className="relative">
+                  <div className="w-20 h-20 rounded-2xl bg-gray-100 border-2 border-dashed border-gray-300 overflow-hidden flex items-center justify-center">
+                    {form.logo_url
+                      ? <img src={form.logo_url} alt="Logo" className="w-full h-full object-cover" />
+                      : <Camera size={22} className="text-gray-400" />}
+                  </div>
+                  <button type="button" onClick={() => fileRef.current?.click()}
+                    className="absolute -bottom-2 -right-2 w-7 h-7 bg-teal-600 rounded-full flex items-center justify-center shadow-md hover:bg-teal-700 transition"
+                    aria-label="Upload logo">
+                    <Camera size={13} className="text-white" />
+                  </button>
+                  <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleLogoUpload} />
                 </div>
-                <button type="button" onClick={() => fileRef.current?.click()}
-                  className="absolute -bottom-2 -right-2 w-7 h-7 bg-teal-600 rounded-full flex items-center justify-center shadow-md hover:bg-teal-700 transition">
-                  <Camera size={13} className="text-white" />
-                </button>
-                <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleLogoUpload} />
+                <div className="min-w-0">
+                  <p className="text-sm font-semibold text-gray-700">Company Logo</p>
+                  <p className="text-xs text-gray-400 mt-0.5">{uploadingLogo ? 'Uploading…' : 'PNG, JPG, SVG or WEBP — up to 5 MB'}</p>
+                  {form.logo_url && !uploadingLogo && (
+                    <button
+                      type="button"
+                      onClick={() => setForm(prev => ({ ...prev, logo_url: '' }))}
+                      className="text-xs text-gray-500 hover:text-red-600 underline mt-1">
+                      Remove logo
+                    </button>
+                  )}
+                </div>
               </div>
-              <div>
-                <p className="text-sm font-semibold text-gray-700">Company Logo</p>
-                <p className="text-xs text-gray-400 mt-0.5">{uploadingLogo ? 'Uploading...' : 'PNG or JPG, square recommended'}</p>
-              </div>
+              {logoError && (
+                <p className="mt-2 text-xs text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
+                  {logoError}
+                </p>
+              )}
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
