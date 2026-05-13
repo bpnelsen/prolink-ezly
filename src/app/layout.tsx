@@ -3,6 +3,7 @@ import Script from 'next/script'
 import { cookies } from 'next/headers'
 import ForemanWrapper from '@/components/ForemanWrapper'
 import AppShell from '@/components/AppShell'
+import ReportBugButton from '@/components/ReportBugButton'
 import { AppProvider } from '../context/AppContext'
 import { ConsentProvider } from '@/components/consent/ConsentProvider'
 import { CookieBanner } from '@/components/consent/CookieBanner'
@@ -47,6 +48,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <AppProvider>
             <AppShell>{children}</AppShell>
             <ForemanWrapper />
+            <ReportBugButton />
           </AppProvider>
           {GA_ID && (
             <ConsentGate category="analytics">
