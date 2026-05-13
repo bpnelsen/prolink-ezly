@@ -74,6 +74,7 @@ function JobDetail({ params }: { params: { id: string } }) {
   const [editing, setEditing] = useState(searchParams.get('edit') === '1')
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
+  const [saveError, setSaveError] = useState<string>('')
 
   // Edit form state
   const [form, setForm] = useState({
@@ -160,6 +161,7 @@ function JobDetail({ params }: { params: { id: string } }) {
   const handleSave = async () => {
     if (!job) return
     setSaving(true)
+    setSaveError('')
 
     const { error: jobErr } = await supabase.from('jobs').update({
       title: form.title.trim(),
@@ -176,27 +178,51 @@ function JobDetail({ params }: { params: { id: string } }) {
       estimated_value: subtotal || job.estimated_value,
     }).eq('id', id)
 
-    if (!jobErr) {
-      // Delete existing line items and re-insert
-      await supabase.from('job_line_items').delete().eq('job_id', id)
-      const validItems = editItems.filter(i => i.description.trim())
-      if (validItems.length > 0) {
-        await supabase.from('job_line_items').insert(
-          validItems.map(i => ({
-            job_id: id,
-            description: i.description.trim(),
-            qty: i.qty,
-            unit: i.unit,
-            rate: i.rate,
-          }))
-        )
-      }
+    if (jobErr) {
+      // Surface the underlying reason — most often an RLS denial or a
+      // network failure — so users don't think their click did nothing.
+      setSaveError(`Couldn't save: ${jobErr.message || 'unknown error'}`)
+      setSaving(false)
+      return
+    }
+
+    // Delete existing line items and re-insert
+    const { error: delErr } = await supabase.from('job_line_items').delete().eq('job_id', id)
+    if (delErr) {
+      setSaveError(`Saved core fields but couldn't refresh line items: ${delErr.message}`)
       await load()
       markJobsChanged()
       setEditing(false)
-      setSaved(true)
-      setTimeout(() => setSaved(false), 3000)
+      setSaving(false)
+      return
     }
+
+    const validItems = editItems.filter(i => i.description.trim())
+    if (validItems.length > 0) {
+      const { error: insErr } = await supabase.from('job_line_items').insert(
+        validItems.map(i => ({
+          job_id: id,
+          description: i.description.trim(),
+          qty: i.qty,
+          unit: i.unit,
+          rate: i.rate,
+        }))
+      )
+      if (insErr) {
+        setSaveError(`Saved core fields but couldn't add line items: ${insErr.message}`)
+        await load()
+        markJobsChanged()
+        setEditing(false)
+        setSaving(false)
+        return
+      }
+    }
+
+    await load()
+    markJobsChanged()
+    setEditing(false)
+    setSaved(true)
+    setTimeout(() => setSaved(false), 3000)
     setSaving(false)
   }
 
@@ -249,6 +275,11 @@ function JobDetail({ params }: { params: { id: string } }) {
       ]} />
 
       <div className="max-w-4xl mx-auto p-4 md:p-8">
+        {saveError && (
+          <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-xl text-sm text-red-700">
+            {saveError}
+          </div>
+        )}
         {/* Header */}
         <div className="flex items-start gap-3 mb-6">
           <button onClick={() => router.back()} className="mt-1 p-2 rounded-lg hover:bg-gray-200 text-gray-500 transition">
