@@ -56,10 +56,10 @@ export default function Sidebar({ open, onClose, userName: _userName, userEmail 
       {open && <div className="fixed inset-0 bg-black/40 z-20 md:hidden" onClick={onClose} />}
 
       <aside className={`
-        fixed top-0 left-0 h-full w-56 z-30 flex flex-col
+        fixed top-0 left-0 h-screen w-56 z-30 flex flex-col shrink-0
         bg-[#0f1d35] transition-transform duration-200
         ${open ? 'translate-x-0' : '-translate-x-full'}
-        md:translate-x-0 md:static md:flex
+        md:translate-x-0 md:sticky md:top-0 md:h-screen md:flex
       `}>
         {/* Logo */}
         <div className="px-5 py-5 flex items-center justify-between">
