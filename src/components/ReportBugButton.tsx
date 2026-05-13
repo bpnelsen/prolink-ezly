@@ -1,8 +1,35 @@
 'use client'
 import { useEffect, useState } from 'react'
+import { usePathname } from 'next/navigation'
 import { Bug, X, Send, CheckCircle2 } from 'lucide-react'
 
+// Any other component can call this to open the modal — used by the sidebar.
+export const REPORT_BUG_EVENT = 'report-bug:open'
+export function openReportBug() {
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new Event(REPORT_BUG_EVENT))
+  }
+}
+
+// Routes where the sidebar is rendered. On these, the in-sidebar trigger
+// replaces the floating one at md+ to avoid overlapping the Logout button.
+const APP_ROUTE_PREFIXES = [
+  '/dashboard',
+  '/settings',
+  '/customers',
+  '/dispatch',
+  '/new-job',
+  '/automations',
+  '/contractor',
+]
+
+function isAppRoute(pathname: string): boolean {
+  return APP_ROUTE_PREFIXES.some(p => pathname === p || pathname.startsWith(p + '/'))
+}
+
 export default function ReportBugButton() {
+  const pathname = usePathname() || ''
+  const appRoute = isAppRoute(pathname)
   const [open, setOpen] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [done, setDone] = useState(false)
@@ -25,6 +52,13 @@ export default function ReportBugButton() {
     return () => window.removeEventListener('keydown', onKey)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open])
+
+  // Listen for global open requests (sidebar button dispatches this)
+  useEffect(() => {
+    const handler = () => setOpen(true)
+    window.addEventListener(REPORT_BUG_EVENT, handler)
+    return () => window.removeEventListener(REPORT_BUG_EVENT, handler)
+  }, [])
 
   const close = () => {
     setOpen(false)
@@ -68,11 +102,15 @@ export default function ReportBugButton() {
   return (
     <>
       {/* Floating button — bottom-left so it doesn't collide with the in-app
-          AI Foreman widget (bottom-right) or the mobile hamburger (top-left). */}
+          AI Foreman widget (bottom-right) or the mobile hamburger (top-left).
+          On desktop app routes the sidebar renders its own trigger below
+          Logout, so we hide this one at md+ to prevent overlap. */}
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="fixed bottom-4 left-4 z-40 print:hidden flex items-center gap-1.5 px-3 py-2 bg-white border border-gray-200 rounded-full shadow-md text-xs font-semibold text-gray-700 hover:bg-gray-50 hover:border-gray-300 transition"
+        className={`fixed bottom-4 left-4 z-40 print:hidden items-center gap-1.5 px-3 py-2 bg-white border border-gray-200 rounded-full shadow-md text-xs font-semibold text-gray-700 hover:bg-gray-50 hover:border-gray-300 transition ${
+          appRoute ? 'flex md:hidden' : 'flex'
+        }`}
         aria-label="Report a bug"
       >
         <Bug size={13} className="text-orange-500" />

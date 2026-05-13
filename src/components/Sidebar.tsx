@@ -2,13 +2,14 @@
 import {
   LayoutDashboard, CalendarDays, Users, Briefcase,
   BarChart2, LogOut, Globe, UserCog, FileText, Shield,
-  Settings, User, X,
+  Settings, User, X, Bug,
 } from 'lucide-react'
 import { usePathname } from 'next/navigation'
 import Link from 'next/link'
 import { ADMIN_EMAIL } from '../lib/admin'
 import { supabase } from '../lib/supabase-client'
 import ProlinkLogo from './ProlinkLogo'
+import { openReportBug } from './ReportBugButton'
 
 const NAV_MAIN = [
   { label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
@@ -136,12 +137,17 @@ export default function Sidebar({ open, onClose, userName: _userName, userEmail 
           </Section>
         </nav>
 
-        {/* Logout */}
-        <div className="px-3 py-4 border-t border-white/10">
+        {/* Logout + Report Bug */}
+        <div className="px-3 py-4 border-t border-white/10 space-y-0.5">
           <button
             onClick={async () => { await supabase.auth.signOut(); window.location.href = '/login' }}
             className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-semibold text-white/50 hover:text-white hover:bg-white/5 transition w-full">
             <LogOut size={17} /> Logout
+          </button>
+          <button
+            onClick={() => { onClose(); openReportBug() }}
+            className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-semibold text-white/50 hover:text-white hover:bg-white/5 transition w-full">
+            <Bug size={17} className="text-orange-400" /> Report Bug
           </button>
         </div>
       </aside>
