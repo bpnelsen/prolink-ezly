@@ -253,8 +253,8 @@ function NewJob() {
     return (
       <div className="min-h-screen bg-gray-50">
         <Breadcrumbs items={[{ label: 'New Job', href: '/new-job' }]} />
-        <div className="max-w-4xl mx-auto p-8">
-          <div className="bg-white rounded-2xl border border-gray-100 p-16 text-center shadow-sm">
+        <div className="max-w-4xl mx-auto p-4 md:p-8">
+          <div className="bg-white rounded-2xl border border-gray-100 p-8 sm:p-12 md:p-16 text-center shadow-sm">
             <div className="w-16 h-16 bg-teal-100 rounded-full flex items-center justify-center mx-auto mb-4">
               <CheckCircle2 className="w-8 h-8 text-teal-600" />
             </div>
@@ -272,9 +272,9 @@ function NewJob() {
     <div className="min-h-screen bg-gray-50">
       <Breadcrumbs items={[{ label: 'New Job', href: '/new-job' }]} />
       <div className="max-w-5xl mx-auto p-4 md:p-8">
-        <div className="mb-8">
+        <div className="mb-6 md:mb-8">
           <p className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-1">Jobs</p>
-          <h1 className="text-2xl font-bold text-gray-900">Create New Job</h1>
+          <h1 className="text-xl md:text-2xl font-bold text-gray-900">Create New Job</h1>
         </div>
 
         {error && (
@@ -284,7 +284,7 @@ function NewJob() {
         <form onSubmit={handleSubmit} className="space-y-6">
 
           {/* Customer */}
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 sm:p-6">
             <h2 className="font-bold text-gray-900 mb-5">Customer</h2>
             <div className="relative">
               <label className="block text-xs font-semibold text-gray-600 mb-1.5">Search Existing Customer</label>
@@ -333,7 +333,7 @@ function NewJob() {
           </div>
 
           {/* Job Details */}
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 sm:p-6">
             <h2 className="font-bold text-gray-900 mb-5">Job Details</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
               <div className="md:col-span-2">
@@ -395,7 +395,7 @@ function NewJob() {
           </div>
 
           {/* Scheduling */}
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 sm:p-6">
             <h2 className="font-bold text-gray-900 mb-5">Scheduling</h2>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
               <div>
@@ -420,7 +420,7 @@ function NewJob() {
           </div>
 
           {/* Technician Assignment */}
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 sm:p-6">
             <div className="flex items-center gap-2 mb-5">
               <Users size={18} className="text-teal-600" />
               <h2 className="font-bold text-gray-900">Assign Technician</h2>
@@ -451,7 +451,7 @@ function NewJob() {
           </div>
 
           {/* Line Items */}
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 sm:p-6">
             <h2 className="font-bold text-gray-900 mb-5">Estimate / Line Items</h2>
             <div className="space-y-3">
               <div className="hidden md:grid grid-cols-12 gap-3 px-1">
@@ -462,27 +462,47 @@ function NewJob() {
                 <p className="col-span-1"></p>
               </div>
               {lineItems.map(item => (
-                <div key={item.id} className="grid grid-cols-12 gap-3 items-center">
-                  <input value={item.description} onChange={e => updateLineItem(item.id, 'description', e.target.value)}
-                    className="col-span-12 md:col-span-5 bg-gray-50 p-3 rounded-xl border border-gray-200 text-sm focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 transition"
-                    placeholder="Labor, material, service..." />
-                  <input type="number" min="0" step="0.5" value={item.qty}
-                    onChange={e => updateLineItem(item.id, 'qty', parseFloat(e.target.value) || 0)}
-                    className="col-span-4 md:col-span-2 bg-gray-50 p-3 rounded-xl border border-gray-200 text-sm focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 transition" />
-                  <select value={item.unit} onChange={e => updateLineItem(item.id, 'unit', e.target.value)}
-                    className="col-span-4 md:col-span-2 bg-gray-50 p-3 rounded-xl border border-gray-200 text-sm focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 transition">
-                    <option value="hr">hr</option><option value="ea">ea</option>
-                    <option value="sqft">sqft</option><option value="lft">lft</option>
-                    <option value="day">day</option><option value="lot">lot</option>
-                  </select>
-                  <input type="number" min="0" step="0.01" value={item.rate}
-                    onChange={e => updateLineItem(item.id, 'rate', parseFloat(e.target.value) || 0)}
-                    className="col-span-3 md:col-span-2 bg-gray-50 p-3 rounded-xl border border-gray-200 text-sm focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 transition"
-                    placeholder="0.00" />
-                  <button type="button" onClick={() => removeLineItem(item.id)}
-                    className="col-span-1 flex justify-center text-gray-300 hover:text-red-500 transition">
-                    <Trash2 size={15} />
-                  </button>
+                <div key={item.id} className="md:grid md:grid-cols-12 md:gap-3 md:items-center bg-gray-50/60 md:bg-transparent rounded-xl p-3 md:p-0 space-y-2 md:space-y-0">
+                  <div className="md:col-span-5">
+                    <label className="md:hidden block text-[10px] font-bold uppercase tracking-wider text-gray-400 mb-1">Description</label>
+                    <input value={item.description} onChange={e => updateLineItem(item.id, 'description', e.target.value)}
+                      className="w-full bg-white md:bg-gray-50 p-3 rounded-xl border border-gray-200 text-sm focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 transition"
+                      placeholder="Labor, material, service..." />
+                  </div>
+                  <div className="grid grid-cols-3 gap-2 md:contents">
+                    <div className="md:col-span-2">
+                      <label className="md:hidden block text-[10px] font-bold uppercase tracking-wider text-gray-400 mb-1">Qty</label>
+                      <input type="number" min="0" step="0.5" value={item.qty}
+                        onChange={e => updateLineItem(item.id, 'qty', parseFloat(e.target.value) || 0)}
+                        className="w-full bg-white md:bg-gray-50 p-3 rounded-xl border border-gray-200 text-sm focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 transition" />
+                    </div>
+                    <div className="md:col-span-2">
+                      <label className="md:hidden block text-[10px] font-bold uppercase tracking-wider text-gray-400 mb-1">Unit</label>
+                      <select value={item.unit} onChange={e => updateLineItem(item.id, 'unit', e.target.value)}
+                        className="w-full bg-white md:bg-gray-50 p-3 rounded-xl border border-gray-200 text-sm focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 transition">
+                        <option value="hr">hr</option><option value="ea">ea</option>
+                        <option value="sqft">sqft</option><option value="lft">lft</option>
+                        <option value="day">day</option><option value="lot">lot</option>
+                      </select>
+                    </div>
+                    <div className="md:col-span-2">
+                      <label className="md:hidden block text-[10px] font-bold uppercase tracking-wider text-gray-400 mb-1">Rate ($)</label>
+                      <input type="number" min="0" step="0.01" value={item.rate}
+                        onChange={e => updateLineItem(item.id, 'rate', parseFloat(e.target.value) || 0)}
+                        className="w-full bg-white md:bg-gray-50 p-3 rounded-xl border border-gray-200 text-sm focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 transition"
+                        placeholder="0.00" />
+                    </div>
+                  </div>
+                  <div className="flex justify-between items-center md:col-span-1 md:justify-center">
+                    <span className="md:hidden text-xs font-semibold text-gray-500">
+                      ${(item.qty * item.rate).toFixed(2)}
+                    </span>
+                    <button type="button" onClick={() => removeLineItem(item.id)}
+                      className="text-gray-300 hover:text-red-500 transition p-1"
+                      aria-label="Remove line item">
+                      <Trash2 size={15} />
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>
@@ -505,7 +525,7 @@ function NewJob() {
           </div>
 
           {/* Notes */}
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 sm:p-6">
             <h2 className="font-bold text-gray-900 mb-5">Notes & Instructions</h2>
             <textarea value={notes} onChange={e => setNotes(e.target.value)} rows={4}
               className="w-full bg-gray-50 p-3 rounded-xl border border-gray-200 text-sm focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 transition resize-none"

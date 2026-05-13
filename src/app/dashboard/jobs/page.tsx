@@ -73,14 +73,14 @@ export default function JobsPage() {
       <Breadcrumbs items={[{ label: 'Dashboard', href: '/dashboard' }, { label: 'Jobs', href: '/dashboard/jobs' }]} />
       <div className="max-w-6xl mx-auto p-4 md:p-8">
 
-        <div className="flex items-center justify-between mb-6">
-          <div>
+        <div className="flex items-center justify-between mb-6 gap-3">
+          <div className="min-w-0">
             <p className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-1">Operations</p>
-            <h2 className="text-2xl font-bold text-gray-900">Jobs</h2>
+            <h2 className="text-xl md:text-2xl font-bold text-gray-900">Jobs</h2>
           </div>
           <Link href="/new-job"
-            className="flex items-center gap-2 px-4 py-2.5 bg-teal-600 hover:bg-teal-700 text-white text-sm font-bold rounded-xl shadow-sm transition">
-            <Plus size={15} /> New Job
+            className="flex items-center gap-1.5 px-3 sm:px-4 py-2.5 bg-teal-600 hover:bg-teal-700 text-white text-sm font-bold rounded-xl shadow-sm transition whitespace-nowrap shrink-0">
+            <Plus size={15} /> <span className="hidden sm:inline">New Job</span><span className="sm:hidden">New</span>
           </Link>
         </div>
 
@@ -129,32 +129,45 @@ export default function JobsPage() {
                   : '—'
 
               return (
-                <div key={job.id} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 flex items-center gap-4 hover:border-gray-200 transition">
-                  {/* Status dot */}
-                  <div className={`w-2 h-2 rounded-full shrink-0 ${s.dot}`} />
+                <div key={job.id} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 flex flex-col md:flex-row md:items-center gap-3 md:gap-4 hover:border-gray-200 transition">
+                  <div className="flex items-start gap-3 md:contents">
+                    {/* Status dot */}
+                    <div className={`w-2 h-2 mt-2 rounded-full shrink-0 ${s.dot}`} />
 
-                  {/* Main info */}
-                  <div className="flex-1 min-w-0">
-                    <p className="font-semibold text-gray-900 text-sm truncate">{job.title}</p>
-                    <div className="flex flex-wrap gap-x-4 gap-y-0.5 mt-1">
-                      <span className="flex items-center gap-1 text-xs text-gray-500">
-                        <User size={11} /> {customer}
-                      </span>
-                      {job.technicians?.name && (
-                        <span className="text-xs text-gray-500">{job.technicians.name}</span>
-                      )}
-                      {job.site_address && (
-                        <span className="flex items-center gap-1 text-xs text-gray-500 truncate">
-                          <MapPin size={11} /> {job.site_address}
+                    {/* Main info */}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-start justify-between gap-2">
+                        <p className="font-semibold text-gray-900 text-sm truncate">{job.title}</p>
+                        <span className={`md:hidden inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-semibold shrink-0 ${s.bg} ${s.text}`}>
+                          {s.label}
                         </span>
-                      )}
-                      <span className="flex items-center gap-1 text-xs text-gray-500">
-                        <Calendar size={11} /> {date}
-                      </span>
+                      </div>
+                      <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-1">
+                        <span className="flex items-center gap-1 text-xs text-gray-500 min-w-0">
+                          <User size={11} className="shrink-0" /> <span className="truncate">{customer}</span>
+                        </span>
+                        {job.technicians?.name && (
+                          <span className="text-xs text-gray-500 truncate">{job.technicians.name}</span>
+                        )}
+                        {job.site_address && (
+                          <span className="flex items-center gap-1 text-xs text-gray-500 min-w-0">
+                            <MapPin size={11} className="shrink-0" /> <span className="truncate">{job.site_address}</span>
+                          </span>
+                        )}
+                        <span className="flex items-center gap-1 text-xs text-gray-500">
+                          <Calendar size={11} className="shrink-0" /> {date}
+                        </span>
+                        {job.estimated_value != null && (
+                          <span className="sm:hidden flex items-center gap-1 text-xs font-semibold text-gray-700">
+                            <DollarSign size={11} className="text-gray-400" />
+                            {Number(job.estimated_value).toLocaleString()}
+                          </span>
+                        )}
+                      </div>
                     </div>
                   </div>
 
-                  {/* Value */}
+                  {/* Value (desktop) */}
                   {job.estimated_value != null && (
                     <div className="hidden sm:flex items-center gap-1 text-sm font-semibold text-gray-700 shrink-0">
                       <DollarSign size={13} className="text-gray-400" />
@@ -162,13 +175,13 @@ export default function JobsPage() {
                     </div>
                   )}
 
-                  {/* Status badge */}
+                  {/* Status badge (desktop) */}
                   <span className={`hidden md:inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold shrink-0 ${s.bg} ${s.text}`}>
                     {s.label}
                   </span>
 
                   {/* Actions */}
-                  <div className="flex items-center gap-1.5 shrink-0">
+                  <div className="flex items-center gap-1.5 md:shrink-0 flex-wrap">
                     <Link href={`/dashboard/jobs/${job.id}`}
                       className="flex items-center gap-1 px-3 py-2 border border-gray-200 hover:bg-gray-50 text-gray-600 text-xs font-semibold rounded-xl transition">
                       <Eye size={13} /> View

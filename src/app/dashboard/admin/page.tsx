@@ -155,12 +155,12 @@ export default function AdminDashboardPage() {
       <div className="max-w-7xl mx-auto p-4 md:p-6">
         {/* Header */}
         <div className="mb-6 flex items-start justify-between flex-wrap gap-3">
-          <div>
+          <div className="min-w-0">
             <div className="flex items-center gap-2 mb-1">
               <Shield size={14} className="text-purple-600" />
               <p className="text-xs font-bold uppercase tracking-widest text-purple-600">Platform Admin</p>
             </div>
-            <h1 className="text-2xl font-bold text-gray-900">Admin Dashboard</h1>
+            <h1 className="text-xl md:text-2xl font-bold text-gray-900">Admin Dashboard</h1>
             <p className="text-sm text-gray-500 mt-0.5">Manage all contractors, customers, and platform-wide data.</p>
           </div>
           <div className="text-xs text-gray-400 bg-purple-50 border border-purple-200 px-3 py-2 rounded-xl">
@@ -169,7 +169,7 @@ export default function AdminDashboardPage() {
         </div>
 
         {/* Platform stats */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 mb-6">
           <StatCard icon={<Building2 size={16} className="text-purple-600" />}
             label="Contractors" value={String(stats.totalContractors)}
             sub={`${stats.activeContractors} active`} />
