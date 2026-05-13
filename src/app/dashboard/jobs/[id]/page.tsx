@@ -1,9 +1,10 @@
 'use client'
 import { useState, useEffect, useCallback, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { ArrowLeft, Edit2, Save, X, Plus, Trash2, FileText, CheckCircle2 } from 'lucide-react'
+import { ArrowLeft, Edit2, Save, X, Plus, Trash2, FileText, FileSignature, CheckCircle2 } from 'lucide-react'
 import Link from 'next/link'
 import Breadcrumbs from '../../../../components/Breadcrumbs'
+import ContractFormModal from '../../../../components/contracts/ContractFormModal'
 import { supabase } from '../../../../lib/supabase-client'
 
 type JobStatus = 'pending' | 'assigned' | 'in_progress' | 'completed' | 'cancelled'
@@ -89,6 +90,10 @@ function JobDetail({ params }: { params: { id: string } }) {
   })
   const [editItems, setEditItems] = useState<LineItem[]>([])
 
+  // Contract modal + existing-contract lookup
+  const [contractModalOpen, setContractModalOpen] = useState(false)
+  const [existingContractId, setExistingContractId] = useState<string | null>(null)
+
   const load = useCallback(async () => {
     const { data: jobData } = await supabase
       .from('jobs')
@@ -101,6 +106,15 @@ function JobDetail({ params }: { params: { id: string } }) {
       .select('id, description, qty, unit, rate')
       .eq('job_id', id)
       .order('id')
+
+    const { data: contractRow } = await supabase
+      .from('contracts')
+      .select('id')
+      .eq('job_id', id)
+      .neq('status', 'cancelled')
+      .limit(1)
+      .maybeSingle()
+    setExistingContractId(contractRow?.id ?? null)
 
     const { data: techs } = await supabase
       .from('technicians')
@@ -262,6 +276,17 @@ function JobDetail({ params }: { params: { id: string } }) {
                   className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-gray-200 text-xs font-semibold text-gray-700 hover:bg-gray-50 transition">
                   <FileText size={13} /> Create Invoice
                 </Link>
+                {existingContractId ? (
+                  <Link href={`/dashboard/contracts/${existingContractId}`}
+                    className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-gray-200 text-xs font-semibold text-gray-700 hover:bg-gray-50 transition">
+                    <FileSignature size={13} /> View Contract
+                  </Link>
+                ) : (
+                  <button onClick={() => setContractModalOpen(true)}
+                    className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-gray-200 text-xs font-semibold text-gray-700 hover:bg-gray-50 transition">
+                    <FileSignature size={13} /> Create Contract
+                  </button>
+                )}
                 <button onClick={() => setEditing(true)}
                   className="flex items-center gap-1.5 px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold rounded-xl transition">
                   <Edit2 size={13} /> Edit
@@ -473,6 +498,13 @@ function JobDetail({ params }: { params: { id: string } }) {
           </div>
         </div>
       </div>
+
+      <ContractFormModal
+        jobId={id}
+        open={contractModalOpen}
+        onClose={() => setContractModalOpen(false)}
+        onCreated={createdId => setExistingContractId(createdId)}
+      />
     </div>
   )
 }
