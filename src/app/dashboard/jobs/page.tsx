@@ -1,6 +1,6 @@
 'use client'
 import { useState, useEffect, useCallback } from 'react'
-import { FileText, Plus, MapPin, User, Calendar, DollarSign, Search, Eye, Edit2 } from 'lucide-react'
+import { FileText, Plus, MapPin, User, Calendar, DollarSign, Search, Eye, Edit2, RefreshCw } from 'lucide-react'
 import Link from 'next/link'
 import Breadcrumbs from '../../../components/Breadcrumbs'
 import { supabase } from '../../../lib/supabase-client'
@@ -83,10 +83,19 @@ export default function JobsPage() {
             <p className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-1">Operations</p>
             <h2 className="text-xl md:text-2xl font-bold text-gray-900">Jobs</h2>
           </div>
-          <Link href="/new-job"
-            className="flex items-center gap-1.5 px-3 sm:px-4 py-2.5 bg-teal-600 hover:bg-teal-700 text-white text-sm font-bold rounded-xl shadow-sm transition whitespace-nowrap shrink-0">
-            <Plus size={15} /> <span className="hidden sm:inline">New Job</span><span className="sm:hidden">New</span>
-          </Link>
+          <div className="flex items-center gap-2 shrink-0">
+            <button
+              onClick={() => { setLoading(true); load() }}
+              className="p-2.5 rounded-xl border border-gray-200 text-gray-500 hover:text-gray-700 hover:bg-gray-50 transition"
+              aria-label="Refresh jobs"
+              title="Refresh jobs">
+              <RefreshCw size={14} />
+            </button>
+            <Link href="/new-job"
+              className="flex items-center gap-1.5 px-3 sm:px-4 py-2.5 bg-teal-600 hover:bg-teal-700 text-white text-sm font-bold rounded-xl shadow-sm transition whitespace-nowrap">
+              <Plus size={15} /> <span className="hidden sm:inline">New Job</span><span className="sm:hidden">New</span>
+            </Link>
+          </div>
         </div>
 
         {/* Status filter tabs */}

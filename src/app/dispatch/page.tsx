@@ -210,21 +210,25 @@ function Dispatch() {
   // ── Update job
   const updateJob = async (jobId: string, updates: Partial<Job>) => {
     const { error } = await supabase.from('jobs').update(updates).eq('id', jobId)
-    if (!error) {
-      setJobs(prev => prev.map(j => j.id === jobId ? { ...j, ...updates } : j))
-      if (selectedJob?.id === jobId) setSelectedJob(prev => prev ? { ...prev, ...updates } : null)
-      markJobsChanged()
+    if (error) {
+      alert(`Couldn't update job: ${error.message}`)
+      return
     }
+    setJobs(prev => prev.map(j => j.id === jobId ? { ...j, ...updates } : j))
+    if (selectedJob?.id === jobId) setSelectedJob(prev => prev ? { ...prev, ...updates } : null)
+    markJobsChanged()
   }
 
   const deleteJob = async (jobId: string) => {
     if (!confirm('Delete this job? This cannot be undone.')) return
     const { error } = await supabase.from('jobs').delete().eq('id', jobId)
-    if (!error) {
-      setJobs(prev => prev.filter(j => j.id !== jobId))
-      setSelectedJob(null)
-      markJobsChanged()
+    if (error) {
+      alert(`Couldn't delete job: ${error.message}`)
+      return
     }
+    setJobs(prev => prev.filter(j => j.id !== jobId))
+    setSelectedJob(null)
+    markJobsChanged()
   }
 
   return (
