@@ -1,7 +1,8 @@
 'use client'
 import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { CheckCircle2, Plus, Trash2, Search, Users } from 'lucide-react';
+import Link from 'next/link';
+import { CheckCircle2, Plus, Trash2, Search, Users, CalendarDays, ArrowRight } from 'lucide-react';
 import Breadcrumbs from '../../components/Breadcrumbs';
 import { supabase } from '../../lib/supabase-client';
 
@@ -74,6 +75,7 @@ function NewJob() {
   const clientId = searchParams.get('client_id');
 
   const [loading, setLoading] = useState(false);
+  const [createdJobId, setCreatedJobId] = useState<string | null>(null);
   const [prefilling, setPrefilling] = useState(!!clientId);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState('');
@@ -230,11 +232,8 @@ function NewJob() {
         if (lineError) throw lineError;
       }
 
+      setCreatedJobId(job?.id ?? null);
       setSuccess(true);
-      setTimeout(() => {
-        if (clientId) router.push(`/customers/${clientId}/jobs`);
-        else router.push('/dashboard');
-      }, 1500);
     } catch (err: any) {
       setLoading(false);
       setError(err.message || 'Error creating job');
@@ -250,6 +249,8 @@ function NewJob() {
   }
 
   if (success) {
+    const doneHref = clientId ? `/customers/${clientId}/jobs` : '/dashboard';
+    const scheduleHref = createdJobId ? `/dispatch?schedule=${createdJobId}` : '/dispatch';
     return (
       <div className="min-h-screen bg-gray-50">
         <Breadcrumbs items={[{ label: 'New Job', href: '/new-job' }]} />
@@ -260,8 +261,19 @@ function NewJob() {
             </div>
             <p className="text-xl font-bold text-gray-900">Job Created!</p>
             <p className="text-gray-500 text-sm mt-2">
-              {clientId ? 'Redirecting to client jobs...' : 'Redirecting to Dashboard...'}
+              Schedule it now to assign a technician and pick a date.
             </p>
+            <div className="mt-6 flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-3">
+              <Link href={scheduleHref}
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-3 bg-teal-600 hover:bg-teal-700 text-white font-bold text-sm rounded-xl shadow-sm transition">
+                <CalendarDays size={15} /> Schedule Job
+                <ArrowRight size={14} />
+              </Link>
+              <Link href={doneHref}
+                className="w-full sm:w-auto inline-flex items-center justify-center px-5 py-3 rounded-xl border border-gray-200 text-gray-600 font-semibold text-sm hover:bg-gray-50 transition">
+                Done
+              </Link>
+            </div>
           </div>
         </div>
       </div>
