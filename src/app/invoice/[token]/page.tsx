@@ -1,7 +1,6 @@
 'use client'
 import { useState, useEffect } from 'react'
 import { Printer, CreditCard, CheckCircle2, AlertCircle, Phone, Mail } from 'lucide-react'
-import { supabase } from '../../../lib/supabase-client'
 
 interface LineItem {
   id: string
@@ -37,54 +36,21 @@ export default function PublicInvoicePage({ params }: { params: { token: string 
 
   useEffect(() => {
     async function load() {
-      const { data: inv } = await supabase
-        .from('invoices')
-        .select('*, clients(first_name, last_name, email, phone, address_line1, address_line2)')
-        .eq('public_token', token)
-        .single()
-
-      if (inv) {
-        setInvoice(inv)
-
-        if (inv.status === 'sent' && !inv.viewed_at) {
-          await supabase.from('invoices')
-            .update({ status: 'viewed', viewed_at: new Date().toISOString() })
-            .eq('id', inv.id)
+      try {
+        const res = await fetch(`/api/v1/public/invoice/${encodeURIComponent(token)}`, {
+          cache: 'no-store',
+        })
+        if (res.ok) {
+          const payload = await res.json()
+          if (payload?.invoice) {
+            setInvoice(payload.invoice)
+            setLineItems(payload.lineItems || [])
+            setPayments(payload.payments || [])
+          }
         }
-
-        // Fetch business info from customers table
-        const { data: biz } = await supabase
-          .from('customers')
-          .select('business_name, logo_url, phone, street_address, city, state, zip_code')
-          .eq('id', inv.contractor_id)
-          .single()
-
-        const { data: prof } = await supabase
-          .from('profiles')
-          .select('full_name, email')
-          .eq('id', inv.contractor_id)
-          .single()
-
-        inv.business = { ...(biz || {}), ...(prof || {}) }
-
-        // Fetch job + technician
-        if (inv.job_id) {
-          const { data: job } = await supabase
-            .from('jobs')
-            .select('title, scheduled_start, technicians(name)')
-            .eq('id', inv.job_id)
-            .single()
-          if (job) inv.job = job
-        }
-
-        const [{ data: items }, { data: pays }] = await Promise.all([
-          supabase.from('invoice_line_items').select('*').eq('invoice_id', inv.id).order('position'),
-          supabase.from('payments').select('*').eq('invoice_id', inv.id).order('paid_at', { ascending: false }),
-        ])
-        if (items) setLineItems(items)
-        if (pays) setPayments(pays)
+      } finally {
+        setLoading(false)
       }
-      setLoading(false)
     }
     load()
   }, [token])

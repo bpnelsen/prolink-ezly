@@ -29,7 +29,14 @@ export default function LoginPage() {
     const { data, error } = await supabase.auth.signInWithPassword({ email, password })
     if (error) throw error
     const role = data.user?.user_metadata?.role || 'contractor'
-    router.push(role === 'admin' ? '/dashboard/admin' : '/dashboard')
+    const defaultDest = role === 'admin' ? '/dashboard/admin' : '/dashboard'
+    let dest = defaultDest
+    try {
+      const raw = new URLSearchParams(window.location.search).get('next')
+      // Only allow same-origin, relative paths so we don't open-redirect.
+      if (raw && raw.startsWith('/') && !raw.startsWith('//')) dest = raw
+    } catch {}
+    router.push(dest)
   } catch (err: any) {
     setError(err.message || 'Login failed')
     setLoading(false)
