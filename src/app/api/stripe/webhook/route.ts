@@ -66,8 +66,39 @@ export async function POST(req: NextRequest) {
 
       case 'checkout.session.completed': {
         const session = event.data.object as Stripe.Checkout.Session
-        if (session.payment_status !== 'paid') break
-        await recordPayment(supabase, stripe, session, event.account || null)
+        if (session.mode === 'subscription') {
+          await syncSubscriptionFromSession(supabase, stripe, session)
+        } else if (session.mode === 'payment') {
+          if (session.payment_status !== 'paid') break
+          if (session.metadata?.invoice_id) {
+            // Connect direct charge from a contractor's invoice.
+            await recordInvoicePayment(supabase, stripe, session, event.account || null)
+          } else if (session.metadata?.purchase_type) {
+            // Platform-level one-time purchase (prewired scaffolding).
+            await recordOneTimePurchase(supabase, session)
+          }
+        }
+        break
+      }
+
+      case 'customer.subscription.created':
+      case 'customer.subscription.updated':
+      case 'customer.subscription.deleted': {
+        const sub = event.data.object as Stripe.Subscription
+        await syncSubscription(supabase, sub)
+        break
+      }
+
+      case 'invoice.payment_failed': {
+        const inv = event.data.object as Stripe.Invoice
+        const subRef = inv.parent?.subscription_details?.subscription
+        const subId = typeof subRef === 'string' ? subRef : subRef?.id
+        if (subId) {
+          await supabase
+            .from('customers')
+            .update({ stripe_subscription_status: 'past_due' })
+            .eq('stripe_subscription_id', subId)
+        }
         break
       }
 
@@ -119,7 +150,7 @@ export async function POST(req: NextRequest) {
   return NextResponse.json({ received: true })
 }
 
-async function recordPayment(
+async function recordInvoicePayment(
   supabase: ReturnType<typeof serviceClient>,
   stripe: Stripe,
   session: Stripe.Checkout.Session,
@@ -189,4 +220,84 @@ async function recordPayment(
       })
       .eq('id', invoiceId)
   }
+}
+
+async function syncSubscriptionFromSession(
+  supabase: ReturnType<typeof serviceClient>,
+  stripe: Stripe,
+  session: Stripe.Checkout.Session,
+) {
+  const subId = typeof session.subscription === 'string' ? session.subscription : session.subscription?.id
+  if (!subId) return
+  const sub = await stripe.subscriptions.retrieve(subId, { expand: ['items.data.price'] })
+  await syncSubscription(supabase, sub)
+}
+
+async function syncSubscription(
+  supabase: ReturnType<typeof serviceClient>,
+  sub: Stripe.Subscription,
+) {
+  const contractorId = sub.metadata?.contractor_id
+  if (!contractorId) return
+
+  const item = sub.items.data[0]
+  const price = item?.price
+  const lookupKey = price?.lookup_key || null
+  const plan = lookupKeyToPlan(lookupKey)
+  const periodEnd = item?.current_period_end
+    ? new Date(item.current_period_end * 1000).toISOString()
+    : null
+
+  await supabase
+    .from('customers')
+    .update({
+      stripe_subscription_id: sub.id,
+      stripe_subscription_status: sub.status,
+      stripe_price_id: price?.id || null,
+      stripe_price_lookup_key: lookupKey,
+      subscription_current_period_end: periodEnd,
+      subscription_cancel_at_period_end: sub.cancel_at_period_end,
+      // Keep the existing `plan` / `plan_status` columns in sync so the rest
+      // of the app continues to work without changes.
+      plan,
+      plan_status: sub.status === 'active' || sub.status === 'trialing' ? 'active' : sub.status,
+    })
+    .eq('id', contractorId)
+}
+
+function lookupKeyToPlan(lookupKey: string | null): string | null {
+  if (!lookupKey) return null
+  if (lookupKey.startsWith('starter')) return 'starter'
+  if (lookupKey.startsWith('pro')) return 'pro'
+  if (lookupKey.startsWith('business')) return 'business'
+  return null
+}
+
+async function recordOneTimePurchase(
+  supabase: ReturnType<typeof serviceClient>,
+  session: Stripe.Checkout.Session,
+) {
+  // Prewired scaffolding for platform-level one-time charges.
+  // The `one_time_purchases` table tracks any non-subscription, non-invoice
+  // platform purchase (setup fees, add-ons, etc).
+  const contractorId = session.metadata?.contractor_id
+  const purchaseType = session.metadata?.purchase_type
+  if (!contractorId || !purchaseType) return
+
+  const piId = typeof session.payment_intent === 'string'
+    ? session.payment_intent
+    : session.payment_intent?.id || null
+
+  const { error } = await supabase.from('one_time_purchases').insert({
+    contractor_id: contractorId,
+    purchase_type: purchaseType,
+    amount: (session.amount_total || 0) / 100,
+    currency: session.currency || 'usd',
+    stripe_checkout_session_id: session.id,
+    stripe_payment_intent_id: piId,
+    metadata: session.metadata || {},
+    paid_at: new Date().toISOString(),
+  })
+  // Ignore duplicate-key replays; surface anything else.
+  if (error && error.code !== '23505') throw error
 }

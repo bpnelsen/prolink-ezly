@@ -1,8 +1,10 @@
 'use client'
-import { useState, useEffect } from 'react'
-import { CheckCircle2, Zap, AlertCircle } from 'lucide-react'
+import { useState, useEffect, Suspense } from 'react'
+import { useSearchParams } from 'next/navigation'
+import { CheckCircle2, Zap, AlertCircle, ExternalLink, Loader2 } from 'lucide-react'
 import Breadcrumbs from '../../../components/Breadcrumbs'
 import { supabase } from '../../../lib/supabase-client'
+import { apiFetch } from '../../../lib/api-fetch'
 
 type Plan = 'trial' | 'starter' | 'pro' | 'business'
 
@@ -11,6 +13,7 @@ const PLANS = [
     id: 'starter' as Plan,
     name: 'Starter',
     price: 29,
+    lookupKey: 'starter_monthly',
     desc: 'For solo contractors just starting out.',
     features: ['Up to 25 customers', 'Basic invoicing', 'Email support'],
     popular: false,
@@ -19,6 +22,7 @@ const PLANS = [
     id: 'pro' as Plan,
     name: 'Pro',
     price: 49,
+    lookupKey: 'pro_monthly',
     desc: 'For growing contractors who want more.',
     features: ['Unlimited customers', 'Full invoicing + payments', 'Job management + scheduling', 'Business analytics'],
     popular: true,
@@ -27,6 +31,7 @@ const PLANS = [
     id: 'business' as Plan,
     name: 'Business',
     price: 149,
+    lookupKey: 'business_monthly',
     desc: 'For teams with multiple crews.',
     features: ['Everything in Pro', 'Multi-user access', 'API access', 'Dedicated support'],
     popular: false,
@@ -41,11 +46,26 @@ const PLAN_LABELS: Record<Plan, { label: string; bg: string; text: string }> = {
 }
 
 export default function BillingPage() {
+  return (
+    <Suspense fallback={<LoadingShell />}>
+      <BillingInner />
+    </Suspense>
+  )
+}
+
+function BillingInner() {
+  const params = useSearchParams()
+  const success = params.get('success') === '1'
+  const canceled = params.get('canceled') === '1'
+
   const [currentPlan, setCurrentPlan] = useState<Plan>('trial')
   const [planStatus, setPlanStatus] = useState<string>('active')
   const [trialEndsAt, setTrialEndsAt] = useState<string | null>(null)
+  const [hasStripeCustomer, setHasStripeCustomer] = useState(false)
+  const [periodEnd, setPeriodEnd] = useState<string | null>(null)
+  const [cancelAtPeriodEnd, setCancelAtPeriodEnd] = useState(false)
   const [loading, setLoading] = useState(true)
-  const [saving, setSaving] = useState(false)
+  const [busy, setBusy] = useState<string | null>(null)
   const [msg, setMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
 
   useEffect(() => {
@@ -54,42 +74,52 @@ export default function BillingPage() {
       if (!session) return
       const { data } = await supabase
         .from('customers')
-        .select('plan, plan_status, trial_ends_at')
+        .select('plan, plan_status, trial_ends_at, stripe_customer_id, stripe_subscription_status, subscription_current_period_end, subscription_cancel_at_period_end')
         .eq('id', session.user.id)
         .single()
       if (data) {
         setCurrentPlan((data.plan as Plan) || 'trial')
-        setPlanStatus(data.plan_status || 'active')
+        setPlanStatus(data.stripe_subscription_status || data.plan_status || 'active')
         setTrialEndsAt(data.trial_ends_at)
+        setHasStripeCustomer(!!data.stripe_customer_id)
+        setPeriodEnd(data.subscription_current_period_end)
+        setCancelAtPeriodEnd(!!data.subscription_cancel_at_period_end)
       }
       setLoading(false)
     }
     load()
   }, [])
 
-  const changePlan = async (plan: Plan) => {
-    setSaving(true)
+  useEffect(() => {
+    if (success) setMsg({ type: 'success', text: 'Subscription started! Welcome to Prolink.' })
+    if (canceled) setMsg({ type: 'error', text: 'Checkout canceled — no changes were made.' })
+  }, [success, canceled])
+
+  async function startCheckout(lookupKey: string, plan: Plan) {
+    setBusy(plan)
     setMsg(null)
-    const { data: { session } } = await supabase.auth.getSession()
-    if (!session) return
-    const { error } = await supabase
-      .from('customers')
-      .update({
-        plan,
-        plan_status: 'active',
-        trial_ends_at: plan === 'trial'
-          ? new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString()
-          : null,
-        plan_started_at: new Date().toISOString(),
-      })
-      .eq('id', session.user.id)
-    if (error) {
-      setMsg({ type: 'error', text: error.message })
-    } else {
-      setCurrentPlan(plan)
-      setMsg({ type: 'success', text: `Plan updated to ${plan === 'trial' ? 'Free Trial' : PLANS.find(p => p.id === plan)?.name}` })
+    const res = await apiFetch<{ url: string }>('/api/stripe/subscription/create-checkout-session', {
+      method: 'POST',
+      body: JSON.stringify({ lookup_key: lookupKey }),
+    })
+    if (res.data?.url) {
+      window.location.href = res.data.url
+      return
     }
-    setSaving(false)
+    setMsg({ type: 'error', text: res.message || 'Could not start checkout. Make sure Stripe is configured.' })
+    setBusy(null)
+  }
+
+  async function openPortal() {
+    setBusy('portal')
+    setMsg(null)
+    const res = await apiFetch<{ url: string }>('/api/stripe/subscription/create-portal-session', { method: 'POST' })
+    if (res.data?.url) {
+      window.location.href = res.data.url
+      return
+    }
+    setMsg({ type: 'error', text: res.message || 'Could not open billing portal.' })
+    setBusy(null)
   }
 
   const trialDaysLeft = trialEndsAt
@@ -97,14 +127,11 @@ export default function BillingPage() {
     : null
 
   const badge = PLAN_LABELS[currentPlan]
+  const periodEndDisplay = periodEnd
+    ? new Date(periodEnd).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+    : null
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="w-8 h-8 border-2 border-gray-200 border-t-teal-600 rounded-full animate-spin" />
-      </div>
-    )
-  }
+  if (loading) return <LoadingShell />
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -113,8 +140,14 @@ export default function BillingPage() {
         { label: 'Billing & Subscription', href: '/settings/billing' },
       ]} />
       <div className="max-w-3xl mx-auto p-4 md:p-8">
-        <p className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-1">Account</p>
-        <h2 className="text-2xl font-bold text-gray-900 mb-6">Billing & Subscription</h2>
+        {/* Branded header */}
+        <div className="flex items-center gap-2 mb-1">
+          <div className="w-7 h-7 rounded-lg bg-gray-900 flex items-center justify-center">
+            <Zap size={14} className="text-teal-400" />
+          </div>
+          <p className="text-xs font-bold uppercase tracking-widest text-gray-400">Prolink by EZLY · Account</p>
+        </div>
+        <h2 className="text-2xl font-bold text-gray-900 mb-6">Billing &amp; Subscription</h2>
 
         {msg && (
           <div className={`mb-5 flex items-center gap-2 p-4 rounded-xl border text-sm font-semibold ${
@@ -134,9 +167,14 @@ export default function BillingPage() {
             <span className={`px-3 py-1 rounded-full text-sm font-bold ${badge.bg} ${badge.text}`}>
               {badge.label}
             </span>
-            {planStatus !== 'active' && (
+            {planStatus !== 'active' && planStatus !== 'trialing' && (
               <span className="px-3 py-1 rounded-full text-sm font-bold bg-red-50 text-red-600">
-                {planStatus.replace('_', ' ')}
+                {planStatus.replace(/_/g, ' ')}
+              </span>
+            )}
+            {planStatus === 'trialing' && (
+              <span className="px-3 py-1 rounded-full text-sm font-bold bg-blue-50 text-blue-700">
+                Trialing
               </span>
             )}
             {currentPlan !== 'trial' && (
@@ -157,6 +195,29 @@ export default function BillingPage() {
                   Choose a plan below to keep full access after your trial ends.
                 </p>
               </div>
+            </div>
+          )}
+
+          {hasStripeCustomer && currentPlan !== 'trial' && (
+            <div className="mt-4 flex items-center justify-between flex-wrap gap-3 pt-4 border-t border-gray-100">
+              <div className="text-xs text-gray-500">
+                {cancelAtPeriodEnd && periodEndDisplay && (
+                  <p className="text-amber-700 font-semibold">
+                    Cancels on {periodEndDisplay} (you keep full access until then)
+                  </p>
+                )}
+                {!cancelAtPeriodEnd && periodEndDisplay && (
+                  <p>Renews {periodEndDisplay}</p>
+                )}
+              </div>
+              <button
+                onClick={openPortal}
+                disabled={busy !== null}
+                className="flex items-center gap-2 px-4 py-2 bg-gray-900 hover:bg-gray-800 disabled:opacity-50 text-white rounded-xl text-xs font-bold transition"
+              >
+                {busy === 'portal' ? <Loader2 size={12} className="animate-spin" /> : <ExternalLink size={12} />}
+                Manage your billing
+              </button>
             </div>
           )}
         </div>
@@ -205,15 +266,16 @@ export default function BillingPage() {
                       </span>
                     ) : (
                       <button
-                        onClick={() => changePlan(plan.id)}
-                        disabled={saving}
-                        className={`px-4 py-2 rounded-xl text-xs font-bold transition disabled:opacity-50 ${
+                        onClick={() => startCheckout(plan.lookupKey, plan.id)}
+                        disabled={busy !== null}
+                        className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold transition disabled:opacity-50 ${
                           plan.popular
                             ? 'bg-teal-600 hover:bg-teal-700 text-white'
                             : 'bg-gray-900 hover:bg-gray-800 text-white'
                         }`}
                       >
-                        {saving ? '...' : currentPlan === 'trial' ? 'Choose Plan' : 'Switch'}
+                        {busy === plan.id && <Loader2 size={12} className="animate-spin" />}
+                        {currentPlan === 'trial' ? 'Start 14-day trial' : 'Switch to ' + plan.name}
                       </button>
                     )}
                   </div>
@@ -221,13 +283,27 @@ export default function BillingPage() {
               </div>
             )
           })}
+          <p className="text-[11px] text-gray-400 px-1">
+            All paid plans start with a 14-day free trial — your card isn&apos;t charged until day 15.
+          </p>
         </div>
 
         <div className="bg-gray-50 rounded-2xl border border-gray-200 p-5 text-sm text-gray-500">
           <p className="font-semibold text-gray-700 mb-1">Billing questions?</p>
-          <p>All plans include a 14-day free trial. Contact <a href="mailto:hello@useezly.com" className="text-teal-600 font-semibold hover:underline">hello@useezly.com</a> for billing support, invoices, or to cancel your subscription.</p>
+          <p>
+            Manage your card, see invoices, or cancel anytime from the Stripe billing portal (button above).
+            For anything else, email <a href="mailto:hello@useezly.com" className="text-teal-600 font-semibold hover:underline">hello@useezly.com</a>.
+          </p>
         </div>
       </div>
+    </div>
+  )
+}
+
+function LoadingShell() {
+  return (
+    <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="w-8 h-8 border-2 border-gray-200 border-t-teal-600 rounded-full animate-spin" />
     </div>
   )
 }
