@@ -3,7 +3,7 @@ import { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
 import {
   Shield, Users, Building2, Briefcase, FileText, DollarSign,
-  Search, ExternalLink, AlertTriangle, TrendingUp, Globe, UserCheck
+  Search, ExternalLink, AlertTriangle, TrendingUp, Globe, UserCheck, CreditCard
 } from 'lucide-react'
 import Breadcrumbs from '../../../components/Breadcrumbs'
 import { supabase } from '../../../lib/supabase-client'
@@ -185,8 +185,9 @@ export default function AdminDashboardPage() {
         </div>
 
         {/* Quick links */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-6">
           <QuickLink href="/dashboard/admin/contractors/new" icon={<UserCheck size={14} />} label="Add Contractor" />
+          <QuickLink href="/dashboard/admin/payments" icon={<CreditCard size={14} />} label="Platform Payments" />
           <QuickLink href="/customers" icon={<Users size={14} />} label="View All Customers" />
           <QuickLink href="/dashboard/invoices" icon={<FileText size={14} />} label="View All Invoices" />
           <QuickLink href="/dispatch" icon={<Briefcase size={14} />} label="View All Jobs" />
