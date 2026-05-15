@@ -95,7 +95,7 @@ export default function PublicInvoicePage({ params }: { params: { token: string 
       const res = await fetch('/api/stripe/checkout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ invoiceId: invoice?.id, amount: invoice?.balance_due }),
+        body: JSON.stringify({ token }),
       })
       const data = await res.json()
       if (data.url) window.location.href = data.url

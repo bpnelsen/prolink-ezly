@@ -71,11 +71,10 @@ const SETTINGS_CARDS = [
     icon: CreditCard,
   },
   {
-    title: 'Payouts',
-    desc: 'Bank account where customer payments are deposited',
-    href: '/settings/payouts',
+    title: 'Payments & Payouts',
+    desc: 'Connect Stripe to accept card payments and receive bank deposits',
+    href: '/settings/payments',
     icon: Banknote,
-    soon: true,
   },
   {
     title: 'Refer & Earn',
