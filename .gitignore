@@ -7,3 +7,7 @@ node_modules/
 *.log
 .vercel
 tsconfig.tsbuildinfo
+
+# Never commit data exports or backend bundles (may contain secrets/PII)
+*.zip
+data/*.csv

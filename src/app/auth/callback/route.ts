@@ -32,11 +32,13 @@ export async function GET(request: Request) {
   const email = data.session.user.email
   const meta = data.session.user.user_metadata || {}
 
-  // Upsert profiles row (uses service role — bypasses RLS)
+  // Upsert profiles row (uses service role — bypasses RLS).
+  // Deliberately does NOT write `role`: it must never come from
+  // client-controlled user_metadata. New rows get the DB default
+  // ('contractor'); existing rows keep whatever role they already have.
   await supabaseAdmin.from('profiles').upsert({
     id: userId,
     email: email,
-    role: meta.role || 'contractor',
     full_name: meta.full_name || email?.split('@')[0] || 'Contractor',
   })
 
