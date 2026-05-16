@@ -37,52 +37,22 @@ export default function PublicInvoicePage({ params }: { params: { token: string 
 
   useEffect(() => {
     async function load() {
-      const { data: inv } = await supabase
-        .from('invoices')
-        .select('*, clients(first_name, last_name, email, phone, address_line1, address_line2)')
-        .eq('public_token', token)
-        .single()
+      // Token-scoped server-side lookup. RLS denies anon direct table reads;
+      // this SECURITY DEFINER function returns only the invoice that matches
+      // the opaque public_token plus the rows the portal renders.
+      const { data, error } = await supabase.rpc('get_public_invoice', { p_token: token })
 
+      const inv = !error && data ? (data as { invoice: Invoice | null }).invoice : null
       if (inv) {
         setInvoice(inv)
 
         if (inv.status === 'sent' && !inv.viewed_at) {
-          await supabase.from('invoices')
-            .update({ status: 'viewed', viewed_at: new Date().toISOString() })
-            .eq('id', inv.id)
+          await supabase.rpc('mark_invoice_viewed', { p_token: token })
         }
 
-        // Fetch business info from customers table
-        const { data: biz } = await supabase
-          .from('customers')
-          .select('business_name, logo_url, phone, street_address, city, state, zip_code')
-          .eq('id', inv.contractor_id)
-          .single()
-
-        const { data: prof } = await supabase
-          .from('profiles')
-          .select('full_name, email')
-          .eq('id', inv.contractor_id)
-          .single()
-
-        inv.business = { ...(biz || {}), ...(prof || {}) }
-
-        // Fetch job + technician
-        if (inv.job_id) {
-          const { data: job } = await supabase
-            .from('jobs')
-            .select('title, scheduled_start, technicians(name)')
-            .eq('id', inv.job_id)
-            .single()
-          if (job) inv.job = job
-        }
-
-        const [{ data: items }, { data: pays }] = await Promise.all([
-          supabase.from('invoice_line_items').select('*').eq('invoice_id', inv.id).order('position'),
-          supabase.from('payments').select('*').eq('invoice_id', inv.id).order('paid_at', { ascending: false }),
-        ])
-        if (items) setLineItems(items)
-        if (pays) setPayments(pays)
+        const payload = data as { line_items?: LineItem[]; payments?: Payment[] }
+        if (payload.line_items) setLineItems(payload.line_items)
+        if (payload.payments) setPayments(payload.payments)
       }
       setLoading(false)
     }
@@ -145,6 +115,11 @@ export default function PublicInvoicePage({ params }: { params: { token: string 
 
   const bizAddress = [biz.street_address, biz.city && biz.state ? `${biz.city}, ${biz.state} ${biz.zip_code || ''}`.trim() : null]
     .filter(Boolean).join('\n')
+
+  const clientCityLine = [
+    client.city && client.state ? `${client.city}, ${client.state}` : client.city || client.state,
+    client.zip_code,
+  ].filter(Boolean).join(' ')
 
   return (
     <div className="min-h-screen bg-gray-100 print:bg-white" style={{ fontFamily: 'Arial, sans-serif' }}>
@@ -241,8 +216,8 @@ export default function PublicInvoicePage({ params }: { params: { token: string 
                 <div className="mb-4">
                   <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400 mb-1">Bill To</p>
                   <p className="text-sm font-semibold text-gray-800">{customerName}</p>
-                  {client.address_line1 && <p className="text-sm text-gray-600">{client.address_line1}</p>}
-                  {client.address_line2 && <p className="text-sm text-gray-600">{client.address_line2}</p>}
+                  {client.street_address && <p className="text-sm text-gray-600">{client.street_address}</p>}
+                  {clientCityLine && <p className="text-sm text-gray-600">{clientCityLine}</p>}
                 </div>
               )}
               {(biz.phone || biz.email) && (
@@ -263,12 +238,12 @@ export default function PublicInvoicePage({ params }: { params: { token: string 
 
             {/* Right: service address + contact + tech */}
             <div className="flex-1 min-w-[180px] space-y-3">
-              {client.address_line1 && (
+              {client.street_address && (
                 <div>
                   <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400 mb-1">Service Address</p>
                   <p className="text-sm text-gray-800">{customerName}</p>
-                  <p className="text-sm text-gray-600">{client.address_line1}</p>
-                  {client.address_line2 && <p className="text-sm text-gray-600">{client.address_line2}</p>}
+                  <p className="text-sm text-gray-600">{client.street_address}</p>
+                  {clientCityLine && <p className="text-sm text-gray-600">{clientCityLine}</p>}
                 </div>
               )}
               {bizAddress && (
