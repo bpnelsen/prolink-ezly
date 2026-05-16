@@ -52,6 +52,30 @@ export async function requireUser(
   }
 }
 
+/**
+ * Server-side admin gate. Verifies the caller's JWT, then checks the
+ * authenticated email against the allowlist (ADMIN_EMAILS, comma-separated;
+ * defaults to the single known platform admin). On success returns a
+ * service-role client — the trusted cross-tenant path now that RLS is
+ * locked down. NEVER trust a client-supplied role/email for this.
+ */
+const ADMIN_EMAILS = (process.env.ADMIN_EMAILS || 'bpnelsen@gmail.com')
+  .split(',')
+  .map(e => e.trim().toLowerCase())
+  .filter(Boolean)
+
+export async function requireAdmin(
+  req: NextRequest
+): Promise<{ user: AuthedUser; supabase: SupabaseClient } | { error: NextResponse }> {
+  const auth = await requireUser(req)
+  if ('error' in auth) return auth
+  const email = (auth.user.email || '').toLowerCase()
+  if (!email || !ADMIN_EMAILS.includes(email)) {
+    return { error: forbidden('Admin access required.') }
+  }
+  return { user: auth.user, supabase: serviceClient() }
+}
+
 export function badRequest(message: string, details?: unknown) {
   return NextResponse.json({ error: 'bad_request', message, details }, { status: 400 })
 }

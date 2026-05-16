@@ -6,7 +6,7 @@ import {
   Search, ExternalLink, AlertTriangle, TrendingUp, Globe, UserCheck
 } from 'lucide-react'
 import Breadcrumbs from '../../../components/Breadcrumbs'
-import { supabase } from '../../../lib/supabase-client'
+import { apiFetch } from '../../../lib/api-fetch'
 import { useIsAdmin } from '../../../lib/admin'
 
 interface Contractor {
@@ -44,74 +44,11 @@ export default function AdminDashboardPage() {
 
   const fetchAll = useCallback(async () => {
     setLoading(true)
-
-    const [profilesRes, clientsRes, jobsRes, invoicesRes, techsRes] = await Promise.all([
-      supabase.from('profiles').select('id, full_name, email, business_name, phone, created_at').order('created_at', { ascending: false }),
-      supabase.from('clients').select('id, contractor_id').neq('is_deleted', true),
-      supabase.from('jobs').select('id, contractor_id, status, estimated_value'),
-      supabase.from('invoices').select('id, contractor_id, total, balance_due, status, amount_paid'),
-      supabase.from('technicians').select('id, contractor_id, is_active'),
-    ])
-
-    // contractor_websites table may not exist yet; safe-fetch
-    const { data: websitesData } = await supabase.from('contractor_websites').select('id, contractor_id, published').then(
-      r => r,
-      () => ({ data: [] as { id: string; contractor_id: string; published: boolean }[] })
-    )
-
-    const profiles = (profilesRes.data || []) as Contractor[]
-    const clients = clientsRes.data || []
-    const jobs = jobsRes.data || []
-    const invoices = invoicesRes.data || []
-    const websites = websitesData || []
-    const techs = techsRes.data || []
-
-    // Aggregate per-contractor metrics
-    const enriched = profiles.map(p => {
-      const cClients = clients.filter(c => c.contractor_id === p.id)
-      const cJobs = jobs.filter(j => j.contractor_id === p.id)
-      const cActiveJobs = cJobs.filter(j => j.status === 'pending' || j.status === 'assigned' || j.status === 'in_progress')
-      const cInvoices = invoices.filter(i => i.contractor_id === p.id)
-      const cOutstanding = cInvoices
-        .filter(i => i.status !== 'paid' && i.status !== 'cancelled' && i.status !== 'draft')
-        .reduce((sum, i) => sum + Number(i.balance_due || 0), 0)
-      const cRevenue = cInvoices.reduce((sum, i) => sum + Number(i.amount_paid || 0), 0)
-      const cWebsite = websites.find(w => w.contractor_id === p.id)
-      const cTechs = techs.filter(t => t.contractor_id === p.id && t.is_active)
-
-      return {
-        ...p,
-        customer_count: cClients.length,
-        job_count: cJobs.length,
-        active_job_count: cActiveJobs.length,
-        invoice_count: cInvoices.length,
-        outstanding: cOutstanding,
-        revenue_total: cRevenue,
-        has_website: cWebsite?.published || false,
-        tech_count: cTechs.length,
-      }
-    })
-
-    setContractors(enriched)
-
-    // Platform totals
-    const totalRevenue = invoices.reduce((sum, i) => sum + Number(i.amount_paid || 0), 0)
-    const totalOutstanding = invoices
-      .filter(i => i.status !== 'paid' && i.status !== 'cancelled' && i.status !== 'draft')
-      .reduce((sum, i) => sum + Number(i.balance_due || 0), 0)
-    const activeContractors = enriched.filter(c => (c.active_job_count || 0) > 0).length
-
-    setStats({
-      totalContractors: profiles.length,
-      activeContractors,
-      totalCustomers: clients.length,
-      totalJobs: jobs.length,
-      totalRevenue,
-      totalOutstanding,
-      totalInvoices: invoices.length,
-      websitesPublished: websites.filter(w => w.published).length,
-    })
-
+    const r = await apiFetch<{ contractors: Contractor[]; stats: typeof stats }>('/api/v1/admin/overview')
+    if (r.data) {
+      setContractors(r.data.contractors || [])
+      if (r.data.stats) setStats(r.data.stats)
+    }
     setLoading(false)
   }, [])
 
