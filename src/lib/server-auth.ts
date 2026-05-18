@@ -76,6 +76,48 @@ export async function requireAdmin(
   return { user: auth.user, supabase: serviceClient() }
 }
 
+/**
+ * Customer-portal gate. Verifies the caller's JWT, ensures a
+ * client_portal_users row exists, and resolves the contractor-owned
+ * `clients` ids this account has claimed (via client_links). Returns a
+ * service-role client — portal data is fetched server-side scoped strictly
+ * to `clientIds`, so no client-facing RLS is added to contractor tables.
+ */
+export async function requireClient(
+  req: NextRequest
+): Promise<
+  | { user: AuthedUser; supabase: SupabaseClient; clientIds: string[] }
+  | { error: NextResponse }
+> {
+  const auth = await requireUser(req)
+  if ('error' in auth) return auth
+  const svc = serviceClient()
+
+  // Reject contractor accounts hitting the portal API.
+  const { data: contractor } = await svc
+    .from('profiles')
+    .select('id')
+    .eq('id', auth.user.id)
+    .maybeSingle()
+  if (contractor) {
+    return { error: forbidden('This is a contractor account, not a customer portal account.') }
+  }
+
+  // Ensure the portal account row exists (defensive if the signup trigger
+  // didn't run, e.g. account_type metadata missing).
+  await svc
+    .from('client_portal_users')
+    .upsert({ id: auth.user.id, email: auth.user.email }, { onConflict: 'id' })
+
+  const { data: links } = await svc
+    .from('client_links')
+    .select('client_id')
+    .eq('portal_user_id', auth.user.id)
+
+  const clientIds = (links || []).map((l: { client_id: string }) => l.client_id)
+  return { user: auth.user, supabase: svc, clientIds }
+}
+
 export function badRequest(message: string, details?: unknown) {
   return NextResponse.json({ error: 'bad_request', message, details }, { status: 400 })
 }
