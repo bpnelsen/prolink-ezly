@@ -1,9 +1,10 @@
 'use client'
 import { useState, useEffect } from 'react'
 import { useParams, useRouter } from 'next/navigation'
-import { Phone, Mail, MapPin, FileText, ArrowLeft, Pencil, Trash2, User, Plus, Briefcase, DollarSign, Calendar, Eye } from 'lucide-react'
+import { Phone, Mail, MapPin, FileText, ArrowLeft, Pencil, Trash2, User, Plus, Briefcase, DollarSign, Calendar, Eye, UserPlus } from 'lucide-react'
 import Link from 'next/link'
 import { supabase } from '../../../lib/supabase-client'
+import { apiFetch } from '../../../lib/api-fetch'
 import Breadcrumbs from '../../../components/Breadcrumbs'
 
 type Tab = 'overview' | 'jobs' | 'invoices'
@@ -69,6 +70,30 @@ export default function CustomerDetailPage() {
   const [invoices, setInvoices] = useState<Invoice[]>([])
   const [loading, setLoading] = useState(true)
   const [tab, setTab] = useState<Tab>('overview')
+  const [inviting, setInviting] = useState(false)
+  const [inviteUrl, setInviteUrl] = useState<string | null>(null)
+  const [inviteMsg, setInviteMsg] = useState<string | null>(null)
+
+  const invitePortal = async () => {
+    setInviting(true)
+    setInviteMsg(null)
+    const r = await apiFetch<{ url: string; emailed: boolean }>(`/api/v1/clients/${id}/portal-invite`, { method: 'POST' })
+    if (r.data?.url) {
+      setInviteUrl(r.data.url)
+      setInviteMsg(r.data.emailed ? 'Invite emailed to the customer. You can also copy the link below.' : 'Invite link created — copy and send it to your customer.')
+    } else {
+      const det = (r as { details?: unknown }).details
+      const detail = det == null ? '' : typeof det === 'string' ? det : JSON.stringify(det)
+      const base = r.message || r.error || 'Could not create the invite.'
+      setInviteMsg(
+        `${base}${detail ? ` — ${detail}` : ''}` +
+        (/(relation|function|table).*(does not exist)|client_portal/i.test(detail)
+          ? ' (Run migrations/015_client_portal.sql in Supabase — it has not been applied yet.)'
+          : '')
+      )
+    }
+    setInviting(false)
+  }
 
   useEffect(() => {
     async function load() {
@@ -160,12 +185,33 @@ export default function CustomerDetailPage() {
               className="flex items-center gap-1.5 px-3 py-2 border border-gray-200 hover:bg-gray-50 text-gray-700 text-xs font-semibold rounded-xl transition">
               <Pencil size={12} /> Edit
             </Link>
+            <button onClick={invitePortal} disabled={inviting}
+              className="flex items-center gap-1.5 px-3 py-2 border border-gray-200 hover:bg-gray-50 text-gray-700 text-xs font-semibold rounded-xl transition disabled:opacity-50">
+              <UserPlus size={12} /> {inviting ? 'Creating…' : 'Invite to portal'}
+            </button>
             <button onClick={handleArchive}
               className="flex items-center gap-1.5 px-3 py-2 border border-red-200 hover:bg-red-50 text-red-600 text-xs font-semibold rounded-xl transition">
               <Trash2 size={12} /> Archive
             </button>
           </div>
         </div>
+
+        {(inviteUrl || inviteMsg) && (
+          <div className="mb-6 bg-teal-50 border border-teal-200 rounded-xl p-3">
+            {inviteMsg && <p className="text-xs text-teal-800 mb-2">{inviteMsg}</p>}
+            {inviteUrl && (
+              <div className="flex items-center gap-2">
+                <input readOnly value={inviteUrl}
+                  className="flex-1 bg-white border border-teal-200 rounded-lg px-2 py-1.5 text-xs text-gray-700" />
+                <button
+                  onClick={() => { navigator.clipboard.writeText(inviteUrl); setInviteMsg('Link copied to clipboard.') }}
+                  className="px-3 py-1.5 bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold rounded-lg">
+                  Copy
+                </button>
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Stats bar */}
         <div className="grid grid-cols-3 gap-3 mb-6">
