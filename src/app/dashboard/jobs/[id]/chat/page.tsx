@@ -42,6 +42,7 @@ export default function JobChatPage({ params }: { params: { id: string } }) {
   const [sending, setSending] = useState(false)
   const [analyzing, setAnalyzing] = useState(false)
   const [copied, setCopied] = useState(false)
+  const [error, setError] = useState<string | null>(null)
   const analyzingRef = useRef(false)
   const threadRef = useRef<HTMLDivElement>(null)
 
@@ -61,7 +62,12 @@ export default function JobChatPage({ params }: { params: { id: string } }) {
     if (analyzingRef.current) return
     analyzingRef.current = true
     setAnalyzing(true)
-    await apiFetch(`/api/v1/conversations/${cid}/analyze`, { method: 'POST' })
+    const a = await apiFetch<Row>(`/api/v1/conversations/${cid}/analyze`, { method: 'POST' })
+    if (a.status >= 400) {
+      setError(`AI analysis failed (HTTP ${a.status}): ${a.message || a.error || 'unknown error'}`)
+    } else if (a.data?.warning) {
+      setError(`AI analysis: ${a.data.warning}`)
+    }
     const r = await apiFetch<Row>(`/api/v1/conversations/${cid}/messages`)
     if (r.data) applySnapshot(r.data)
     analyzingRef.current = false
@@ -89,7 +95,16 @@ export default function JobChatPage({ params }: { params: { id: string } }) {
       return
     }
     const r = await apiFetch<Row>(`/api/v1/jobs/${params.id}/conversation`)
-    if (r.data) applySnapshot(r.data)
+    if (r.data) {
+      applySnapshot(r.data)
+      setError(null)
+    } else {
+      setError(
+        `Couldn't load this conversation (HTTP ${r.status}): ${r.message || r.error || 'unknown error'}. ` +
+        `If this mentions a missing relation/table or function, the chat database migration ` +
+        `(migrations/014_chat_and_deal_plan.sql) has not been applied in Supabase yet.`
+      )
+    }
     setLoading(false)
   }, [params.id, router, applySnapshot])
 
@@ -107,7 +122,11 @@ export default function JobChatPage({ params }: { params: { id: string } }) {
 
   const send = async () => {
     const text = draft.trim()
-    if (!text || !convId || sending) return
+    if (!text || sending) return
+    if (!convId) {
+      setError('Cannot send: the conversation never loaded. See the error above (likely the chat migration is not applied in Supabase).')
+      return
+    }
     setSending(true)
     const r = await apiFetch<Message>(`/api/v1/conversations/${convId}/messages`, {
       method: 'POST',
@@ -116,6 +135,9 @@ export default function JobChatPage({ params }: { params: { id: string } }) {
     if (r.data) {
       setMessages(m => [...m, r.data as Message])
       setDraft('')
+      setError(null)
+    } else {
+      setError(`Message failed (HTTP ${r.status}): ${r.message || r.error || 'unknown error'}`)
     }
     setSending(false)
   }
@@ -153,6 +175,14 @@ export default function JobChatPage({ params }: { params: { id: string } }) {
         { label: jobTitle || 'Job', href: `/dashboard/jobs/${params.id}` },
         { label: 'Chat & Deal Plan', href: `/dashboard/jobs/${params.id}/chat` },
       ]} />
+
+      {error && (
+        <div className="max-w-7xl mx-auto px-4 md:px-6 pt-4">
+          <div className="bg-red-50 border border-red-200 text-red-800 rounded-xl p-3 text-sm whitespace-pre-wrap">
+            {error}
+          </div>
+        </div>
+      )}
 
       <div className="max-w-7xl mx-auto p-4 md:p-6 grid grid-cols-1 lg:grid-cols-2 gap-5">
         {/* Chat */}

@@ -21,13 +21,17 @@ export default function ClientChatPage({ params }: { params: { token: string } }
   const [draft, setDraft] = useState('')
   const [sending, setSending] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [loadErr, setLoadErr] = useState<string | null>(null)
   const threadRef = useRef<HTMLDivElement>(null)
 
   const load = useCallback(async () => {
     const { data, error: rpcErr } = await supabase.rpc('get_client_thread', { p_token: token })
-    if (!rpcErr && data) {
+    if (rpcErr) {
+      setLoadErr(rpcErr.message || 'Could not load this conversation.')
+    } else if (data) {
       setConv((data as Conv).conversation || null)
       setMessages(((data as Conv).messages as Message[]) || [])
+      setLoadErr(null)
     }
     setLoading(false)
   }, [token])
@@ -82,6 +86,9 @@ export default function ClientChatPage({ params }: { params: { token: string } }
         <p className="text-4xl mb-4">💬</p>
         <h1 className="text-xl font-bold text-gray-900 mb-2">Conversation not found</h1>
         <p className="text-gray-500 text-sm">This link may be invalid or no longer active.</p>
+        {loadErr && (
+          <p className="mt-4 max-w-md text-xs text-red-600 break-words">{loadErr}</p>
+        )}
       </div>
     )
   }
