@@ -4,6 +4,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { CheckCircle2, Plus, Trash2, Search, Users, CalendarDays, ArrowRight } from 'lucide-react';
 import Breadcrumbs from '../../components/Breadcrumbs';
+import AddressAutocomplete from '../../components/AddressAutocomplete';
 import { supabase } from '../../lib/supabase-client';
 import { markJobsChanged } from '../../lib/data-events';
 
@@ -401,7 +402,10 @@ function NewJob() {
               </div>
               <div className="md:col-span-2">
                 <label className="block text-xs font-semibold text-gray-600 mb-1.5">Site Address</label>
-                <input value={siteAddress} onChange={e => setSiteAddress(e.target.value)}
+                <AddressAutocomplete
+                  value={siteAddress}
+                  onChange={setSiteAddress}
+                  onSelect={a => setSiteAddress(a.formatted || a.line1)}
                   className="w-full bg-gray-50 p-3 rounded-xl border border-gray-200 text-sm focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 transition"
                   placeholder="Job site address" />
               </div>

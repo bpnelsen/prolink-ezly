@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Plus, CheckCircle2 } from 'lucide-react';
 import Breadcrumbs from '../../../components/Breadcrumbs';
+import AddressAutocomplete from '../../../components/AddressAutocomplete';
 import { supabase } from '../../../lib/supabase-client';
 
 export default function NewCustomer() {
@@ -130,7 +131,16 @@ export default function NewCustomer() {
               <h3 className="font-bold text-sm text-gray-500 uppercase tracking-wide">Primary Property</h3>
               <div>
                 <label className="block text-xs font-semibold text-gray-600 mb-1.5">Address Line 1</label>
-                <input value={form.address_line1} onChange={handleChange('address_line1')}
+                <AddressAutocomplete
+                  value={form.address_line1}
+                  onChange={v => setForm(prev => ({ ...prev, address_line1: v }))}
+                  onSelect={a => setForm(prev => ({
+                    ...prev,
+                    address_line1: a.line1 || prev.address_line1,
+                    city: a.city || prev.city,
+                    state: a.state || prev.state,
+                    zip_code: a.postal_code || prev.zip_code,
+                  }))}
                   className="w-full bg-gray-50 p-3 rounded-xl border border-gray-200 text-sm focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 transition"
                   placeholder="123 Main St" />
               </div>
