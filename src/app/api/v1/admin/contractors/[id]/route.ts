@@ -114,7 +114,7 @@ export async function DELETE(req: NextRequest, { params }: { params: { id: strin
 
   // Best-effort child cleanup before the profile row (FKs may or may not
   // cascade depending on how the project was provisioned).
-  for (const table of ['invoices', 'jobs', 'clients', 'technicians', 'contractor_websites', 'customers']) {
+  for (const table of ['invoices', 'jobs', 'clients', 'technicians', 'contractor_websites']) {
     try {
       await svc.from(table).delete().eq('contractor_id', id)
     } catch {
