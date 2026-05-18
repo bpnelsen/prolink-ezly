@@ -1,7 +1,7 @@
 'use client'
 import { useState, useEffect, useCallback, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { ArrowLeft, Edit2, Save, X, Plus, Trash2, FileText, FileSignature, CheckCircle2 } from 'lucide-react'
+import { ArrowLeft, Edit2, Save, X, Plus, Trash2, FileText, FileSignature, CheckCircle2, MessageSquare } from 'lucide-react'
 import Link from 'next/link'
 import Breadcrumbs from '../../../../components/Breadcrumbs'
 import ContractFormModal from '../../../../components/contracts/ContractFormModal'
@@ -308,6 +308,10 @@ function JobDetail({ params }: { params: { id: string } }) {
                 <Link href={`/dashboard/invoices/new?job_id=${id}`}
                   className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-gray-200 text-xs font-semibold text-gray-700 hover:bg-gray-50 transition">
                   <FileText size={13} /> Create Invoice
+                </Link>
+                <Link href={`/dashboard/jobs/${id}/chat`}
+                  className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-gray-200 text-xs font-semibold text-gray-700 hover:bg-gray-50 transition">
+                  <MessageSquare size={13} /> Chat &amp; Deal Plan
                 </Link>
                 {existingContractId ? (
                   <Link href={`/dashboard/contracts/${existingContractId}`}
