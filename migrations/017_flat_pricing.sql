@@ -38,7 +38,7 @@ SET
     ELSE COALESCE(NULLIF(subscription_status, ''), 'trialing')
   END,
   trial_ends_at = COALESCE(trial_ends_at, timezone('utc', now()) + interval '14 days'),
-  plan_started_at = COALESCE(plan_started_at, created_at, timezone('utc', now()))
+  plan_started_at = COALESCE(plan_started_at, timezone('utc', now()))
 WHERE plan IS DISTINCT FROM 'standard'
    OR plan IS NULL
    OR seats IS NULL;
