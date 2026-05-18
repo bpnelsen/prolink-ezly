@@ -1,0 +1,4 @@
+Contact: mailto:security@useezly.com
+Expires: 2027-05-14T00:00:00Z
+Preferred-Languages: en
+Canonical: https://www.useezly.com/.well-known/security.txt

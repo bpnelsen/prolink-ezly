@@ -104,17 +104,29 @@ export default function AIForeman() {
     const contextNote = jobContext ? `\n\n[CURRENT JOB CONTEXT]\n${jobContext}` : ''
 
     try {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session) {
+        setMessages(prev => [...prev, { role: 'ai', content: 'Sign in to chat with Foreman.' }])
+        return
+      }
       const resp = await fetch('/api/foreman', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${session.access_token}`,
+        },
         body: JSON.stringify({
           prompt: text + contextNote,
         }),
       })
+      if (resp.status === 429) {
+        setMessages(prev => [...prev, { role: 'ai', content: 'Slow down — too many questions in a row. Try again in a minute.' }])
+        return
+      }
       const data = await resp.json()
       setMessages(prev => [...prev, { role: 'ai', content: data.response || 'Foreman is off-site. Try again.' }])
     } catch {
-      setMessages(prev => [...prev, { role: 'ai', content: '🔌 Foreman is offline. Check your OpenRouter API key in Vercel environment variables.' }])
+      setMessages(prev => [...prev, { role: 'ai', content: 'Foreman is offline right now. Try again in a moment.' }])
     } finally {
       setLoading(false)
     }

@@ -8,7 +8,7 @@ import {
   Mail, Phone, Building2, DollarSign, TrendingUp
 } from 'lucide-react'
 import Breadcrumbs from '../../../../../components/Breadcrumbs'
-import { supabase } from '../../../../../lib/supabase-client'
+import { apiFetch } from '../../../../../lib/api-fetch'
 import { useIsAdmin } from '../../../../../lib/admin'
 
 interface Profile {
@@ -88,27 +88,17 @@ export default function AdminContractorDetailPage({ params }: { params: { id: st
 
   const fetchAll = useCallback(async () => {
     setLoading(true)
-    const [
-      { data: prof },
-      { data: clientsData },
-      { data: jobsData },
-      { data: invoicesData },
-      { data: techData },
-    ] = await Promise.all([
-      supabase.from('profiles').select('*').eq('id', id).single(),
-      supabase.from('clients').select('*').eq('contractor_id', id).order('created_at', { ascending: false }),
-      supabase.from('jobs').select('id, title, status, stage, estimated_value, scheduled_start').eq('contractor_id', id).order('created_at', { ascending: false }),
-      supabase.from('invoices').select('id, invoice_number, status, total, amount_paid, balance_due, issue_date').eq('contractor_id', id).order('created_at', { ascending: false }),
-      supabase.from('technicians').select('id, name, is_active').eq('contractor_id', id).order('name'),
-    ])
+    const r = await apiFetch<{
+      profile: Profile
+      clients: Client[]
+      jobs: Job[]
+      invoices: Invoice[]
+      technicians: Technician[]
+      website: Website | null
+    }>(`/api/v1/admin/contractors/${id}`)
 
-    // contractor_websites may not exist yet; safe-fetch
-    const { data: webData } = await supabase.from('contractor_websites').select('id, slug, published, business_name').eq('contractor_id', id).maybeSingle().then(
-      r => r,
-      () => ({ data: null as Website | null })
-    )
-
-    if (prof) {
+    if (r.data?.profile) {
+      const prof = r.data.profile
       setProfile(prof)
       setEditForm({
         full_name: prof.full_name || '',
@@ -116,12 +106,12 @@ export default function AdminContractorDetailPage({ params }: { params: { id: st
         email: prof.email || '',
         phone: prof.phone || '',
       })
+      setClients(r.data.clients || [])
+      setJobs(r.data.jobs || [])
+      setInvoices(r.data.invoices || [])
+      setTechnicians(r.data.technicians || [])
+      setWebsite(r.data.website || null)
     }
-    if (clientsData) setClients(clientsData)
-    if (jobsData) setJobs(jobsData)
-    if (invoicesData) setInvoices(invoicesData)
-    if (techData) setTechnicians(techData)
-    if (webData) setWebsite(webData)
     setLoading(false)
   }, [id])
 
@@ -131,25 +121,23 @@ export default function AdminContractorDetailPage({ params }: { params: { id: st
 
   const handleSaveProfile = async () => {
     setSaving(true)
-    const { error } = await supabase.from('profiles').update({
-      full_name: editForm.full_name.trim() || null,
-      business_name: editForm.business_name.trim() || null,
-      email: editForm.email.trim() || null,
-      phone: editForm.phone.trim() || null,
-    }).eq('id', id)
-    if (!error) {
-      setProfile(prev => prev ? { ...prev, ...editForm } : null)
+    const r = await apiFetch<{ profile: Profile }>(`/api/v1/admin/contractors/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(editForm),
+    })
+    if (r.data?.profile) {
+      setProfile(r.data.profile)
       setEditing(false)
     } else {
-      alert('Failed to update: ' + error.message)
+      alert('Failed to update: ' + (r.message || r.error || 'unknown error'))
     }
     setSaving(false)
   }
 
   const deleteRecord = async (table: string, recordId: string, label: string, callback: () => void) => {
     if (!confirm(`Delete this ${label}? This cannot be undone.`)) return
-    const { error } = await supabase.from(table).delete().eq('id', recordId)
-    if (error) alert('Delete failed: ' + error.message)
+    const r = await apiFetch(`/api/v1/admin/records/${table}/${recordId}`, { method: 'DELETE' })
+    if (r.status >= 400) alert('Delete failed: ' + (r.message || r.error || 'unknown error'))
     else callback()
   }
 
@@ -448,8 +436,8 @@ export default function AdminContractorDetailPage({ params }: { params: { id: st
               <button onClick={async () => {
                 if (!confirm(`Permanently delete ${profile.full_name} and ALL their data?\n\nThis includes:\n• ${activeClients} customers\n• ${jobs.length} jobs\n• ${invoices.length} invoices\n• ${activeTechs} technicians\n• Website if any\n\nThis cannot be undone.`)) return
                 if (!confirm('Are you absolutely sure?')) return
-                const { error } = await supabase.from('profiles').delete().eq('id', id)
-                if (error) alert('Delete failed: ' + error.message)
+                const r = await apiFetch(`/api/v1/admin/contractors/${id}`, { method: 'DELETE' })
+                if (r.status >= 400) alert('Delete failed: ' + (r.message || r.error || 'unknown error'))
                 else router.push('/dashboard/admin')
               }}
                 className="flex items-center gap-1.5 px-3 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-xs font-bold transition">
