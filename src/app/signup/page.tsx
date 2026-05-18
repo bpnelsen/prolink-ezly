@@ -2,46 +2,19 @@
 
 export const dynamic = 'force-dynamic'
 
-import { useState, useEffect, Suspense } from 'react'
+import { useState, Suspense } from 'react'
 import Link from 'next/link'
-import { useSearchParams } from 'next/navigation'
 import { CheckCircle, Zap } from 'lucide-react'
 import { supabase } from '../../lib/supabase-client'
 import ProlinkLogoDark from '../../components/ProlinkLogoDark'
 import AddressAutocomplete from '../../components/AddressAutocomplete'
 
 type Step = 1 | 2 | 3 | 4
-type Plan = 'trial' | 'starter' | 'pro' | 'business'
 
-const PLANS = [
-  {
-    id: 'starter' as Plan,
-    name: 'Starter',
-    price: 29,
-    desc: 'For solo contractors just starting out.',
-    features: ['Up to 25 customers', 'Basic invoicing', 'Email support'],
-    color: 'border-gray-200',
-    badge: '',
-  },
-  {
-    id: 'pro' as Plan,
-    name: 'Pro',
-    price: 49,
-    desc: 'For growing contractors who want more.',
-    features: ['Unlimited customers', 'Full invoicing + payments', 'Job management + scheduling', 'Business analytics'],
-    color: 'border-teal-500',
-    badge: 'Most Popular',
-  },
-  {
-    id: 'business' as Plan,
-    name: 'Business',
-    price: 149,
-    desc: 'For teams with multiple crews.',
-    features: ['Everything in Pro', 'Multi-user access', 'API access', 'Dedicated support'],
-    color: 'border-gray-200',
-    badge: '',
-  },
-]
+const BASE_PRICE = 49
+const SEAT_PRICE = 15
+const TRIAL_DAYS = 14
+const planTotal = (seats: number) => BASE_PRICE + SEAT_PRICE * (Math.max(1, seats) - 1)
 
 export default function SignupPage() {
   return (
@@ -52,16 +25,10 @@ export default function SignupPage() {
 }
 
 function SignupForm() {
-  const searchParams = useSearchParams()
   const [step, setStep] = useState<Step>(1)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
-  const [selectedPlan, setSelectedPlan] = useState<Plan>('trial')
-
-  useEffect(() => {
-    const p = searchParams.get('plan') as Plan | null
-    if (p && ['starter', 'pro', 'business'].includes(p)) setSelectedPlan(p)
-  }, [searchParams])
+  const [seats, setSeats] = useState(1)
 
   const [formData, setFormData] = useState({
     email: '',
@@ -161,11 +128,11 @@ const handleChange = (e: any) => {
         state: formData.businessState || null,
         zip_code: formData.businessZip || null,
         trade: formData.specialties.length > 0 ? formData.specialties[0] : null,
-        plan: selectedPlan,
+        plan: 'standard',
         plan_status: 'active',
-        trial_ends_at: selectedPlan === 'trial'
-          ? new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString()
-          : null,
+        subscription_status: 'trialing',
+        seats: Math.max(1, seats),
+        trial_ends_at: new Date(Date.now() + TRIAL_DAYS * 24 * 60 * 60 * 1000).toISOString(),
         plan_started_at: new Date().toISOString(),
       })
 
@@ -474,74 +441,48 @@ const handleChange = (e: any) => {
           {step === 4 && (
             <div className="space-y-5">
               <div>
-                <h1 className="text-2xl font-bold text-[#0f1d35]">Choose Your Plan</h1>
-                <p className="text-gray-500 text-sm mt-1">Start free for 14 days. No credit card required.</p>
+                <h1 className="text-2xl font-bold text-[#0f1d35]">Your Plan</h1>
+                <p className="text-gray-500 text-sm mt-1">Start free for {TRIAL_DAYS} days. No credit card required to begin.</p>
               </div>
 
-              <div className="space-y-3">
-                {/* Trial option */}
-                <button
-                  type="button"
-                  onClick={() => setSelectedPlan('trial')}
-                  className={`w-full text-left p-4 rounded-xl border-2 transition ${
-                    selectedPlan === 'trial' ? 'border-[#0f1d35] bg-[#0f1d35]/5' : 'border-gray-200 hover:border-gray-300'
-                  }`}
-                >
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <Zap size={14} className="text-teal-500" />
-                        <span className="font-bold text-sm text-gray-900">14-Day Free Trial</span>
-                        <span className="text-[10px] font-bold bg-teal-100 text-teal-700 px-2 py-0.5 rounded-full">Recommended</span>
-                      </div>
-                      <p className="text-xs text-gray-500 mt-0.5 ml-5">Try everything free, pick a plan later</p>
-                    </div>
-                    <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${selectedPlan === 'trial' ? 'border-[#0f1d35]' : 'border-gray-300'}`}>
-                      {selectedPlan === 'trial' && <div className="w-2 h-2 rounded-full bg-[#0f1d35]" />}
-                    </div>
+              <div className="p-5 rounded-xl border-2 border-[#14b8a6] bg-teal-50">
+                <div className="flex items-center justify-between flex-wrap gap-2">
+                  <div className="flex items-center gap-2">
+                    <Zap size={16} className="text-teal-600" />
+                    <span className="font-bold text-gray-900">Prolink — Standard</span>
                   </div>
-                </button>
-
-                {/* Paid plans */}
-                {PLANS.map(plan => (
-                  <button
-                    key={plan.id}
-                    type="button"
-                    onClick={() => setSelectedPlan(plan.id)}
-                    className={`w-full text-left p-4 rounded-xl border-2 transition ${
-                      selectedPlan === plan.id
-                        ? 'border-[#14b8a6] bg-teal-50'
-                        : 'border-gray-200 hover:border-gray-300'
-                    }`}
-                  >
-                    <div className="flex items-center justify-between">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <span className="font-bold text-sm text-gray-900">{plan.name}</span>
-                          {plan.badge && (
-                            <span className="text-[10px] font-bold bg-orange-100 text-orange-600 px-2 py-0.5 rounded-full">{plan.badge}</span>
-                          )}
-                          <span className="text-sm font-bold text-gray-700 ml-auto mr-4">${plan.price}<span className="text-xs font-normal text-gray-400">/mo</span></span>
-                        </div>
-                        <ul className="mt-1.5 space-y-0.5">
-                          {plan.features.slice(0, 2).map(f => (
-                            <li key={f} className="text-xs text-gray-500 flex items-center gap-1">
-                              <span className="text-teal-500">✦</span> {f}
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                      <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 ml-2 ${selectedPlan === plan.id ? 'border-teal-500' : 'border-gray-300'}`}>
-                        {selectedPlan === plan.id && <div className="w-2 h-2 rounded-full bg-teal-500" />}
-                      </div>
-                    </div>
-                  </button>
-                ))}
+                  <span className="text-2xl font-bold text-gray-900">
+                    ${planTotal(seats)}<span className="text-xs font-normal text-gray-400">/mo</span>
+                  </span>
+                </div>
+                <p className="text-xs text-gray-500 mt-1">
+                  ${BASE_PRICE}/mo includes you. Each additional team member is +${SEAT_PRICE}/mo.
+                </p>
+                <ul className="mt-3 space-y-1">
+                  {['Everything included — no feature tiers', 'Unlimited customers, jobs & invoices', 'Customer portal, chat & AI deal plans', `${TRIAL_DAYS}-day free trial, cancel anytime`].map(f => (
+                    <li key={f} className="text-xs text-gray-600 flex items-center gap-1.5">
+                      <span className="text-teal-500 font-bold">✦</span> {f}
+                    </li>
+                  ))}
+                </ul>
               </div>
 
-              {selectedPlan !== 'trial' && (
-                <p className="text-xs text-gray-400 text-center">Billing starts after your 14-day trial. Cancel anytime.</p>
-              )}
+              <div className="p-4 rounded-xl border border-gray-200">
+                <p className="text-sm font-semibold text-gray-800 mb-1">Team size</p>
+                <p className="text-xs text-gray-500 mb-3">How many people (including you) will use Prolink?</p>
+                <div className="flex items-center gap-3">
+                  <button type="button" onClick={() => setSeats(s => Math.max(1, s - 1))}
+                    className="w-9 h-9 rounded-lg border border-gray-200 text-gray-600 font-bold">−</button>
+                  <span className="text-lg font-bold text-gray-900 w-10 text-center">{seats}</span>
+                  <button type="button" onClick={() => setSeats(s => s + 1)}
+                    className="w-9 h-9 rounded-lg border border-gray-200 text-gray-600 font-bold">+</button>
+                  <span className="text-sm text-gray-500 ml-2">
+                    {seats === 1 ? 'Just me' : `${seats - 1} extra seat${seats - 1 !== 1 ? 's' : ''}`} → ${planTotal(seats)}/mo
+                  </span>
+                </div>
+              </div>
+
+              <p className="text-xs text-gray-400 text-center">Billing starts after your {TRIAL_DAYS}-day trial. Cancel anytime.</p>
 
               <div className="flex gap-3 pt-1">
                 <button
