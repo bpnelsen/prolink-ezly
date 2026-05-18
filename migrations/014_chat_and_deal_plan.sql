@@ -23,6 +23,17 @@ CREATE TABLE IF NOT EXISTS public.conversations (
   last_analyzed_at TIMESTAMPTZ,
   created_at      TIMESTAMPTZ NOT NULL DEFAULT now()
 );
+-- Reconcile a partially-created table from an earlier failed run
+-- (CREATE TABLE IF NOT EXISTS is a no-op and won't add missing columns).
+ALTER TABLE public.conversations
+  ADD COLUMN IF NOT EXISTS contractor_id    UUID,
+  ADD COLUMN IF NOT EXISTS client_id        UUID,
+  ADD COLUMN IF NOT EXISTS job_id           UUID,
+  ADD COLUMN IF NOT EXISTS public_token     UUID NOT NULL DEFAULT gen_random_uuid(),
+  ADD COLUMN IF NOT EXISTS status           TEXT NOT NULL DEFAULT 'active',
+  ADD COLUMN IF NOT EXISTS last_message_at  TIMESTAMPTZ,
+  ADD COLUMN IF NOT EXISTS last_analyzed_at TIMESTAMPTZ,
+  ADD COLUMN IF NOT EXISTS created_at       TIMESTAMPTZ NOT NULL DEFAULT now();
 CREATE UNIQUE INDEX IF NOT EXISTS idx_conversations_job        ON public.conversations(job_id);
 CREATE UNIQUE INDEX IF NOT EXISTS idx_conversations_token      ON public.conversations(public_token);
 CREATE INDEX        IF NOT EXISTS idx_conversations_contractor ON public.conversations(contractor_id);
@@ -39,6 +50,13 @@ CREATE TABLE IF NOT EXISTS public.messages (
   created_at      TIMESTAMPTZ NOT NULL DEFAULT now(),
   read_at         TIMESTAMPTZ
 );
+ALTER TABLE public.messages
+  ADD COLUMN IF NOT EXISTS conversation_id UUID,
+  ADD COLUMN IF NOT EXISTS sender_role     TEXT,
+  ADD COLUMN IF NOT EXISTS sender_name     TEXT,
+  ADD COLUMN IF NOT EXISTS body            TEXT,
+  ADD COLUMN IF NOT EXISTS created_at      TIMESTAMPTZ NOT NULL DEFAULT now(),
+  ADD COLUMN IF NOT EXISTS read_at         TIMESTAMPTZ;
 CREATE INDEX IF NOT EXISTS idx_messages_conversation ON public.messages(conversation_id, created_at);
 
 -- ---------------------------------------------------------------------------
@@ -59,6 +77,19 @@ CREATE TABLE IF NOT EXISTS public.deal_plans (
   updated_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
   created_at    TIMESTAMPTZ NOT NULL DEFAULT now()
 );
+ALTER TABLE public.deal_plans
+  ADD COLUMN IF NOT EXISTS job_id                     UUID,
+  ADD COLUMN IF NOT EXISTS contractor_id              UUID,
+  ADD COLUMN IF NOT EXISTS scope                      JSONB NOT NULL DEFAULT '[]'::jsonb,
+  ADD COLUMN IF NOT EXISTS pricing                    JSONB NOT NULL DEFAULT '[]'::jsonb,
+  ADD COLUMN IF NOT EXISTS schedule                   JSONB NOT NULL DEFAULT '[]'::jsonb,
+  ADD COLUMN IF NOT EXISTS decisions                  JSONB NOT NULL DEFAULT '[]'::jsonb,
+  ADD COLUMN IF NOT EXISTS action_items               JSONB NOT NULL DEFAULT '[]'::jsonb,
+  ADD COLUMN IF NOT EXISTS change_order_opportunities JSONB NOT NULL DEFAULT '[]'::jsonb,
+  ADD COLUMN IF NOT EXISTS value_engineering          JSONB NOT NULL DEFAULT '[]'::jsonb,
+  ADD COLUMN IF NOT EXISTS upgrade_opportunities      JSONB NOT NULL DEFAULT '[]'::jsonb,
+  ADD COLUMN IF NOT EXISTS updated_at                 TIMESTAMPTZ NOT NULL DEFAULT now(),
+  ADD COLUMN IF NOT EXISTS created_at                 TIMESTAMPTZ NOT NULL DEFAULT now();
 CREATE UNIQUE INDEX IF NOT EXISTS idx_deal_plans_job ON public.deal_plans(job_id);
 
 -- ---------------------------------------------------------------------------
@@ -81,6 +112,18 @@ CREATE TABLE IF NOT EXISTS public.deal_plan_suggestions (
   created_at      TIMESTAMPTZ NOT NULL DEFAULT now(),
   decided_at      TIMESTAMPTZ
 );
+ALTER TABLE public.deal_plan_suggestions
+  ADD COLUMN IF NOT EXISTS deal_plan_id    UUID,
+  ADD COLUMN IF NOT EXISTS conversation_id UUID,
+  ADD COLUMN IF NOT EXISTS contractor_id   UUID,
+  ADD COLUMN IF NOT EXISTS section         TEXT,
+  ADD COLUMN IF NOT EXISTS operation       TEXT NOT NULL DEFAULT 'add',
+  ADD COLUMN IF NOT EXISTS payload         JSONB,
+  ADD COLUMN IF NOT EXISTS rationale       TEXT,
+  ADD COLUMN IF NOT EXISTS source_quote    TEXT,
+  ADD COLUMN IF NOT EXISTS status          TEXT NOT NULL DEFAULT 'pending',
+  ADD COLUMN IF NOT EXISTS created_at      TIMESTAMPTZ NOT NULL DEFAULT now(),
+  ADD COLUMN IF NOT EXISTS decided_at      TIMESTAMPTZ;
 CREATE INDEX IF NOT EXISTS idx_dps_plan   ON public.deal_plan_suggestions(deal_plan_id, status);
 CREATE INDEX IF NOT EXISTS idx_dps_owner  ON public.deal_plan_suggestions(contractor_id);
 
