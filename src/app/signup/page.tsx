@@ -8,6 +8,7 @@ import { useSearchParams } from 'next/navigation'
 import { CheckCircle, Zap } from 'lucide-react'
 import { supabase } from '../../lib/supabase-client'
 import ProlinkLogoDark from '../../components/ProlinkLogoDark'
+import AddressAutocomplete from '../../components/AddressAutocomplete'
 
 type Step = 1 | 2 | 3 | 4
 type Plan = 'trial' | 'starter' | 'pro' | 'business'
@@ -69,6 +70,10 @@ function SignupForm() {
     ownerName: '',
     phone: '',
     serviceAreas: '',
+    businessStreet: '',
+    businessCity: '',
+    businessState: '',
+    businessZip: '',
     specialties: [] as string[],
     yearsExperience: '',
     licensed: '',
@@ -151,6 +156,10 @@ const handleChange = (e: any) => {
         owner_name: formData.ownerName || null,
         phone: formData.phone || null,
         service_areas: formData.serviceAreas || null,
+        street_address: formData.businessStreet || null,
+        city: formData.businessCity || null,
+        state: formData.businessState || null,
+        zip_code: formData.businessZip || null,
         trade: formData.specialties.length > 0 ? formData.specialties[0] : null,
         plan: selectedPlan,
         plan_status: 'active',
@@ -313,6 +322,28 @@ const handleChange = (e: any) => {
                     placeholder="Salt Lake City, West Valley, ..."
                     className="w-full px-4 py-3 bg-[#f8fafc] border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#14b8a6] focus:border-transparent outline-none transition text-gray-900 text-sm"
                   />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-1.5">Business Address</label>
+                  <AddressAutocomplete
+                    value={formData.businessStreet}
+                    onChange={v => setFormData(prev => ({ ...prev, businessStreet: v }))}
+                    onSelect={a => setFormData(prev => ({
+                      ...prev,
+                      businessStreet: a.line1 || prev.businessStreet,
+                      businessCity: a.city || prev.businessCity,
+                      businessState: a.state || prev.businessState,
+                      businessZip: a.postal_code || prev.businessZip,
+                    }))}
+                    placeholder="Start typing your business address…"
+                    className="w-full px-4 py-3 bg-[#f8fafc] border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#14b8a6] focus:border-transparent outline-none transition text-gray-900 text-sm"
+                  />
+                  {(formData.businessCity || formData.businessState || formData.businessZip) && (
+                    <p className="text-xs text-gray-500 mt-1">
+                      {[formData.businessCity, formData.businessState, formData.businessZip].filter(Boolean).join(', ')}
+                    </p>
+                  )}
                 </div>
               </div>
 
