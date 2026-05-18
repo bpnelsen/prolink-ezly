@@ -9,6 +9,15 @@ import { supabase } from '../../../../../lib/supabase-client'
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Row = Record<string, any>
 
+// apiFetch spreads the JSON body, so `details` (the raw Postgres error from
+// our serverError helper) is present but untyped — surface it verbatim.
+function apiErr(r: { status: number; message?: string; error?: string }): string {
+  const d = (r as { details?: unknown }).details
+  const detail = d == null ? '' : typeof d === 'string' ? d : JSON.stringify(d)
+  const base = r.message || r.error || 'unknown error'
+  return `HTTP ${r.status}: ${base}${detail ? ` — ${detail}` : ''}`
+}
+
 interface Message {
   id: string
   sender_role: 'contractor' | 'client' | 'system'
@@ -64,7 +73,7 @@ export default function JobChatPage({ params }: { params: { id: string } }) {
     setAnalyzing(true)
     const a = await apiFetch<Row>(`/api/v1/conversations/${cid}/analyze`, { method: 'POST' })
     if (a.status >= 400) {
-      setError(`AI analysis failed (HTTP ${a.status}): ${a.message || a.error || 'unknown error'}`)
+      setError(`AI analysis failed — ${apiErr(a)}`)
     } else if (a.data?.warning) {
       setError(`AI analysis: ${a.data.warning}`)
     }
@@ -100,9 +109,9 @@ export default function JobChatPage({ params }: { params: { id: string } }) {
       setError(null)
     } else {
       setError(
-        `Couldn't load this conversation (HTTP ${r.status}): ${r.message || r.error || 'unknown error'}. ` +
-        `If this mentions a missing relation/table or function, the chat database migration ` +
-        `(migrations/014_chat_and_deal_plan.sql) has not been applied in Supabase yet.`
+        `Couldn't load this conversation — ${apiErr(r)}. ` +
+        `If this mentions a missing relation/table/function or "violates row-level security", ` +
+        `re-run migrations/014_chat_and_deal_plan.sql in Supabase (it applied only partially).`
       )
     }
     setLoading(false)
@@ -137,7 +146,7 @@ export default function JobChatPage({ params }: { params: { id: string } }) {
       setDraft('')
       setError(null)
     } else {
-      setError(`Message failed (HTTP ${r.status}): ${r.message || r.error || 'unknown error'}`)
+      setError(`Message failed — ${apiErr(r)}`)
     }
     setSending(false)
   }
