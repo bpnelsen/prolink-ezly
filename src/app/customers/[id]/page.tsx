@@ -82,7 +82,15 @@ export default function CustomerDetailPage() {
       setInviteUrl(r.data.url)
       setInviteMsg(r.data.emailed ? 'Invite emailed to the customer. You can also copy the link below.' : 'Invite link created — copy and send it to your customer.')
     } else {
-      setInviteMsg(r.message || r.error || 'Could not create the invite.')
+      const det = (r as { details?: unknown }).details
+      const detail = det == null ? '' : typeof det === 'string' ? det : JSON.stringify(det)
+      const base = r.message || r.error || 'Could not create the invite.'
+      setInviteMsg(
+        `${base}${detail ? ` — ${detail}` : ''}` +
+        (/(relation|function|table).*(does not exist)|client_portal/i.test(detail)
+          ? ' (Run migrations/015_client_portal.sql in Supabase — it has not been applied yet.)'
+          : '')
+      )
     }
     setInviting(false)
   }
