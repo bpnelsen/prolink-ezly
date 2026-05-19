@@ -1,15 +1,20 @@
 'use client'
 import { useState, useEffect, useRef } from 'react'
-import { Phone, Mail, MapPin, Search, Plus, Eye, Briefcase, FileText, MoreHorizontal, Trash2, Users } from 'lucide-react'
+import { Phone, Mail, MapPin, Search, Plus, Eye, Briefcase, FileText, MoreHorizontal, Trash2, Users, Building2, ShieldCheck } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { supabase } from '../../lib/supabase-client'
 import Breadcrumbs from '../../components/Breadcrumbs'
+import { LIFECYCLE_META, LIFECYCLE_STATUSES } from '../../lib/crm'
 
 interface Client {
   id: string
   first_name: string
   last_name: string
+  client_type: string | null
+  company_name: string | null
+  lifecycle_status: string | null
+  address_verified: boolean | null
   phone: string | null
   email: string | null
   address_line1: string | null
@@ -69,13 +74,14 @@ export default function CustomersPage() {
   const [clients, setClients] = useState<Client[]>([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
+  const [statusFilter, setStatusFilter] = useState<string>('all')
 
   const fetchClients = async () => {
     const { data: { session } } = await supabase.auth.getSession()
     if (!session) { setLoading(false); return }
 
     const [{ data: clientData }, { data: jobData }, { data: invoiceData }] = await Promise.all([
-      supabase.from('clients').select('id, first_name, last_name, phone, email, address_line1, city, state, created_at')
+      supabase.from('clients').select('id, first_name, last_name, client_type, company_name, lifecycle_status, address_verified, phone, email, address_line1, city, state, created_at')
         .eq('contractor_id', session.user.id).neq('is_deleted', true).order('first_name'),
       supabase.from('jobs').select('id, client_id').eq('contractor_id', session.user.id),
       supabase.from('invoices').select('client_id, total').eq('contractor_id', session.user.id).eq('status', 'paid'),
@@ -98,13 +104,21 @@ export default function CustomersPage() {
 
   useEffect(() => { fetchClients() }, [])
 
-  const filtered = clients.filter(c =>
-    !search ||
-    `${c.first_name} ${c.last_name}`.toLowerCase().includes(search.toLowerCase()) ||
-    c.email?.toLowerCase().includes(search.toLowerCase()) ||
-    c.phone?.includes(search) ||
-    c.city?.toLowerCase().includes(search.toLowerCase())
-  )
+  const displayName = (c: Client) =>
+    c.client_type === 'company' && c.company_name
+      ? c.company_name
+      : `${c.first_name} ${c.last_name}`.trim()
+
+  const filtered = clients.filter(c => {
+    const matchesSearch =
+      !search ||
+      displayName(c).toLowerCase().includes(search.toLowerCase()) ||
+      c.email?.toLowerCase().includes(search.toLowerCase()) ||
+      c.phone?.includes(search) ||
+      c.city?.toLowerCase().includes(search.toLowerCase())
+    const matchesStatus = statusFilter === 'all' || (c.lifecycle_status || 'lead') === statusFilter
+    return matchesSearch && matchesStatus
+  })
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -130,6 +144,24 @@ export default function CustomersPage() {
             placeholder="Search by name, email, phone, city…" />
         </div>
 
+        {/* Lifecycle filter */}
+        <div className="flex flex-wrap gap-1.5 mb-5">
+          {['all', ...LIFECYCLE_STATUSES].map(s => {
+            const meta = s === 'all' ? null : LIFECYCLE_META[s]
+            const activeF = statusFilter === s
+            return (
+              <button key={s} onClick={() => setStatusFilter(s)}
+                className={`px-3 py-1.5 rounded-full text-xs font-semibold border transition ${
+                  activeF
+                    ? 'bg-gray-900 text-white border-gray-900'
+                    : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'
+                }`}>
+                {s === 'all' ? 'All' : meta!.label}
+              </button>
+            )
+          })}
+        </div>
+
         {loading ? (
           <div className="flex justify-center py-20">
             <div className="w-8 h-8 border-2 border-gray-200 border-t-teal-600 rounded-full animate-spin" />
@@ -149,19 +181,27 @@ export default function CustomersPage() {
           <div className="space-y-2">
             {filtered.map(c => {
               const location = [c.city, c.state].filter(Boolean).join(', ') || c.address_line1
+              const name = displayName(c)
+              const isCompany = c.client_type === 'company'
+              const status = LIFECYCLE_META[c.lifecycle_status || 'lead'] || LIFECYCLE_META.lead
+              const initials = isCompany
+                ? (c.company_name || '?').slice(0, 2).toUpperCase()
+                : `${c.first_name?.[0] || ''}${c.last_name?.[0] || ''}`
               return (
                 <div key={c.id} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 flex flex-col md:flex-row md:items-center gap-3 md:gap-4 hover:border-gray-200 transition">
                   {/* Top row on mobile: avatar + name + menu */}
                   <div className="flex items-center gap-3 md:contents">
                     {/* Avatar */}
                     <Link href={`/customers/${c.id}`} className="w-10 h-10 bg-teal-100 rounded-full flex items-center justify-center shrink-0 text-teal-700 font-bold text-sm">
-                      {c.first_name[0]}{c.last_name[0]}
+                      {isCompany ? <Building2 size={16} /> : initials}
                     </Link>
 
                     {/* Main info */}
                     <div className="flex-1 min-w-0">
-                      <Link href={`/customers/${c.id}`} className="block">
-                        <p className="font-semibold text-gray-900 text-sm truncate">{c.first_name} {c.last_name}</p>
+                      <Link href={`/customers/${c.id}`} className="flex items-center gap-2">
+                        <p className="font-semibold text-gray-900 text-sm truncate">{name}</p>
+                        <span className={`shrink-0 text-[10px] font-bold px-2 py-0.5 rounded-full ${status.bg} ${status.text}`}>{status.label}</span>
+                        {c.address_verified && <ShieldCheck size={12} className="text-green-600 shrink-0" />}
                       </Link>
                       <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-0.5">
                         {c.phone && <span className="flex items-center gap-1 text-xs text-gray-500 min-w-0"><Phone size={10} className="shrink-0" /> <span className="truncate">{c.phone}</span></span>}

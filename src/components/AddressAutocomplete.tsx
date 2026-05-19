@@ -6,8 +6,12 @@ export interface ParsedAddress {
   city: string
   state: string
   postal_code: string
+  county: string
   country: string
   formatted: string
+  latitude: number | null
+  longitude: number | null
+  place_id: string
 }
 
 interface Suggestion {
@@ -57,11 +61,12 @@ function parseGoogleComponents(comps: any[]): ParsedAddress {
   const city = get('locality') || get('postal_town') || get('sublocality') || get('administrative_area_level_2')
   const state = get('administrative_area_level_1', true)
   const postal_code = get('postal_code')
+  const county = get('administrative_area_level_2')
   const country = get('country', true)
   const formatted = [line1, city, [state, postal_code].filter(Boolean).join(' '), country]
     .filter(Boolean)
     .join(', ')
-  return { line1, city, state, postal_code, country, formatted }
+  return { line1, city, state, postal_code, county, country, formatted, latitude: null, longitude: null, place_id: '' }
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -82,7 +87,15 @@ function parsePhoton(props: any): ParsedAddress {
   ]
     .filter(Boolean)
     .join(', ')
-  return { line1: line1 || props.name || '', city, state, postal_code, country, formatted }
+  return {
+    line1: line1 || props.name || '',
+    city, state, postal_code,
+    county: props.county || '',
+    country, formatted,
+    latitude: null,
+    longitude: null,
+    place_id: '',
+  }
 }
 
 export default function AddressAutocomplete({
@@ -118,7 +131,7 @@ export default function AddressAutocomplete({
         return preds.slice(0, 5).map(p => ({
           label: p.description,
           placeId: p.place_id,
-          parsed: { line1: '', city: '', state: '', postal_code: '', country: '', formatted: p.description },
+          parsed: { line1: '', city: '', state: '', postal_code: '', county: '', country: '', formatted: p.description, latitude: null, longitude: null, place_id: p.place_id },
         }))
       } catch {
         /* fall through to keyless */
@@ -134,6 +147,11 @@ export default function AddressAutocomplete({
     const feats: any[] = data?.features || []
     const mapped = feats.map(f => {
       const parsed = parsePhoton(f.properties || {})
+      const coords = f.geometry?.coordinates
+      if (Array.isArray(coords) && coords.length === 2) {
+        parsed.longitude = Number(coords[0])
+        parsed.latitude = Number(coords[1])
+      }
       return { label: parsed.formatted, parsed }
     })
     // US first for this contractor audience.
@@ -191,6 +209,13 @@ export default function AddressAutocomplete({
           )
         )
         parsed = parseGoogleComponents(r.address_components || [])
+        parsed.place_id = s.placeId
+        const loc = r.geometry?.location
+        if (loc) {
+          parsed.latitude = typeof loc.lat === 'function' ? loc.lat() : loc.lat
+          parsed.longitude = typeof loc.lng === 'function' ? loc.lng() : loc.lng
+        }
+        if (r.formatted_address) parsed.formatted = r.formatted_address
       } catch {
         /* keep the description-only parsed */
       }
