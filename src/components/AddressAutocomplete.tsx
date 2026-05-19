@@ -113,31 +113,7 @@ export default function AddressAutocomplete({
   const skipNext = useRef(false)
   const boxRef = useRef<HTMLDivElement>(null)
 
-  const search = useCallback(async (q: string) => {
-    // Google path (only when a key is set and the SDK loads).
-    if (GOOGLE_KEY) {
-      try {
-        await loadGoogle()
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const g = (window as any).google
-        const svc = new g.maps.places.AutocompleteService()
-        const preds: { description: string; place_id: string }[] = await new Promise(res =>
-          svc.getPlacePredictions(
-            { input: q, types: ['address'], componentRestrictions: { country: 'us' } },
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            (p: any) => res(p || [])
-          )
-        )
-        return preds.slice(0, 5).map(p => ({
-          label: p.description,
-          placeId: p.place_id,
-          parsed: { line1: '', city: '', state: '', postal_code: '', county: '', country: '', formatted: p.description, latitude: null, longitude: null, place_id: p.place_id },
-        }))
-      } catch {
-        /* fall through to keyless */
-      }
-    }
-    // Keyless default: Photon (OpenStreetMap), no API key, CORS-enabled.
+  const photonSearch = useCallback(async (q: string): Promise<Suggestion[]> => {
     const res = await fetch(
       `https://photon.komoot.io/api/?q=${encodeURIComponent(q)}&limit=6&lang=en`
     ).catch(() => null)
@@ -165,13 +141,47 @@ export default function AddressAutocomplete({
       .slice(0, 6)
   }, [])
 
+  const search = useCallback(async (q: string): Promise<Suggestion[]> => {
+    // Google path (only when a key is set and the SDK loads).
+    if (GOOGLE_KEY) {
+      try {
+        await loadGoogle()
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const g = (window as any).google
+        const svc = new g.maps.places.AutocompleteService()
+        const preds: { description: string; place_id: string }[] = await new Promise((resolve, reject) =>
+          svc.getPlacePredictions(
+            { input: q, types: ['address'], componentRestrictions: { country: 'us' } },
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            (p: any, status: string) => {
+              // Only OK (or ZERO_RESULTS with data) is usable. Any error
+              // status (REQUEST_DENIED, OVER_QUERY_LIMIT, invalid key, …)
+              // must fall through to the keyless provider, not dead-end.
+              if (status === 'OK' && Array.isArray(p) && p.length > 0) resolve(p)
+              else reject(new Error(status || 'NO_RESULTS'))
+            }
+          )
+        )
+        return preds.slice(0, 5).map(p => ({
+          label: p.description,
+          placeId: p.place_id,
+          parsed: { line1: '', city: '', state: '', postal_code: '', county: '', country: '', formatted: p.description, latitude: null, longitude: null, place_id: p.place_id },
+        }))
+      } catch {
+        /* fall through to keyless provider below */
+      }
+    }
+    // Keyless default / fallback: Photon (OpenStreetMap), CORS-enabled.
+    return photonSearch(q)
+  }, [photonSearch])
+
   useEffect(() => {
     if (skipNext.current) {
       skipNext.current = false
       return
     }
     const q = value.trim()
-    if (q.length < 4) {
+    if (q.length < 3) {
       setSuggestions([])
       setOpen(false)
       return
@@ -181,7 +191,7 @@ export default function AddressAutocomplete({
       setSuggestions(s)
       setOpen(s.length > 0)
       setActive(-1)
-    }, 300)
+    }, 250)
     return () => clearTimeout(t)
   }, [value, search])
 
