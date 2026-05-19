@@ -10,10 +10,11 @@ import Link from 'next/link'
 import { supabase } from '../../../lib/supabase-client'
 import { apiFetch } from '../../../lib/api-fetch'
 import Breadcrumbs from '../../../components/Breadcrumbs'
+import AddressAutocomplete, { ParsedAddress } from '../../../components/AddressAutocomplete'
 import AddressMapPreview from '../../../components/AddressMapPreview'
-import { LIFECYCLE_META, DEAL_STAGES, DEAL_STAGE_META, titleCase } from '../../../lib/crm'
+import { LIFECYCLE_META, DEAL_STAGES, DEAL_STAGE_META, ADDRESS_LABELS, titleCase } from '../../../lib/crm'
 
-type Tab = 'overview' | 'activity' | 'tasks' | 'contacts' | 'deals' | 'jobs' | 'invoices'
+type Tab = 'overview' | 'addresses' | 'activity' | 'tasks' | 'contacts' | 'deals' | 'jobs' | 'invoices'
 
 interface Client {
   id: string; first_name: string; last_name: string
@@ -33,6 +34,15 @@ interface Act { id: string; type: string; subject: string | null; body: string |
 interface Task { id: string; title: string; description: string | null; due_at: string | null; priority: string; status: string }
 interface Contact { id: string; first_name: string; last_name: string | null; title: string | null; email: string | null; phone: string | null; is_primary: boolean }
 interface Deal { id: string; name: string; stage: string; value: number; probability: number; expected_close_date: string | null }
+interface Address {
+  id: string; label: string
+  address_line1: string | null; address_line2: string | null
+  city: string | null; state: string | null; zip_code: string | null; county: string | null; country: string | null
+  latitude: number | null; longitude: number | null
+  google_place_id: string | null; formatted_address: string | null
+  is_primary: boolean; verified: boolean; verified_at: string | null
+  notes: string | null
+}
 
 const JOB_STATUS: Record<string, { dot: string; label: string }> = {
   pending: { dot: 'bg-yellow-400', label: 'Pending' }, assigned: { dot: 'bg-blue-500', label: 'Assigned' },
@@ -61,6 +71,7 @@ export default function CustomerDetailPage() {
   const [tasks, setTasks] = useState<Task[]>([])
   const [contacts, setContacts] = useState<Contact[]>([])
   const [deals, setDeals] = useState<Deal[]>([])
+  const [addresses, setAddresses] = useState<Address[]>([])
   const [loading, setLoading] = useState(true)
   const [tab, setTab] = useState<Tab>('overview')
   const [inviting, setInviting] = useState(false)
@@ -68,7 +79,7 @@ export default function CustomerDetailPage() {
   const [inviteMsg, setInviteMsg] = useState<string | null>(null)
 
   const reload = useCallback(async () => {
-    const [c, j, inv, a, t, ct, d] = await Promise.all([
+    const [c, j, inv, a, t, ct, d, a8] = await Promise.all([
       supabase.from('clients').select('*').eq('id', id).single(),
       supabase.from('jobs').select('id, title, status, trade, estimated_value, scheduled_start, created_at').eq('client_id', id).order('created_at', { ascending: false }),
       supabase.from('invoices').select('id, invoice_number, status, total, balance_due, issue_date, public_token').eq('client_id', id).order('issue_date', { ascending: false }),
@@ -76,6 +87,7 @@ export default function CustomerDetailPage() {
       supabase.from('client_tasks').select('id, title, description, due_at, priority, status').eq('client_id', id).order('due_at', { ascending: true, nullsFirst: false }),
       supabase.from('client_contacts').select('id, first_name, last_name, title, email, phone, is_primary').eq('client_id', id).order('is_primary', { ascending: false }),
       supabase.from('client_deals').select('id, name, stage, value, probability, expected_close_date').eq('client_id', id).order('created_at', { ascending: false }),
+      supabase.from('client_addresses').select('id, label, address_line1, address_line2, city, state, zip_code, county, country, latitude, longitude, google_place_id, formatted_address, is_primary, verified, verified_at, notes').eq('client_id', id).order('is_primary', { ascending: false }),
     ])
     if (c.data) setClient(c.data)
     setJobs(j.data || [])
@@ -84,6 +96,7 @@ export default function CustomerDetailPage() {
     setTasks(t.data || [])
     setContacts(ct.data || [])
     setDeals(d.data || [])
+    setAddresses((a8 as { data: Address[] | null }).data || [])
     setLoading(false)
   }, [id])
 
@@ -132,6 +145,7 @@ export default function CustomerDetailPage() {
 
   const TABS: { id: Tab; label: string; count?: number }[] = [
     { id: 'overview', label: 'Overview' },
+    { id: 'addresses', label: 'Addresses', count: addresses.length },
     { id: 'activity', label: 'Activity', count: acts.length },
     { id: 'tasks', label: 'Tasks', count: openTasks },
     { id: 'contacts', label: 'Contacts', count: contacts.length },
@@ -280,6 +294,7 @@ export default function CustomerDetailPage() {
           </div>
         )}
 
+        {tab === 'addresses' && <AddressesSection clientId={id} addresses={addresses} client={client} onChange={reload} />}
         {tab === 'activity' && <ActivitySection clientId={id} acts={acts} onChange={reload} />}
         {tab === 'tasks' && <TasksSection clientId={id} tasks={tasks} onChange={reload} />}
         {tab === 'contacts' && <ContactsSection clientId={id} contacts={contacts} onChange={reload} />}
@@ -528,6 +543,309 @@ function ContactsSection({ clientId, contacts, onChange }: { clientId: string; c
             <button onClick={() => del(ct.id)} className="p-1.5 rounded-lg hover:bg-red-50 text-gray-300 hover:text-red-500 shrink-0"><Trash size={14} /></button>
           </div>
         ))}</div>}
+    </div>
+  )
+}
+
+const LABEL_META: Record<string, { bg: string; text: string }> = {
+  service: { bg: 'bg-teal-50',  text: 'text-teal-700' },
+  billing: { bg: 'bg-blue-50',  text: 'text-blue-700' },
+  mailing: { bg: 'bg-indigo-50', text: 'text-indigo-700' },
+  other:   { bg: 'bg-gray-100', text: 'text-gray-600' },
+}
+
+const EMPTY_ADDR_FORM = {
+  label: 'service', address_line1: '', address_line2: '',
+  city: '', state: '', zip_code: '', county: '', country: 'US',
+  latitude: null as number | null, longitude: null as number | null,
+  google_place_id: '', formatted_address: '', verified: false, notes: '',
+}
+
+function AddressesSection({
+  clientId, addresses, client, onChange,
+}: { clientId: string; addresses: Address[]; client: Client; onChange: () => void }) {
+  const [showForm, setShowForm] = useState(false)
+  const [editId, setEditId] = useState<string | null>(null)
+  const [f, setF] = useState({ ...EMPTY_ADDR_FORM })
+  const [saving, setSaving] = useState(false)
+  const [validating, setValidating] = useState(false)
+  const [validMsg, setValidMsg] = useState<{ ok: boolean; text: string } | null>(null)
+
+  const resetForm = () => { setF({ ...EMPTY_ADDR_FORM }); setValidMsg(null); setEditId(null) }
+
+  const startEdit = (a: Address) => {
+    setF({
+      label: a.label, address_line1: a.address_line1 || '',
+      address_line2: a.address_line2 || '', city: a.city || '',
+      state: a.state || '', zip_code: a.zip_code || '',
+      county: a.county || '', country: a.country || 'US',
+      latitude: a.latitude, longitude: a.longitude,
+      google_place_id: a.google_place_id || '',
+      formatted_address: a.formatted_address || '',
+      verified: a.verified, notes: a.notes || '',
+    })
+    setEditId(a.id)
+    setShowForm(true)
+    setValidMsg(null)
+  }
+
+  const onSelect = (a: ParsedAddress) => {
+    setValidMsg(null)
+    setF(prev => ({
+      ...prev,
+      address_line1: a.line1 || prev.address_line1,
+      city: a.city || prev.city, state: a.state || prev.state,
+      zip_code: a.postal_code || prev.zip_code, county: a.county || prev.county,
+      country: a.country || prev.country,
+      latitude: a.latitude ?? prev.latitude, longitude: a.longitude ?? prev.longitude,
+      google_place_id: a.place_id || prev.google_place_id,
+      formatted_address: a.formatted || prev.formatted_address,
+      verified: false,
+    }))
+  }
+
+  const validate = async () => {
+    if (!f.address_line1) return
+    setValidating(true); setValidMsg(null)
+    const r = await apiFetch<{
+      verified: boolean; available: boolean; formatted?: string | null
+      latitude?: number | null; longitude?: number | null; place_id?: string | null
+    }>('/api/v1/address/validate', {
+      method: 'POST',
+      body: JSON.stringify({ address_line1: f.address_line1, address_line2: f.address_line2, city: f.city, state: f.state, zip_code: f.zip_code, country: f.country }),
+    })
+    setValidating(false)
+    const d = r.data
+    if (!d?.available) { setValidMsg({ ok: false, text: 'Address validation unavailable (no Google key).' }); return }
+    if (d.verified) {
+      setF(prev => ({
+        ...prev, verified: true,
+        formatted_address: d.formatted || prev.formatted_address,
+        latitude: d.latitude ?? prev.latitude, longitude: d.longitude ?? prev.longitude,
+        google_place_id: d.place_id || prev.google_place_id,
+      }))
+    }
+    setValidMsg({ ok: d.verified, text: d.verified ? 'Address verified by Google.' : 'Google could not fully verify this address — check it manually.' })
+  }
+
+  const save = async () => {
+    if (!f.address_line1.trim()) return
+    setSaving(true)
+    const { data: { session } } = await supabase.auth.getSession()
+    const cid = session?.user.id || null
+    const payload = {
+      contractor_id: cid, client_id: clientId, label: f.label,
+      address_line1: f.address_line1.trim() || null, address_line2: f.address_line2.trim() || null,
+      city: f.city.trim() || null, state: f.state.trim() || null,
+      zip_code: f.zip_code.trim() || null, county: f.county.trim() || null,
+      country: f.country.trim() || 'US', latitude: f.latitude, longitude: f.longitude,
+      google_place_id: f.google_place_id || null, formatted_address: f.formatted_address || null,
+      verified: f.verified, verified_at: f.verified ? new Date().toISOString() : null,
+      notes: f.notes.trim() || null, updated_at: new Date().toISOString(),
+      is_primary: addresses.length === 0,
+    }
+    if (editId) {
+      await supabase.from('client_addresses').update(payload).eq('id', editId)
+    } else {
+      await supabase.from('client_addresses').insert(payload)
+    }
+    setSaving(false); resetForm(); setShowForm(false); onChange()
+  }
+
+  const del = async (aid: string) => {
+    if (!confirm('Remove this address?')) return
+    await supabase.from('client_addresses').delete().eq('id', aid)
+    onChange()
+  }
+
+  const setPrimary = async (a: Address) => {
+    if (a.is_primary) return
+    await supabase.from('client_addresses').update({ is_primary: false }).eq('client_id', clientId)
+    await supabase.from('client_addresses').update({ is_primary: true }).eq('id', a.id)
+    await supabase.from('clients').update({
+      address_line1: a.address_line1, address_line2: a.address_line2,
+      city: a.city, state: a.state, zip_code: a.zip_code,
+      county: a.county, country: a.country,
+      latitude: a.latitude, longitude: a.longitude,
+      google_place_id: a.google_place_id, formatted_address: a.formatted_address,
+      address_verified: a.verified, address_verified_at: a.verified_at || null,
+    }).eq('id', clientId)
+    onChange()
+  }
+
+  const inputCls2 = 'w-full bg-gray-50 p-2.5 rounded-xl border border-gray-200 text-sm focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 transition outline-none'
+
+  const primaryAddr = addresses.find(a => a.is_primary)
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <p className="text-xs font-bold uppercase tracking-widest text-gray-400">{addresses.length} address{addresses.length !== 1 ? 'es' : ''}</p>
+        <button onClick={() => { resetForm(); setShowForm(o => !o) }}
+          className="flex items-center gap-1.5 px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold rounded-xl transition">
+          <Plus size={13} /> Add Address
+        </button>
+      </div>
+
+      {showForm && (
+        <div className={`${card} p-5 space-y-4`}>
+          <h4 className="font-bold text-sm text-gray-700">{editId ? 'Edit Address' : 'New Address'}</h4>
+
+          {/* Label picker */}
+          <div className="flex gap-2 flex-wrap">
+            {ADDRESS_LABELS.map(l => (
+              <button type="button" key={l} onClick={() => setF(p => ({ ...p, label: l }))}
+                className={`px-3 py-1.5 rounded-full text-xs font-bold border transition ${
+                  f.label === l
+                    ? `${(LABEL_META[l] || LABEL_META.other).bg} ${(LABEL_META[l] || LABEL_META.other).text} border-transparent`
+                    : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'
+                }`}>
+                {titleCase(l)}
+              </button>
+            ))}
+          </div>
+
+          {/* Autocomplete */}
+          <div>
+            <label className="block text-xs font-semibold text-gray-600 mb-1.5">Address Line 1 *</label>
+            <AddressAutocomplete
+              value={f.address_line1}
+              onChange={v => setF(p => ({ ...p, address_line1: v, verified: false }))}
+              onSelect={onSelect}
+              className={inputCls2}
+              placeholder="123 Main St"
+            />
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-semibold text-gray-600 mb-1.5">Address Line 2</label>
+              <input value={f.address_line2} onChange={e => setF(p => ({ ...p, address_line2: e.target.value }))} className={inputCls2} placeholder="Apt, Suite, Unit…" />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-gray-600 mb-1.5">City</label>
+              <input value={f.city} onChange={e => setF(p => ({ ...p, city: e.target.value }))} className={inputCls2} placeholder="Salt Lake City" />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-gray-600 mb-1.5">State</label>
+              <input value={f.state} onChange={e => setF(p => ({ ...p, state: e.target.value }))} maxLength={2} className={inputCls2} placeholder="UT" />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-gray-600 mb-1.5">ZIP</label>
+              <input value={f.zip_code} onChange={e => setF(p => ({ ...p, zip_code: e.target.value }))} className={inputCls2} placeholder="84101" />
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold text-gray-600 mb-1.5">Access Notes</label>
+            <textarea value={f.notes} onChange={e => setF(p => ({ ...p, notes: e.target.value }))} rows={2}
+              className={`${inputCls2} resize-none`} placeholder="Gate code, parking, access instructions…" />
+          </div>
+
+          {/* Validate */}
+          <div className="flex items-center gap-3 flex-wrap">
+            <button type="button" onClick={validate} disabled={validating || !f.address_line1}
+              className="flex items-center gap-1.5 px-3 py-2 border border-gray-200 hover:bg-gray-50 text-gray-700 text-xs font-semibold rounded-xl transition disabled:opacity-50">
+              <ShieldCheck size={13} /> {validating ? 'Validating…' : 'Validate with Google'}
+            </button>
+            {f.verified && <span className="inline-flex items-center gap-1 text-xs font-bold text-green-700 bg-green-50 px-2 py-1 rounded-full"><ShieldCheck size={12} /> Verified</span>}
+            {validMsg && <p className={`text-xs ${validMsg.ok ? 'text-green-700' : 'text-amber-700'}`}>{validMsg.text}</p>}
+          </div>
+
+          {/* Map preview */}
+          {(f.latitude != null || f.address_line1) && (
+            <AddressMapPreview latitude={f.latitude} longitude={f.longitude}
+              address={[f.address_line1, f.city, f.state].filter(Boolean).join(', ')} />
+          )}
+
+          <div className="flex gap-2 pt-2">
+            <button type="button" onClick={() => { setShowForm(false); resetForm() }}
+              className="flex-1 py-2.5 rounded-xl border border-gray-200 text-gray-600 text-sm font-semibold hover:bg-gray-50 transition">
+              Cancel
+            </button>
+            <button type="button" onClick={save} disabled={saving || !f.address_line1.trim()}
+              className="flex-1 py-2.5 bg-teal-600 hover:bg-teal-700 text-white text-sm font-bold rounded-xl transition disabled:opacity-50">
+              {saving ? 'Saving…' : editId ? 'Update Address' : 'Save Address'}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {addresses.length === 0 && !showForm && (
+        <Empty icon={<MapPin size={28} />} text="No addresses yet. Add one to get started." />
+      )}
+
+      {addresses.length > 0 && (
+        <div className="space-y-3">
+          {addresses.map(a => {
+            const lm = LABEL_META[a.label] || LABEL_META.other
+            const addrLines = [
+              a.address_line1, a.address_line2,
+              [a.city, a.state].filter(Boolean).join(', ') + (a.zip_code ? ` ${a.zip_code}` : ''),
+              a.county ? `${a.county} County` : null,
+            ].filter(Boolean)
+            return (
+              <div key={a.id} className={`${card} p-5 space-y-4`}>
+                {/* Header row */}
+                <div className="flex items-start justify-between gap-3 flex-wrap">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full ${lm.bg} ${lm.text}`}>{titleCase(a.label)}</span>
+                    {a.is_primary && (
+                      <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-teal-600 text-white">Primary</span>
+                    )}
+                    {a.verified && (
+                      <span className="inline-flex items-center gap-1 text-[11px] font-bold text-green-700 bg-green-50 px-2 py-0.5 rounded-full">
+                        <ShieldCheck size={10} /> Verified
+                      </span>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    {!a.is_primary && (
+                      <button onClick={() => setPrimary(a)}
+                        className="px-3 py-1.5 text-xs font-semibold border border-gray-200 hover:bg-teal-50 hover:text-teal-700 rounded-xl transition">
+                        Set Primary
+                      </button>
+                    )}
+                    <button onClick={() => { startEdit(a); setShowForm(true) }}
+                      className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-gray-700 transition">
+                      <Pencil size={14} />
+                    </button>
+                    <button onClick={() => del(a.id)}
+                      className="p-1.5 rounded-lg hover:bg-red-50 text-gray-300 hover:text-red-500 transition">
+                      <Trash size={14} />
+                    </button>
+                  </div>
+                </div>
+
+                {/* Address + map */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-start">
+                  <div className="flex items-start gap-2.5">
+                    <MapPin size={14} className="text-teal-600 mt-0.5 shrink-0" />
+                    <div className="space-y-0.5 text-sm text-gray-700">
+                      {addrLines.map((ln, i) => (
+                        <p key={i} className={i === addrLines.length - 1 && a.county ? 'text-gray-400 text-xs' : ''}>{ln}</p>
+                      ))}
+                      {!a.address_line1 && <p className="text-gray-300 italic text-xs">No address details</p>}
+                    </div>
+                  </div>
+                  {(a.latitude != null || a.address_line1) && (
+                    <AddressMapPreview latitude={a.latitude} longitude={a.longitude}
+                      address={[a.address_line1, a.city, a.state].filter(Boolean).join(', ')} />
+                  )}
+                </div>
+
+                {/* Access notes */}
+                {a.notes && (
+                  <div className="bg-amber-50 border border-amber-100 rounded-xl px-3 py-2">
+                    <p className="text-[10px] font-bold uppercase tracking-wide text-amber-700 mb-0.5">Access Notes</p>
+                    <p className="text-sm text-amber-900 whitespace-pre-wrap">{a.notes}</p>
+                  </div>
+                )}
+              </div>
+            )
+          })}
+        </div>
+      )}
     </div>
   )
 }

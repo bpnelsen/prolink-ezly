@@ -191,15 +191,48 @@ export default function CustomerForm({ mode, clientId, initial, onSaved, onCance
       updated_at: new Date().toISOString(),
     }
 
+    const hasAddress = !!form.address_line1.trim()
+    const addrPayload = hasAddress ? {
+      contractor_id: session.user.id,
+      label: 'service',
+      address_line1: form.address_line1.trim() || null,
+      address_line2: form.address_line2.trim() || null,
+      city: form.city.trim() || null,
+      state: form.state.trim() || null,
+      zip_code: form.zip_code.trim() || null,
+      county: form.county.trim() || null,
+      country: form.country.trim() || 'US',
+      latitude: form.latitude,
+      longitude: form.longitude,
+      google_place_id: form.google_place_id || null,
+      formatted_address: form.formatted_address || null,
+      is_primary: true,
+      verified: form.address_verified,
+      verified_at: form.address_verified ? new Date().toISOString() : null,
+      updated_at: new Date().toISOString(),
+    } : null
+
     if (mode === 'new') {
       const { data, error: err } = await supabase.from('clients').insert(payload).select('id').single()
+      if (err) { setSaving(false); setError(err.message); return }
+      if (addrPayload) {
+        await supabase.from('client_addresses').insert({ ...addrPayload, client_id: data!.id })
+      }
       setSaving(false)
-      if (err) { setError(err.message); return }
       onSaved(data!.id)
     } else {
       const { error: err } = await supabase.from('clients').update(payload).eq('id', clientId!)
+      if (err) { setSaving(false); setError(err.message); return }
+      if (addrPayload) {
+        const { data: existing } = await supabase.from('client_addresses')
+          .select('id').eq('client_id', clientId!).eq('is_primary', true).maybeSingle()
+        if (existing) {
+          await supabase.from('client_addresses').update(addrPayload).eq('id', existing.id)
+        } else {
+          await supabase.from('client_addresses').insert({ ...addrPayload, client_id: clientId! })
+        }
+      }
       setSaving(false)
-      if (err) { setError(err.message); return }
       onSaved(clientId!)
     }
   }

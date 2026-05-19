@@ -54,8 +54,16 @@ CREATE TABLE IF NOT EXISTS public.client_addresses (
   formatted_address TEXT,
   is_primary BOOLEAN DEFAULT false,
   verified BOOLEAN DEFAULT false,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now())
+  verified_at TIMESTAMP WITH TIME ZONE,
+  notes TEXT, -- per-address notes (gate codes, access instructions, etc.)
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now())
 );
+
+-- Retroactively add columns if the table already exists (idempotent)
+ALTER TABLE public.client_addresses ADD COLUMN IF NOT EXISTS verified_at TIMESTAMP WITH TIME ZONE;
+ALTER TABLE public.client_addresses ADD COLUMN IF NOT EXISTS notes TEXT;
+ALTER TABLE public.client_addresses ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now());
 
 -- ─────────────────────────────────────────────────────────────────────────────
 -- 3. Multiple contacts per client (key for company records)
