@@ -43,6 +43,8 @@ export default function JobChatPage({ params }: { params: { id: string } }) {
   const [analyzing, setAnalyzing] = useState(false)
   const [copied, setCopied] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [sendInfo, setSendInfo] = useState<string | null>(null)
+  const [sendingKind, setSendingKind] = useState<'chat' | 'portal' | null>(null)
   const analyzingRef = useRef(false)
   const threadRef = useRef<HTMLDivElement>(null)
 
@@ -160,6 +162,27 @@ export default function JobChatPage({ params }: { params: { id: string } }) {
     setTimeout(() => setCopied(false), 1800)
   }
 
+  const sendLink = async (kind: 'chat' | 'portal') => {
+    if (!convId || sendingKind) return
+    setSendingKind(kind)
+    setSendInfo(null)
+    const r = await apiFetch<{ sent: boolean; channel?: string; to?: string; url?: string }>(
+      `/api/v1/conversations/${convId}/send-link`,
+      { method: 'POST', body: JSON.stringify({ kind }) }
+    )
+    const label = kind === 'portal' ? 'Portal invite' : 'Chat link'
+    if (r.data?.sent) {
+      setSendInfo(`${label} sent via ${r.data.channel === 'sms' ? 'text' : 'email'} to ${r.data.to}.`)
+    } else if (r.data?.url) {
+      navigator.clipboard.writeText(r.data.url)
+      setSendInfo(r.message || `Couldn’t send ${label.toLowerCase()} — link copied to clipboard instead.`)
+    } else {
+      setSendInfo(r.message || r.error || `Couldn’t send ${label.toLowerCase()}.`)
+    }
+    setSendingKind(null)
+    setTimeout(() => setSendInfo(null), 6000)
+  }
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -192,11 +215,26 @@ export default function JobChatPage({ params }: { params: { id: string } }) {
               <MessageSquare size={15} className="text-teal-600" />
               <p className="text-sm font-bold text-gray-900">Client Chat</p>
             </div>
-            <button onClick={copyLink}
-              className="flex items-center gap-1.5 text-xs font-semibold text-teal-700 hover:text-teal-800">
-              <Link2 size={12} /> {copied ? 'Link copied!' : 'Copy client link'}
-            </button>
+            <div className="flex items-center gap-3 flex-wrap justify-end">
+              <button onClick={copyLink}
+                className="flex items-center gap-1.5 text-xs font-semibold text-teal-700 hover:text-teal-800">
+                <Link2 size={12} /> {copied ? 'Copied!' : 'Copy link'}
+              </button>
+              <button onClick={() => sendLink('chat')} disabled={sendingKind !== null}
+                className="flex items-center gap-1.5 text-xs font-semibold text-teal-700 hover:text-teal-800 disabled:opacity-50">
+                <Send size={12} /> {sendingKind === 'chat' ? 'Sending…' : 'Send chat link'}
+              </button>
+              <button onClick={() => sendLink('portal')} disabled={sendingKind !== null}
+                className="flex items-center gap-1.5 text-xs font-semibold text-teal-700 hover:text-teal-800 disabled:opacity-50">
+                <Send size={12} /> {sendingKind === 'portal' ? 'Sending…' : 'Send portal invite'}
+              </button>
+            </div>
           </div>
+          {sendInfo && (
+            <div className="px-5 py-2 bg-teal-50 border-b border-teal-100 text-xs text-teal-800">
+              {sendInfo}
+            </div>
+          )}
 
           <div ref={threadRef} className="flex-1 overflow-y-auto px-5 py-4 space-y-3">
             {messages.length === 0 ? (
