@@ -1,7 +1,6 @@
 'use client'
 import { useState, useEffect } from 'react'
 import { Printer, CreditCard, CheckCircle2, AlertCircle, Phone, Mail } from 'lucide-react'
-import { supabase } from '../../../lib/supabase-client'
 
 interface LineItem {
   id: string
@@ -33,28 +32,45 @@ export default function PublicInvoicePage({ params }: { params: { token: string 
   const [lineItems, setLineItems] = useState<LineItem[]>([])
   const [payments, setPayments] = useState<Payment[]>([])
   const [loading, setLoading] = useState(true)
+  const [loadError, setLoadError] = useState<string | null>(null)
   const [stripeMsg, setStripeMsg] = useState<string | null>(null)
 
   useEffect(() => {
     async function load() {
-      // Token-scoped server-side lookup. RLS denies anon direct table reads;
-      // this SECURITY DEFINER function returns only the invoice that matches
-      // the opaque public_token plus the rows the portal renders.
-      const { data, error } = await supabase.rpc('get_public_invoice', { p_token: token })
-
-      const inv = !error && data ? (data as { invoice: Invoice | null }).invoice : null
-      if (inv) {
-        setInvoice(inv)
-
-        if (inv.status === 'sent' && !inv.viewed_at) {
-          await supabase.rpc('mark_invoice_viewed', { p_token: token })
+      try {
+        // Token-scoped server-side lookup. Uses the service-role key on the
+        // server so it works without depending on the SECURITY DEFINER RPC
+        // being installed and without anon-row RLS policies. The token (a
+        // UUID) is the auth — possession grants read.
+        const res = await fetch(`/api/public/invoices/${encodeURIComponent(token)}`, {
+          cache: 'no-store',
+        })
+        if (!res.ok) {
+          // Surface the real error instead of silently rendering "not found".
+          let detail = ''
+          try {
+            const body = await res.json()
+            detail = body?.message || body?.error || ''
+          } catch { /* ignore */ }
+          setLoadError(detail || `Request failed (${res.status})`)
+          setLoading(false)
+          return
         }
-
-        const payload = data as { line_items?: LineItem[]; payments?: Payment[] }
-        if (payload.line_items) setLineItems(payload.line_items)
-        if (payload.payments) setPayments(payload.payments)
+        const payload = await res.json()
+        const inv = payload?.invoice as Invoice | null
+        if (!inv) {
+          setLoadError('not_found')
+          setLoading(false)
+          return
+        }
+        setInvoice(inv)
+        if (Array.isArray(payload.line_items)) setLineItems(payload.line_items)
+        if (Array.isArray(payload.payments)) setPayments(payload.payments)
+      } catch (e) {
+        setLoadError(e instanceof Error ? e.message : 'Unknown error')
+      } finally {
+        setLoading(false)
       }
-      setLoading(false)
     }
     load()
   }, [token])
@@ -84,11 +100,23 @@ export default function PublicInvoicePage({ params }: { params: { token: string 
   }
 
   if (!invoice) {
+    const isNotFound = !loadError || loadError === 'not_found'
     return (
       <div className="min-h-screen bg-gray-100 flex flex-col items-center justify-center p-6 text-center">
         <p className="text-4xl mb-4">📄</p>
-        <h1 className="text-xl font-bold text-gray-900 mb-2">Invoice not found</h1>
-        <p className="text-gray-500 text-sm">This link may be invalid or the invoice has been deleted.</p>
+        <h1 className="text-xl font-bold text-gray-900 mb-2">
+          {isNotFound ? 'Invoice not found' : 'Could not load this invoice'}
+        </h1>
+        <p className="text-gray-500 text-sm max-w-md">
+          {isNotFound
+            ? 'This link may be invalid or the invoice has been deleted.'
+            : 'Something went wrong on our end. Please refresh, or contact your contractor for an updated link.'}
+        </p>
+        {loadError && !isNotFound && (
+          <p className="text-gray-400 text-xs mt-3 font-mono break-all max-w-md">
+            {loadError}
+          </p>
+        )}
       </div>
     )
   }
