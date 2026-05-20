@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { requireUser, notFound, serverError } from '../../../../../../lib/server-auth'
+import { portalInviteHtml, portalInviteText } from '../../../../../../lib/email-templates/portal-invite'
 
 export const runtime = 'nodejs'
 
@@ -39,11 +40,23 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
       const resend = new Resend(apiKey)
       const from = process.env.CONTACT_FROM_EMAIL || 'Prolink <onboarding@resend.dev>'
       const name = [client.first_name, client.last_name].filter(Boolean).join(' ') || 'there'
+
+      // Best-effort: include the inviting contractor's display name so the
+      // email reads "Jane Doe has invited you…" instead of a generic line.
+      let contractorName: string | undefined
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('full_name, business_name')
+        .eq('id', user.id)
+        .maybeSingle()
+      contractorName = profile?.business_name || profile?.full_name || undefined
+
       const { error: sendErr } = await resend.emails.send({
         from,
         to: client.email,
-        subject: 'Your customer portal access',
-        text: `Hi ${name},\n\nYou've been invited to your customer portal — view invoices, messages, and contracts in one place.\n\nGet started: ${claimUrl}\n\nThis link is unique to you; please don't share it.`,
+        subject: 'Your Prolink customer portal is ready',
+        html: portalInviteHtml({ name, claimUrl, contractorName }),
+        text: portalInviteText({ name, claimUrl, contractorName }),
       })
       emailed = !sendErr
     } catch {
