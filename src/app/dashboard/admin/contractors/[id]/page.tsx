@@ -33,7 +33,6 @@ interface Job {
   id: string
   title: string
   status: string | null
-  stage: string | null
   estimated_value: number | null
   scheduled_start: string | null
 }
@@ -345,7 +344,7 @@ export default function AdminContractorDetailPage({ params }: { params: { id: st
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-semibold text-gray-900 truncate">{j.title}</p>
                       <p className="text-xs text-gray-400">
-                        {j.stage} • {j.status || 'pending'}
+                        {j.status || 'pending'}
                         {j.scheduled_start && ` • ${new Date(j.scheduled_start).toLocaleDateString()}`}
                       </p>
                     </div>
@@ -550,7 +549,7 @@ function OverviewTab({ profile, jobs, invoices, clients }: {
               <div key={j.id} className="flex items-center gap-2 text-xs">
                 <Briefcase size={11} className="text-gray-300" />
                 <span className="font-semibold text-gray-700 truncate">{j.title}</span>
-                <span className="text-gray-400 shrink-0">— {j.stage}</span>
+                <span className="text-gray-400 shrink-0">— {j.status || 'pending'}</span>
               </div>
             ))}
           </div>

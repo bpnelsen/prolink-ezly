@@ -10,7 +10,7 @@ interface Job {
   id: string;
   title: string;
   trade: string | null;
-  stage: string;
+  status: string;
   priority: string;
   site_address: string | null;
   address_line1: string | null;
@@ -27,11 +27,12 @@ interface Client {
   last_name: string;
 }
 
-const STAGE_CONFIG: Record<string, { color: string }> = {
-  Lead:      { color: 'bg-yellow-50 text-yellow-700 border-yellow-200' },
-  Quoted:    { color: 'bg-blue-50 text-blue-700 border-blue-200' },
-  Active:    { color: 'bg-teal-50 text-teal-700 border-teal-200' },
-  Completed: { color: 'bg-gray-100 text-gray-600 border-gray-200' },
+const STATUS_CONFIG: Record<string, { label: string; color: string }> = {
+  pending:     { label: 'Pending',     color: 'bg-yellow-50 text-yellow-700 border-yellow-200' },
+  assigned:    { label: 'Assigned',    color: 'bg-blue-50 text-blue-700 border-blue-200' },
+  in_progress: { label: 'In Progress', color: 'bg-orange-50 text-orange-700 border-orange-200' },
+  completed:   { label: 'Completed',   color: 'bg-green-50 text-green-700 border-green-200' },
+  cancelled:   { label: 'Cancelled',   color: 'bg-gray-100 text-gray-500 border-gray-200' },
 };
 
 const PRIORITY_CONFIG: Record<string, { color: string }> = {
@@ -49,7 +50,7 @@ function Badge({ label, config }: { label: string; config: { color: string } }) 
   );
 }
 
-const STAGES = ['Lead', 'Quoted', 'Active', 'Completed'];
+const STATUSES = ['pending', 'assigned', 'in_progress', 'completed', 'cancelled'];
 
 export default function ClientJobsPage() {
   const { id } = useParams<{ id: string }>();
@@ -107,11 +108,11 @@ export default function ClientJobsPage() {
         </div>
 
         {/* Stats */}
-        <div className="grid grid-cols-4 gap-4 mb-6">
-          {STAGES.map(stage => (
-            <div key={stage} className="bg-white rounded-xl border border-gray-100 p-4 shadow-sm text-center">
-              <p className="text-2xl font-bold text-gray-900">{jobs.filter(j => j.stage === stage).length}</p>
-              <p className="text-[10px] font-semibold uppercase tracking-widest text-gray-400 mt-0.5">{stage}</p>
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
+          {STATUSES.map(s => (
+            <div key={s} className="bg-white rounded-xl border border-gray-100 p-4 shadow-sm text-center">
+              <p className="text-2xl font-bold text-gray-900">{jobs.filter(j => j.status === s).length}</p>
+              <p className="text-[10px] font-semibold uppercase tracking-widest text-gray-400 mt-0.5">{STATUS_CONFIG[s]?.label ?? s}</p>
             </div>
           ))}
         </div>
@@ -134,7 +135,7 @@ export default function ClientJobsPage() {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap mb-2">
                       <p className="font-bold text-gray-900">{job.title}</p>
-                      <Badge label={job.stage} config={STAGE_CONFIG[job.stage] ?? { color: 'bg-gray-100 text-gray-600 border-gray-200' }} />
+                      <Badge label={STATUS_CONFIG[job.status]?.label ?? job.status} config={STATUS_CONFIG[job.status] ?? { color: 'bg-gray-100 text-gray-600 border-gray-200' }} />
                       {job.priority !== 'Normal' && (
                         <Badge label={job.priority} config={PRIORITY_CONFIG[job.priority] ?? { color: 'bg-gray-100 text-gray-600 border-gray-200' }} />
                       )}

@@ -22,7 +22,6 @@ interface Job {
   id: string
   title: string
   status: JobStatus
-  stage: string | null
   priority: string | null
   trade: string | null
   lead_source: string | null
@@ -80,7 +79,6 @@ function JobDetail({ params }: { params: { id: string } }) {
   const [form, setForm] = useState({
     title: '',
     status: 'pending' as JobStatus,
-    stage: '',
     priority: '',
     trade: '',
     lead_source: '',
@@ -129,7 +127,6 @@ function JobDetail({ params }: { params: { id: string } }) {
       setForm({
         title: jobData.title || '',
         status: (jobData.status || 'pending') as JobStatus,
-        stage: jobData.stage || '',
         priority: jobData.priority || '',
         trade: jobData.trade || '',
         lead_source: jobData.lead_source || '',
@@ -166,7 +163,6 @@ function JobDetail({ params }: { params: { id: string } }) {
     const { error: jobErr } = await supabase.from('jobs').update({
       title: form.title.trim(),
       status: form.status,
-      stage: form.stage || null,
       priority: form.priority || null,
       trade: form.trade.trim() || null,
       lead_source: form.lead_source.trim() || null,
@@ -231,7 +227,6 @@ function JobDetail({ params }: { params: { id: string } }) {
     setForm({
       title: job.title || '',
       status: (job.status || 'pending') as JobStatus,
-      stage: job.stage || '',
       priority: job.priority || '',
       trade: job.trade || '',
       lead_source: job.lead_source || '',
@@ -362,13 +357,6 @@ function JobDetail({ params }: { params: { id: string } }) {
                   </select>
                 </div>
                 <div>
-                  <label className={labelCls}>Stage</label>
-                  <select value={form.stage} onChange={e => setForm(f => ({ ...f, stage: e.target.value }))} className={inputCls}>
-                    <option value="">— None —</option>
-                    {['Lead', 'Quoted', 'Active', 'Completed'].map(s => <option key={s} value={s}>{s}</option>)}
-                  </select>
-                </div>
-                <div>
                   <label className={labelCls}>Trade / Specialty</label>
                   <input value={form.trade} onChange={e => setForm(f => ({ ...f, trade: e.target.value }))} className={inputCls} placeholder="Plumbing, HVAC…" />
                 </div>
@@ -417,7 +405,6 @@ function JobDetail({ params }: { params: { id: string } }) {
                 {job.clients?.phone && <Detail label="Customer Phone" value={job.clients.phone} />}
                 {job.clients?.email && <Detail label="Customer Email" value={job.clients.email} />}
                 <Detail label="Trade" value={job.trade} />
-                <Detail label="Stage" value={job.stage} />
                 <Detail label="Priority" value={job.priority} />
                 <Detail label="Technician" value={job.technicians?.name} />
                 <Detail label="Lead Source" value={job.lead_source} />

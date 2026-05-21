@@ -45,7 +45,7 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
 
   const [clients, jobs, invoices, technicians] = await Promise.all([
     safeSelect(svc, 'clients', '*', id, 'created_at'),
-    safeSelect(svc, 'jobs', 'id, title, status, stage, estimated_value, scheduled_start', id, 'created_at'),
+    safeSelect(svc, 'jobs', 'id, title, status, estimated_value, scheduled_start', id, 'created_at'),
     safeSelect(svc, 'invoices', 'id, invoice_number, status, total, amount_paid, balance_due, issue_date', id, 'created_at'),
     safeSelect(svc, 'technicians', 'id, name, is_active', id),
   ])

@@ -28,7 +28,6 @@ interface Job {
   title: string
   description: string | null
   trade: string | null
-  stage: string | null
   status: JobStatus | null
   priority: string | null
   scheduled_start: string | null
@@ -127,7 +126,7 @@ function Dispatch() {
       supabase
         .from('jobs')
         .select(`
-          id, title, description, trade, stage, status, priority,
+          id, title, description, trade, status, priority,
           scheduled_start, scheduled_end, estimated_duration, estimated_value,
           site_address, technician_id, client_id,
           technicians (name),
@@ -156,7 +155,7 @@ function Dispatch() {
       const { data, error } = await supabase
         .from('jobs')
         .select(`
-          id, title, description, trade, stage, status, priority,
+          id, title, description, trade, status, priority,
           scheduled_start, scheduled_end, estimated_duration, estimated_value,
           site_address, technician_id, client_id,
           technicians (name),
@@ -637,7 +636,6 @@ function JobModal({ job, technicians, onClose, onUpdate, onDelete }: {
                 <InfoRow label="Customer" value={customerName} />
                 <InfoRow label="Phone" value={job.clients?.phone || '—'} />
                 <InfoRow label="Technician" value={job.technicians?.name || 'Unassigned'} />
-                <InfoRow label="Stage" value={job.stage || '—'} />
                 {start && <InfoRow label="Date" value={start.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })} />}
                 {start && <InfoRow label="Time" value={start.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })} />}
                 <InfoRow label="Duration" value={job.estimated_duration || '—'} />

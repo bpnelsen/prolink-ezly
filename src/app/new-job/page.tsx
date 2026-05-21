@@ -94,7 +94,6 @@ function NewJob() {
   const [trade, setTrade] = useState('');
   const [priority, setPriority] = useState('low');
   const [leadSource, setLeadSource] = useState('');
-  const [stage, setStage] = useState('Lead');
   const [scheduledDate, setScheduledDate] = useState('');
   const [scheduledTime, setScheduledTime] = useState('');
   const [estimatedDuration, setEstimatedDuration] = useState('');
@@ -204,7 +203,6 @@ function NewJob() {
         client_id: selectedClient?.id ?? null,
         title: title.trim(),
         trade: trade || null,
-        stage,
         priority,
         lead_source: leadSource || null,
         site_address: siteAddress.trim() || null,
@@ -363,16 +361,6 @@ function NewJob() {
                   className="w-full bg-gray-50 p-3 rounded-xl border border-gray-200 text-sm focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 transition">
                   <option value="">Select trade...</option>
                   {TRADES.map(t => <option key={t}>{t}</option>)}
-                </select>
-              </div>
-              <div>
-                <label className="block text-xs font-semibold text-gray-600 mb-1.5">Stage</label>
-                <select value={stage} onChange={e => setStage(e.target.value)}
-                  className="w-full bg-gray-50 p-3 rounded-xl border border-gray-200 text-sm focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 transition">
-                  <option>Lead</option>
-                  <option>Quoted</option>
-                  <option>Active</option>
-                  <option>Completed</option>
                 </select>
               </div>
               <div>
