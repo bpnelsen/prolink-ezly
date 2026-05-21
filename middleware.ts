@@ -17,13 +17,22 @@ const PROTECTED_PREFIXES = [
 
 // Hitting crm.useezly.com? Every request is rewritten to /crm/* so the
 // /crm route tree serves it — EXCEPT for these prefixes, which must keep
-// resolving at the root of the app (auth flows + framework internals).
+// resolving at the root of the app (signup/recovery flows + framework
+// internals). /login is deliberately NOT in this list: on the CRM host
+// we want /login → /crm/login (the sales-CRM-branded sign-in page).
 const CRM_HOST_REWRITE_BYPASS = [
-  '/login', '/signup', '/forgot-password', '/auth',
+  '/signup', '/forgot-password', '/auth',
   '/api', '/_next', '/favicon',
 ]
 
+// Routes that look protected (matched by PROTECTED_PREFIXES) but should be
+// publicly reachable so users can actually authenticate.
+const UNPROTECTED_OVERRIDES = ['/crm/login']
+
 function isProtected(pathname: string): boolean {
+  if (UNPROTECTED_OVERRIDES.some(p => pathname === p || pathname.startsWith(`${p}/`))) {
+    return false
+  }
   return PROTECTED_PREFIXES.some(
     (p) => pathname === p || pathname.startsWith(`${p}/`),
   )

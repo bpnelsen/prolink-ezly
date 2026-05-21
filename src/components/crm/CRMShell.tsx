@@ -25,28 +25,31 @@ export default function CRMShell({ children }: { children: React.ReactNode }) {
   const [email, setEmail] = useState<string | null>(null)
   const [checked, setChecked] = useState(false)
 
+  // The CRM login page lives under /crm so it inherits this layout — but it
+  // has its own chrome and obviously must NOT be auth-gated by the shell.
+  const isPublicCrmRoute = pathname === '/crm/login' || pathname.startsWith('/crm/login/')
+
   useEffect(() => {
+    if (isPublicCrmRoute) { setChecked(true); return }
     let cancelled = false
     ;(async () => {
       const { data: { session } } = await supabase.auth.getSession()
       if (cancelled) return
       if (!session) {
         const next = encodeURIComponent(pathname || '/crm')
-        router.replace(`/login?next=${next}`)
+        router.replace(`/crm/login?next=${next}`)
         return
       }
       const userEmail = session.user.email || ''
       setEmail(userEmail)
-      if (userEmail.toLowerCase() !== ADMIN_EMAIL.toLowerCase()) {
-        setChecked(true)
-        return
-      }
       setChecked(true)
     })()
     return () => { cancelled = true }
-  }, [router, pathname])
+  }, [router, pathname, isPublicCrmRoute])
 
   useEffect(() => { setOpen(false) }, [pathname])
+
+  if (isPublicCrmRoute) return <>{children}</>
 
   if (!checked) {
     return (
@@ -66,7 +69,7 @@ export default function CRMShell({ children }: { children: React.ReactNode }) {
             signed in as <span className="font-semibold">{email}</span>.
           </p>
           <button
-            onClick={async () => { await supabase.auth.signOut(); router.replace('/login') }}
+            onClick={async () => { await supabase.auth.signOut(); router.replace('/crm/login') }}
             className="text-sm font-semibold text-teal-700 hover:text-teal-800"
           >
             Sign out and try a different account →
@@ -125,7 +128,7 @@ export default function CRMShell({ children }: { children: React.ReactNode }) {
             <p className="text-xs text-white/70 truncate">{email}</p>
           </div>
           <button
-            onClick={async () => { await supabase.auth.signOut(); router.replace('/login') }}
+            onClick={async () => { await supabase.auth.signOut(); router.replace('/crm/login') }}
             className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-semibold text-white/50 hover:text-white hover:bg-white/5 transition w-full"
           >
             <LogOut size={17} /> Sign out
