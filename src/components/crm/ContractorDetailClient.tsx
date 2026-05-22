@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import {
   ArrowLeft, Phone, Mail, MapPin, Globe, FileText, Tag, Calendar,
-  Trash2, Save, X,
+  Trash2, Save, X, Ban,
 } from 'lucide-react'
 import { crmAPI, formatDateTime } from '@/lib/crm-client'
 import type { Activity, Deal, ImportedContractor, PipelineStage } from '@/lib/crm-types'
@@ -72,6 +72,18 @@ export default function ContractorDetailClient({ id }: { id: string }) {
     } catch (e) { alert((e as Error).message) }
   }
 
+  const toggleDoNotContact = async () => {
+    if (!contractor) return
+    const isDNC = contractor.contact_status === 'do_not_contact'
+    if (!isDNC && !confirm('Mark this contractor as DO NOT CONTACT? They will be excluded from outreach.')) return
+    try {
+      const { contractor: updated } = await crmAPI.contractors.patch(id, {
+        contact_status: isDNC ? 'new' : 'do_not_contact',
+      })
+      setContractor(updated); setForm(updated)
+    } catch (e) { alert((e as Error).message) }
+  }
+
   if (loading) return <div className="text-sm text-gray-500">Loading…</div>
   if (error) return <div className="text-sm text-rose-600">{error}</div>
   if (!contractor) return <div className="text-sm text-gray-500">Not found.</div>
@@ -83,6 +95,21 @@ export default function ContractorDetailClient({ id }: { id: string }) {
           <ArrowLeft size={14} /> All contractors
         </Link>
         <div className="flex gap-2">
+          <button
+            onClick={toggleDoNotContact}
+            className={
+              contractor.contact_status === 'do_not_contact'
+                ? 'text-sm font-bold border border-rose-600 bg-rose-600 text-white hover:bg-rose-700 px-3 py-1.5 rounded-lg flex items-center gap-1 uppercase tracking-wider'
+                : 'text-sm font-bold border border-rose-200 text-rose-600 hover:bg-rose-50 px-3 py-1.5 rounded-lg flex items-center gap-1 uppercase tracking-wider'
+            }
+            title={
+              contractor.contact_status === 'do_not_contact'
+                ? 'Currently marked DO NOT CONTACT — click to remove'
+                : 'Mark this contractor as DO NOT CONTACT'
+            }
+          >
+            <Ban size={14} /> Do not contact
+          </button>
           {!editing && (
             <button
               onClick={() => setEditing(true)}
