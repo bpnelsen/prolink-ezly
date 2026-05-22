@@ -65,9 +65,18 @@ export async function POST(req: NextRequest) {
   if (!subject) return badRequest('subject is required')
   if (!messageBody) return badRequest('body is required')
 
+  // Resolve the sender's display name: env override → profiles.full_name →
+  // email local-part. This is what {{my_name}} renders to in the template.
+  let senderName = process.env.CRM_SENDER_NAME || ''
+  if (!senderName) {
+    const { data: prof } = await supabase
+      .from('profiles').select('full_name').eq('id', user.id).maybeSingle()
+    senderName = prof?.full_name || user.email?.split('@')[0] || ''
+  }
+
   const vars = buildVars({
     contractor,
-    sender_name: user.email?.split('@')[0],
+    sender_name: senderName,
     sender_email: user.email,
   })
   subject = renderTemplate(subject, vars)

@@ -23,9 +23,24 @@ export default function MessageComposer({
   const [success, setSuccess] = useState<string | null>(null)
   const [copied, setCopied] = useState(false)
   const [senderEmail, setSenderEmail] = useState<string | null>(null)
+  const [senderName, setSenderName] = useState<string | null>(null)
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => setSenderEmail(data.session?.user?.email || null))
+    let cancelled = false
+    ;(async () => {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (cancelled || !session) return
+      const email = session.user.email || null
+      setSenderEmail(email)
+      // Match the server's lookup order: profiles.full_name → email prefix.
+      // (The server's env override CRM_SENDER_NAME can't be read here, so
+      // the preview will diverge in that one case; sent output still wins.)
+      const { data: prof } = await supabase
+        .from('profiles').select('full_name').eq('id', session.user.id).maybeSingle()
+      if (cancelled) return
+      setSenderName(prof?.full_name || email?.split('@')[0] || null)
+    })()
+    return () => { cancelled = true }
   }, [])
 
   useEffect(() => {
@@ -48,8 +63,8 @@ export default function MessageComposer({
   }, [templateId, templates])
 
   const vars = useMemo(
-    () => buildVars({ contractor, sender_email: senderEmail, sender_name: senderEmail?.split('@')[0] }),
-    [contractor, senderEmail],
+    () => buildVars({ contractor, sender_email: senderEmail, sender_name: senderName }),
+    [contractor, senderEmail, senderName],
   )
   const previewSubject = renderTemplate(subject, vars)
   const previewBody = renderTemplate(body, vars)

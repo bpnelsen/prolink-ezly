@@ -33,9 +33,17 @@ export async function POST(req: NextRequest) {
   }
   if (!messageBody) return badRequest('body is required')
 
+  // Same lookup order as the email route: env → profile → email prefix.
+  let senderName = process.env.CRM_SENDER_NAME || ''
+  if (!senderName) {
+    const { data: prof } = await supabase
+      .from('profiles').select('full_name').eq('id', user.id).maybeSingle()
+    senderName = prof?.full_name || user.email?.split('@')[0] || ''
+  }
+
   const vars = buildVars({
     contractor,
-    sender_name: user.email?.split('@')[0],
+    sender_name: senderName,
     sender_email: user.email,
   })
   const rendered = renderTemplate(messageBody, vars)
