@@ -78,7 +78,9 @@ export function middleware(req: NextRequest) {
 
   if (isProtected(effectivePath) && !hasSupabaseAuthCookie(req)) {
     const url = req.nextUrl.clone()
-    url.pathname = '/login'
+    // CRM visitors get the sales-branded sign-in; everyone else gets the
+    // contractor login.
+    url.pathname = effectivePath.startsWith('/crm') ? '/crm/login' : '/login'
     url.search = `?next=${encodeURIComponent(pathname + search)}`
     return NextResponse.redirect(url)
   }
