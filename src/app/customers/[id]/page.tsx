@@ -10,7 +10,8 @@ import Link from 'next/link'
 import { supabase } from '../../../lib/supabase-client'
 import { apiFetch } from '../../../lib/api-fetch'
 import Breadcrumbs from '../../../components/Breadcrumbs'
-import AddressAutocomplete, { ParsedAddress } from '../../../components/AddressAutocomplete'
+import AddressAutocomplete from '../../../components/ui/AddressAutocomplete'
+import type { ParsedAddress } from '../../../types/address'
 import AddressMapPreview from '../../../components/AddressMapPreview'
 import { LIFECYCLE_META, DEAL_STAGES, DEAL_STAGE_META, ADDRESS_LABELS, titleCase } from '../../../lib/crm'
 
@@ -593,13 +594,13 @@ function AddressesSection({
     setValidMsg(null)
     setF(prev => ({
       ...prev,
-      address_line1: a.line1 || prev.address_line1,
+      address_line1: a.full_street || prev.address_line1,
       city: a.city || prev.city, state: a.state || prev.state,
-      zip_code: a.postal_code || prev.zip_code, county: a.county || prev.county,
+      zip_code: a.zip_code || prev.zip_code, county: a.county || prev.county,
       country: a.country || prev.country,
-      latitude: a.latitude ?? prev.latitude, longitude: a.longitude ?? prev.longitude,
+      latitude: a.lat ?? prev.latitude, longitude: a.lng ?? prev.longitude,
       google_place_id: a.place_id || prev.google_place_id,
-      formatted_address: a.formatted || prev.formatted_address,
+      formatted_address: a.formatted_address || prev.formatted_address,
       verified: false,
     }))
   }
@@ -711,8 +712,7 @@ function AddressesSection({
             <AddressAutocomplete
               value={f.address_line1}
               onChange={v => setF(p => ({ ...p, address_line1: v, verified: false }))}
-              onSelect={onSelect}
-              className={inputCls2}
+              onAddressSelect={onSelect}
               placeholder="123 Main St"
             />
           </div>

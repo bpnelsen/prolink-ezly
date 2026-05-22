@@ -14,6 +14,8 @@ export interface ParsedAddress {
   /** Two-letter US state abbreviation (e.g. "UT"). Empty string for non-US. */
   state: string
   zip_code: string
+  /** US county (e.g. "Salt Lake County"). Useful for tax + permitting. Empty when unknown. */
+  county: string
   /** ISO 3166-1 alpha-2 country code (e.g. "US"). */
   country: string
   lat: number | null
@@ -32,6 +34,7 @@ export const EMPTY_PARSED_ADDRESS: ParsedAddress = {
   city: '',
   state: '',
   zip_code: '',
+  county: '',
   country: '',
   lat: null,
   lng: null,

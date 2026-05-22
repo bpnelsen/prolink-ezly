@@ -7,7 +7,7 @@ import Link from 'next/link'
 import { CheckCircle, Zap } from 'lucide-react'
 import { supabase } from '../../lib/supabase-client'
 import ProlinkLogoDark from '../../components/ProlinkLogoDark'
-import AddressAutocomplete from '../../components/AddressAutocomplete'
+import AddressAutocomplete from '../../components/ui/AddressAutocomplete'
 
 type Step = 1 | 2 | 3 | 4
 
@@ -296,15 +296,14 @@ const handleChange = (e: any) => {
                   <AddressAutocomplete
                     value={formData.businessStreet}
                     onChange={v => setFormData(prev => ({ ...prev, businessStreet: v }))}
-                    onSelect={a => setFormData(prev => ({
+                    onAddressSelect={a => setFormData(prev => ({
                       ...prev,
-                      businessStreet: a.line1 || prev.businessStreet,
+                      businessStreet: a.full_street || prev.businessStreet,
                       businessCity: a.city || prev.businessCity,
                       businessState: a.state || prev.businessState,
-                      businessZip: a.postal_code || prev.businessZip,
+                      businessZip: a.zip_code || prev.businessZip,
                     }))}
                     placeholder="Start typing your business address…"
-                    className="w-full px-4 py-3 bg-[#f8fafc] border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#14b8a6] focus:border-transparent outline-none transition text-gray-900 text-sm"
                   />
                   {(formData.businessCity || formData.businessState || formData.businessZip) && (
                     <p className="text-xs text-gray-500 mt-1">

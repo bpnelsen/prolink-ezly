@@ -1,7 +1,8 @@
 'use client'
 import { useState } from 'react'
 import { Plus, Building2, User, ShieldCheck, ShieldAlert, X } from 'lucide-react'
-import AddressAutocomplete, { ParsedAddress } from './AddressAutocomplete'
+import AddressAutocomplete from './ui/AddressAutocomplete'
+import type { ParsedAddress } from '../types/address'
 import AddressMapPreview from './AddressMapPreview'
 import { supabase } from '../lib/supabase-client'
 import { apiFetch } from '../lib/api-fetch'
@@ -86,16 +87,16 @@ export default function CustomerForm({ mode, clientId, initial, onSaved, onCance
     setValidation(null)
     setForm(prev => ({
       ...prev,
-      address_line1: a.line1 || prev.address_line1,
+      address_line1: a.full_street || prev.address_line1,
       city: a.city || prev.city,
       state: a.state || prev.state,
-      zip_code: a.postal_code || prev.zip_code,
+      zip_code: a.zip_code || prev.zip_code,
       county: a.county || prev.county,
       country: a.country || prev.country,
-      latitude: a.latitude ?? prev.latitude,
-      longitude: a.longitude ?? prev.longitude,
+      latitude: a.lat ?? prev.latitude,
+      longitude: a.lng ?? prev.longitude,
       google_place_id: a.place_id || prev.google_place_id,
-      formatted_address: a.formatted || prev.formatted_address,
+      formatted_address: a.formatted_address || prev.formatted_address,
       address_verified: false,
     }))
   }
@@ -348,8 +349,7 @@ export default function CustomerForm({ mode, clientId, initial, onSaved, onCance
             <AddressAutocomplete
               value={form.address_line1}
               onChange={v => setForm(prev => ({ ...prev, address_line1: v, address_verified: false }))}
-              onSelect={onAddressSelect}
-              className={inputCls}
+              onAddressSelect={onAddressSelect}
               placeholder="123 Main St" />
           </div>
           <div>
