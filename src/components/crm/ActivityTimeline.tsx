@@ -9,6 +9,7 @@ const ICON: Record<ActivityKind, React.ReactNode> = {
   call: <Phone size={14} />,
   email: <Mail size={14} />,
   sms: <MessageSquare size={14} />,
+  dm: <MessageSquare size={14} />,
   task: <ClipboardList size={14} />,
   meeting: <Calendar size={14} />,
 }
@@ -18,6 +19,7 @@ const COLOR: Record<ActivityKind, string> = {
   call: 'bg-blue-50 text-blue-700 border-blue-200',
   email: 'bg-purple-50 text-purple-700 border-purple-200',
   sms: 'bg-green-50 text-green-700 border-green-200',
+  dm: 'bg-sky-50 text-sky-700 border-sky-200',
   task: 'bg-orange-50 text-orange-700 border-orange-200',
   meeting: 'bg-indigo-50 text-indigo-700 border-indigo-200',
 }

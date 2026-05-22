@@ -51,7 +51,7 @@ export type Deal = {
   updated_at: string
 }
 
-export type ActivityKind = 'note' | 'call' | 'email' | 'sms' | 'task' | 'meeting'
+export type ActivityKind = 'note' | 'call' | 'email' | 'sms' | 'dm' | 'task' | 'meeting'
 
 export type Activity = {
   id: string

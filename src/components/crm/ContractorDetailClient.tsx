@@ -11,6 +11,7 @@ import type { Activity, Deal, ImportedContractor, PipelineStage } from '@/lib/cr
 import ActivityComposer from './ActivityComposer'
 import ActivityTimeline from './ActivityTimeline'
 import DealEditor from './DealEditor'
+import MessageComposer from './MessageComposer'
 
 const CONTACT_STATUSES = [
   { value: '', label: '— Not set —' },
@@ -198,7 +199,13 @@ export default function ContractorDetailClient({ id }: { id: string }) {
 
       <div className="grid lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 space-y-4">
-          <h2 className="font-bold text-gray-900">Activity</h2>
+          <h2 className="font-bold text-gray-900">Reach out</h2>
+          <MessageComposer
+            contractor={contractor}
+            onActivity={(a) => setActivities([a, ...activities])}
+          />
+
+          <h2 className="font-bold text-gray-900 pt-2">Log a touch</h2>
           <ActivityComposer
             contractorId={id}
             onCreated={(a) => setActivities([a, ...activities])}
