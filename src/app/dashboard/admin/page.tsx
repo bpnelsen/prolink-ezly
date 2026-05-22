@@ -3,7 +3,8 @@ import { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
 import {
   Shield, Users, Building2, Briefcase, FileText, DollarSign,
-  Search, ExternalLink, AlertTriangle, TrendingUp, Globe, UserCheck
+  Search, ExternalLink, AlertTriangle, TrendingUp, Globe, UserCheck,
+  KanbanSquare, ArrowRight,
 } from 'lucide-react'
 import Breadcrumbs from '../../../components/Breadcrumbs'
 import { apiFetch } from '../../../lib/api-fetch'
@@ -120,6 +121,28 @@ export default function AdminDashboardPage() {
             label="Platform Revenue" value={`$${stats.totalRevenue.toLocaleString()}`}
             sub={`$${stats.totalOutstanding.toLocaleString()} outstanding`} />
         </div>
+
+        {/* Sales CRM call-out */}
+        <Link
+          href="/crm"
+          className="group block mb-6 rounded-2xl border border-teal-200 bg-gradient-to-r from-teal-50 via-white to-teal-50 px-5 py-4 shadow-sm hover:border-teal-400 hover:shadow-md transition"
+        >
+          <div className="flex items-center gap-4">
+            <div className="shrink-0 w-11 h-11 rounded-xl bg-teal-600 text-white flex items-center justify-center">
+              <KanbanSquare size={20} />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-[10px] font-bold uppercase tracking-widest text-teal-700">Sales</p>
+              <p className="text-base font-bold text-gray-900">Prolink Sales CRM</p>
+              <p className="text-xs text-gray-500 mt-0.5">
+                Imported-contractor pipeline, deal stages, message templates, and outreach tracking.
+              </p>
+            </div>
+            <span className="hidden sm:flex items-center gap-1 text-sm font-bold text-teal-700 group-hover:text-teal-800 shrink-0">
+              Open CRM <ArrowRight size={14} />
+            </span>
+          </div>
+        </Link>
 
         {/* Quick links */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
