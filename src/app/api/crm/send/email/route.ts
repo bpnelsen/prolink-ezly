@@ -12,6 +12,10 @@ export const maxDuration = 30
 // account's test inbox will succeed.
 const FROM = process.env.CRM_FROM_EMAIL || 'Brian Nelsen <Brian@useezly.com>'
 
+// Where replies should land. Leave unset to let replies go back to FROM —
+// otherwise recipients hitting "Reply" end up emailing whoever's logged in.
+const REPLY_TO = process.env.CRM_REPLY_TO || ''
+
 function escapeHtml(s: string): string {
   return s
     .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
@@ -90,7 +94,7 @@ export async function POST(req: NextRequest) {
   const { error: sendErr } = await resend.emails.send({
     from: FROM,
     to: contractor.email,
-    replyTo: user.email || undefined,
+    ...(REPLY_TO ? { replyTo: REPLY_TO } : {}),
     subject,
     html: bodyToHtml(messageBody),
     text: messageBody,
