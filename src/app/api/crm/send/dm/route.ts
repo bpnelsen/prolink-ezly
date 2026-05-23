@@ -23,6 +23,9 @@ export async function POST(req: NextRequest) {
     .from('imported_contractors').select('*').eq('id', contractorId).maybeSingle()
   if (cErr) return serverError(cErr.message)
   if (!contractor) return notFound('Contractor not found')
+  if (contractor.contact_status === 'do_not_contact') {
+    return badRequest('This contractor is marked DO NOT CONTACT. Remove the flag on their profile before sending.')
+  }
 
   let messageBody = (body?.body || '').toString()
   if (body?.template_id) {
@@ -68,10 +71,13 @@ export async function POST(req: NextRequest) {
     .select('*').single()
   if (aErr) return serverError(aErr.message)
 
-  await supabase.from('imported_contractors').update({
-    contact_status: 'contacted',
-    contact_date: new Date().toISOString(),
-  }).eq('id', contractorId)
+  // Always bump contact_date; only promote contact_status when it's still
+  // at an initial value, so we don't trample qualified/unqualified/do-not-contact.
+  const update: Record<string, unknown> = { contact_date: new Date().toISOString() }
+  if (!contractor.contact_status || contractor.contact_status === 'new') {
+    update.contact_status = 'contacted'
+  }
+  await supabase.from('imported_contractors').update(update).eq('id', contractorId)
 
   return NextResponse.json({ activity, rendered })
 }

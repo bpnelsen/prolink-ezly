@@ -1,7 +1,7 @@
 'use client'
 import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
-import { Mail, MessageSquare, Send, Copy, Check, Sparkles } from 'lucide-react'
+import { Mail, MessageSquare, Send, Copy, Check, Sparkles, Ban } from 'lucide-react'
 import { supabase } from '@/lib/supabase-client'
 import { templatesAPI, sendAPI } from '@/lib/crm-templates-client'
 import { buildVars, renderTemplate, type CRMTemplate, type TemplateKind } from '@/lib/crm-templates'
@@ -108,6 +108,8 @@ export default function MessageComposer({
     }
   }
 
+  const isDNC = contractor.contact_status === 'do_not_contact'
+
   const tabBtn = (active: boolean) =>
     `flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition ${
       active ? 'bg-teal-600 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
@@ -131,6 +133,13 @@ export default function MessageComposer({
           <Sparkles size={12} /> Manage templates
         </Link>
       </div>
+
+      {isDNC && (
+        <div className="bg-rose-50 border border-rose-200 text-rose-800 text-xs rounded-lg px-3 py-2 flex items-center gap-2">
+          <Ban size={14} className="shrink-0" />
+          This contractor is marked <strong>DO NOT CONTACT</strong>. Sending is disabled — unmark them on their profile if you need to reach out.
+        </div>
+      )}
 
       {kind === 'email' && !contractor.email && (
         <div className="bg-amber-50 border border-amber-200 text-amber-800 text-xs rounded-lg px-3 py-2">
@@ -182,15 +191,15 @@ export default function MessageComposer({
       <div className="flex justify-end">
         {kind === 'email' ? (
           <button
-            type="button" onClick={sendEmail} disabled={busy || !contractor.email}
+            type="button" onClick={sendEmail} disabled={busy || !contractor.email || isDNC}
             className="bg-teal-600 hover:bg-teal-700 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-bold px-4 py-2 rounded-lg flex items-center gap-1.5"
           >
             <Send size={14} /> {busy ? 'Sending…' : `Send to ${contractor.email || '(no email)'}`}
           </button>
         ) : (
           <button
-            type="button" onClick={copyDM} disabled={busy}
-            className="bg-teal-600 hover:bg-teal-700 disabled:opacity-50 text-white text-sm font-bold px-4 py-2 rounded-lg flex items-center gap-1.5"
+            type="button" onClick={copyDM} disabled={busy || isDNC}
+            className="bg-teal-600 hover:bg-teal-700 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-bold px-4 py-2 rounded-lg flex items-center gap-1.5"
           >
             {copied ? <Check size={14} /> : <Copy size={14} />}
             {busy ? 'Working…' : copied ? 'Copied' : 'Copy & log DM'}

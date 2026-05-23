@@ -59,12 +59,17 @@ export async function POST(req: NextRequest) {
     .from('crm_activities').insert(payload).select('*').single()
   if (error) return serverError(error.message)
 
-  // Sync contact_status / contact_date on the parent when an outbound touch happens.
+  // Sync contact_status / contact_date on the parent when an outbound touch
+  // happens. Always bump contact_date; only promote contact_status when it's
+  // still at an initial value, so we don't trample qualified/do-not-contact.
   if (payload.kind === 'call' || payload.kind === 'email' || payload.kind === 'sms') {
-    await supabase.from('imported_contractors').update({
-      contact_status: 'contacted',
-      contact_date: new Date().toISOString(),
-    }).eq('id', body.contractor_id)
+    const { data: current } = await supabase
+      .from('imported_contractors').select('contact_status').eq('id', body.contractor_id).maybeSingle()
+    const update: Record<string, unknown> = { contact_date: new Date().toISOString() }
+    if (!current?.contact_status || current.contact_status === 'new') {
+      update.contact_status = 'contacted'
+    }
+    await supabase.from('imported_contractors').update(update).eq('id', body.contractor_id)
   }
 
   return NextResponse.json({ activity: data })
