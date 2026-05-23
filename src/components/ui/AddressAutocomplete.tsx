@@ -3,9 +3,10 @@
  * Reusable address autocomplete input.
  *
  * Providers:
- *  1. Google Places (Autocomplete + Place Details), loaded lazily on
- *     the first keystroke. Used when NEXT_PUBLIC_GOOGLE_MAPS_API_KEY
- *     is set.
+ *  1. Google Places (Autocomplete + Place Details), via the
+ *     @vis.gl/react-google-maps useMapsLibrary('places') hook. Active
+ *     whenever NEXT_PUBLIC_GOOGLE_MAPS_API_KEY is set and the app is
+ *     wrapped in <GoogleMapsProvider> (see src/app/layout.tsx).
  *  2. Photon (OpenStreetMap), keyless + CORS-enabled. Used when
  *     Google is unconfigured OR returns any non-OK status — invalid
  *     key, REQUEST_DENIED, OVER_QUERY_LIMIT, ZERO_RESULTS — so the
@@ -40,13 +41,15 @@ import {
   useState,
 } from 'react'
 import { Loader2, MapPin, AlertCircle, Pencil, ChevronDown, ChevronUp } from 'lucide-react'
+import { useMapsLibrary } from '@vis.gl/react-google-maps'
 import type { ParsedAddress } from '@/types/address'
 import { EMPTY_PARSED_ADDRESS } from '@/types/address'
 import { parseGoogleComponents, parsePhotonFeature, formatPhotonLabel } from '@/lib/address-parsing'
 
-const GOOGLE_KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY
 const MIN_QUERY_LENGTH = 2
 const DEBOUNCE_MS = 300
+
+type PlacesLibrary = google.maps.PlacesLibrary
 
 export interface AddressAutocompleteProps {
   onAddressSelect: (address: ParsedAddress) => void
@@ -84,39 +87,16 @@ interface Suggestion {
 }
 
 // ---------------------------------------------------------------------------
-// Google JS API loader
+// Google Places — script loading is handled by <APIProvider> upstream; we
+// just consume the library via useMapsLibrary('places').
 // ---------------------------------------------------------------------------
-let googleLoaderPromise: Promise<void> | null = null
-function loadGoogle(): Promise<void> {
-  if (typeof window === 'undefined') return Promise.reject(new Error('SSR'))
-  if (!GOOGLE_KEY) return Promise.reject(new Error('NO_KEY'))
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  if ((window as any).google?.maps?.places) return Promise.resolve()
-  if (googleLoaderPromise) return googleLoaderPromise
-  googleLoaderPromise = new Promise<void>((resolve, reject) => {
-    const existing = document.querySelector<HTMLScriptElement>('script[data-prolink-gmaps]')
-    if (existing) {
-      existing.addEventListener('load', () => resolve())
-      existing.addEventListener('error', () => reject(new Error('SCRIPT_ERROR')))
-      return
-    }
-    const s = document.createElement('script')
-    s.src = `https://maps.googleapis.com/maps/api/js?key=${GOOGLE_KEY}&libraries=places&v=weekly`
-    s.async = true
-    s.defer = true
-    s.dataset.prolinkGmaps = '1'
-    s.onload = () => resolve()
-    s.onerror = () => { googleLoaderPromise = null; reject(new Error('SCRIPT_ERROR')) }
-    document.head.appendChild(s)
-  })
-  return googleLoaderPromise
-}
 
-async function googleSuggest(q: string, country: string): Promise<Suggestion[]> {
-  await loadGoogle()
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const g = (window as any).google
-  const svc = new g.maps.places.AutocompleteService()
+async function googleSuggest(
+  placesLib: PlacesLibrary,
+  q: string,
+  country: string
+): Promise<Suggestion[]> {
+  const svc = new placesLib.AutocompleteService()
   return new Promise<Suggestion[]>((resolve, reject) => {
     svc.getPlacePredictions(
       {
@@ -124,13 +104,18 @@ async function googleSuggest(q: string, country: string): Promise<Suggestion[]> 
         types: ['address'],
         componentRestrictions: country ? { country } : undefined,
       },
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (preds: any, status: string) => {
-        if (status === 'OK' && Array.isArray(preds) && preds.length > 0) {
-          resolve(preds.slice(0, 6).map((p: { description: string; place_id: string }) => ({
-            label: p.description,
-            placeId: p.place_id,
-          })))
+      (preds, status) => {
+        if (
+          status === google.maps.places.PlacesServiceStatus.OK &&
+          Array.isArray(preds) &&
+          preds.length > 0
+        ) {
+          resolve(
+            preds.slice(0, 6).map(p => ({
+              label: p.description,
+              placeId: p.place_id,
+            }))
+          )
         } else {
           reject(new Error(status || 'NO_RESULTS'))
         }
@@ -139,18 +124,20 @@ async function googleSuggest(q: string, country: string): Promise<Suggestion[]> 
   })
 }
 
-async function googleDetails(placeId: string): Promise<ParsedAddress | null> {
-  await loadGoogle()
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const g = (window as any).google
+async function googleDetails(
+  placesLib: PlacesLibrary,
+  placeId: string
+): Promise<ParsedAddress | null> {
   const host = document.createElement('div')
-  const svc = new g.maps.places.PlacesService(host)
+  const svc = new placesLib.PlacesService(host)
   return new Promise<ParsedAddress | null>(resolve => {
     svc.getDetails(
       { placeId, fields: ['address_components', 'formatted_address', 'geometry', 'place_id'] },
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (place: any, status: string) => {
-        if (status !== 'OK' || !place) { resolve(null); return }
+      (place, status) => {
+        if (status !== google.maps.places.PlacesServiceStatus.OK || !place) {
+          resolve(null)
+          return
+        }
         resolve(parseGoogleComponents(place))
       }
     )
@@ -243,6 +230,12 @@ const AddressAutocomplete = forwardRef<HTMLInputElement, AddressAutocompleteProp
     const skipNext = useRef(false)
     const reqIdRef = useRef(0)
 
+    // Google Places library — null until <APIProvider> has loaded the SDK,
+    // or indefinitely when NEXT_PUBLIC_GOOGLE_MAPS_API_KEY is unset
+    // (GoogleMapsProvider renders a pass-through in that case). When null,
+    // suggestions come from Photon only.
+    const placesLib = useMapsLibrary('places')
+
     useImperativeHandle(ref, () => ({
       // Forward focus to the input. ref can be either the DOM node (when
       // a caller passes a raw ref) or our handle interface; in either
@@ -257,8 +250,8 @@ const AddressAutocomplete = forwardRef<HTMLInputElement, AddressAutocompleteProp
       setError(null)
       try {
         let results: Suggestion[] = []
-        if (GOOGLE_KEY) {
-          try { results = await googleSuggest(q, country) } catch { results = [] }
+        if (placesLib) {
+          try { results = await googleSuggest(placesLib, q, country) } catch { results = [] }
         }
         if (results.length === 0) {
           results = await photonSuggest(q, country)
@@ -275,7 +268,7 @@ const AddressAutocomplete = forwardRef<HTMLInputElement, AddressAutocompleteProp
       } finally {
         if (myReqId === reqIdRef.current) setLoading(false)
       }
-    }, [country])
+    }, [country, placesLib])
 
     useEffect(() => {
       if (skipNext.current) { skipNext.current = false; return }
@@ -311,9 +304,9 @@ const AddressAutocomplete = forwardRef<HTMLInputElement, AddressAutocompleteProp
       setActiveIndex(-1)
 
       let parsed: ParsedAddress | null = null
-      if (s.placeId && GOOGLE_KEY) {
+      if (s.placeId && placesLib) {
         setLoading(true)
-        try { parsed = await googleDetails(s.placeId) } catch { parsed = null }
+        try { parsed = await googleDetails(placesLib, s.placeId) } catch { parsed = null }
         setLoading(false)
       }
       if (!parsed && s.photon) {
@@ -327,7 +320,7 @@ const AddressAutocomplete = forwardRef<HTMLInputElement, AddressAutocompleteProp
         setQuery(parsed.formatted_address)
       }
       emit(parsed)
-    }, [emit, setQuery])
+    }, [emit, placesLib, setQuery])
 
     const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
       if (!open && (e.key === 'ArrowDown' || e.key === 'ArrowUp') && suggestions.length > 0) {
