@@ -1,6 +1,11 @@
 -- migrations/023_website_builder_v2.sql
 --
--- Website Builder v2 upgrade:
+-- Website Builder v2 — full setup + upgrade.
+--
+-- Includes:
+--   0. Base `contractor_websites` table (idempotent — only created if it
+--      doesn't already exist; on databases that already had it, this is
+--      a no-op and the column additions below still apply).
 --   1. New optional columns on contractor_websites for logo, gallery,
 --      fonts, SEO meta, social links, and business hours.
 --   2. New `website_leads` table — lead capture from the public site's
@@ -9,26 +14,82 @@
 --   3. Public storage bucket `website-assets` for logos and gallery
 --      photos, scoped to /{contractor_id}/...
 --
--- Idempotent.
+-- Idempotent — safe to run multiple times.
 
 begin;
 
 -- ---------------------------------------------------------------------------
--- 1. New columns on contractor_websites
+-- 0. Base table (create if missing)
+-- ---------------------------------------------------------------------------
+create table if not exists public.contractor_websites (
+  id                uuid primary key default gen_random_uuid(),
+  contractor_id     uuid not null references auth.users(id) on delete cascade,
+
+  -- Business basics (mirror the Questionnaire shape used by the builder UI)
+  business_name     text,
+  owner_name        text,
+  tagline           text,
+  about_story       text,
+  services          jsonb not null default '[]'::jsonb,
+  service_areas     text,
+  phone             text,
+  email             text,
+  years_experience  text,
+  licensed          boolean not null default false,
+  insured           boolean not null default false,
+
+  -- Layout + theming
+  sections          jsonb not null default '["hero","services","about","contact"]'::jsonb,
+  theme             text not null default 'navy',
+  slug              text not null,
+  custom_domain     text,
+
+  -- AI-generated body
+  content           jsonb not null default '{}'::jsonb,
+  published         boolean not null default false,
+
+  created_at        timestamptz not null default now(),
+  updated_at        timestamptz not null default now(),
+
+  unique (contractor_id),
+  unique (slug)
+);
+
+create index if not exists contractor_websites_slug_idx       on public.contractor_websites(slug);
+create index if not exists contractor_websites_contractor_idx on public.contractor_websites(contractor_id);
+
+-- Owner-scoped RLS + public read for published rows.
+alter table public.contractor_websites enable row level security;
+
+drop policy if exists "Contractors manage own website" on public.contractor_websites;
+create policy "Contractors manage own website"
+  on public.contractor_websites
+  for all
+  using (auth.uid() = contractor_id)
+  with check (auth.uid() = contractor_id);
+
+drop policy if exists "Public can view published sites" on public.contractor_websites;
+create policy "Public can view published sites"
+  on public.contractor_websites
+  for select
+  using (published = true);
+
+-- ---------------------------------------------------------------------------
+-- 1. New v2 columns on contractor_websites
 -- ---------------------------------------------------------------------------
 alter table public.contractor_websites
-  add column if not exists logo_url         text,
-  add column if not exists gallery_images   jsonb       not null default '[]'::jsonb,
-  add column if not exists font_family      text        not null default 'inter',
-  add column if not exists seo_title        text,
-  add column if not exists seo_description  text,
-  add column if not exists social_image_url text,
-  add column if not exists social_facebook  text,
-  add column if not exists social_instagram text,
-  add column if not exists social_x         text,
-  add column if not exists social_linkedin  text,
-  add column if not exists social_google    text,
-  add column if not exists business_hours   jsonb       not null default '{}'::jsonb,
+  add column if not exists logo_url          text,
+  add column if not exists gallery_images    jsonb       not null default '[]'::jsonb,
+  add column if not exists font_family       text        not null default 'inter',
+  add column if not exists seo_title         text,
+  add column if not exists seo_description   text,
+  add column if not exists social_image_url  text,
+  add column if not exists social_facebook   text,
+  add column if not exists social_instagram  text,
+  add column if not exists social_x          text,
+  add column if not exists social_linkedin   text,
+  add column if not exists social_google     text,
+  add column if not exists business_hours    jsonb       not null default '{}'::jsonb,
   add column if not exists lead_notify_email text;
 
 -- ---------------------------------------------------------------------------
@@ -83,12 +144,9 @@ create trigger trg_website_leads_touch
   before update on public.website_leads
   for each row execute function public.touch_website_leads_updated_at();
 
--- ---------------------------------------------------------------------------
--- 3. RLS on website_leads
--- ---------------------------------------------------------------------------
+-- RLS
 alter table public.website_leads enable row level security;
 
--- Contractors manage their own leads
 drop policy if exists "Contractors read own leads" on public.website_leads;
 create policy "Contractors read own leads"
   on public.website_leads
@@ -127,7 +185,7 @@ create policy "Anon submit lead to published site"
   );
 
 -- ---------------------------------------------------------------------------
--- 4. Storage bucket for logos + gallery photos
+-- 3. Storage bucket for logos + gallery photos
 -- ---------------------------------------------------------------------------
 insert into storage.buckets (id, name, public)
   values ('website-assets', 'website-assets', true)
