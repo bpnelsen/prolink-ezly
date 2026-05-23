@@ -12,7 +12,8 @@ Decision doc to unblock P1 implementation in `TODO.md`. Recommendation up top; r
 | Charge pattern | **Separate charges and transfers** |
 | Payment hold | **Hold on platform balance** until job completion, then `Transfer` to contractor |
 | API version | **Accounts v2** for new code; v1 acceptable if SDK ergonomics force it |
-| Platform fee model | Application fee (% of payment) initially; revisit at scale |
+| Platform fee model | **No application fee.** Prolink's revenue is the SaaS subscription ($49/mo + $15/seat); per-job payments flow through with only Stripe processing fees deducted. |
+| Dispute & refund handling | **Stripe Connect defaults.** No custom dispute-window hold buffer; standard chargeback + refund flow via Stripe. |
 
 **Why:** Express minimizes contractor onboarding friction (Stripe-hosted KYC, 10-15 min) while Prolink retains control over payout timing — which is exactly what the "release on proof of completion" pattern requires. Separate charges and transfers is the only pattern that lets Prolink hold funds on its own balance and release on a Prolink-defined trigger (job completion + photo proof).
 
@@ -126,7 +127,7 @@ Prolink platform balance  ───────── allocated_funds: true (fun
    │           triggered by contractor marking job done + uploading photo proof
    │           + optional Prolink admin review
    ▼
-Transfer($X − application_fee) → Contractor's Express connected account
+Transfer($X) → Contractor's Express connected account     (no platform fee)
    │
    ▼
 Payout to contractor's bank (per Express payout schedule, or manual)
@@ -167,12 +168,17 @@ job_payment_event   -- new table, append-only audit
 
 ---
 
-## Open questions (resolve before P1.2 starts)
+## Open questions
 
-1. **Application fee model.** Flat % of payment, flat per-job, or hybrid? Affects pricing page math and unit economics modeling (see TODO `[Founder]` items).
-2. **Dispute window.** How long after release does Prolink want to retain a clawback path? Affects whether Prolink uses manual payouts on Express accounts.
-3. **Multi-contractor jobs.** Does a single job ever split payment across multiple contractors / subs? Affects whether `Transfer` is 1:1 or 1:N per payment.
-4. **Refund policy.** Pre-release refunds are simple (reverse the charge). Post-release refunds require pulling funds back via transfer reversal — needs explicit terms.
+### Resolved (May 2026)
+
+1. **Application fee model — RESOLVED: none.** Prolink does not take a cut of per-job payments. Revenue stays on the SaaS subscription line ($49/mo + $15/seat). Per-job money flows through the platform balance and out to the contractor with only Stripe's processing fees deducted. Revisit only if/when payment volume itself becomes the bottleneck on unit economics.
+2. **Dispute window — RESOLVED: Stripe defaults.** No custom hold buffer between job completion and `Transfer` to the contractor. Disputes/chargebacks follow Stripe's standard flow against Prolink's platform balance (Prolink is merchant of record under separate charges and transfers). If chargeback losses become a real cost center, revisit by switching Express accounts to a manual payout schedule and adding a configurable hold-before-transfer window.
+3. **Refund policy — RESOLVED: Stripe defaults.** Pre-release: standard `refund.create` against the charge. Post-release: standard `transfer.createReversal` to pull funds back from the contractor's connected balance, then `refund.create`. No bespoke timing windows or eligibility rules.
+
+### Still open
+
+4. **Multi-contractor jobs.** Does a single job ever split payment across multiple contractors / subs? Affects whether `Transfer` is 1:1 or 1:N per payment.
 5. **International contractors.** Prolink's target is US small contractors initially. Confirm — separate-charges-and-transfers cross-border support is limited (US/CA/UK/EEA/CH).
 6. **Tax forms.** Express handles 1099-K for US sellers automatically when annual thresholds are met. Confirm Prolink's role here is just providing accurate metadata.
 
@@ -180,7 +186,7 @@ job_payment_event   -- new table, append-only audit
 
 ## Next action
 
-Resolve open questions 1, 2, and 4 (these are policy decisions, not engineering questions), then proceed to `P1.2 — Contractor onboarding endpoint`.
+Open questions 1–3 are resolved (May 2026). The remaining open items (4–6) don't block P1.2; they can be answered as the implementation progresses. Proceed to `P1.2 — Contractor onboarding endpoint`.
 
 ---
 

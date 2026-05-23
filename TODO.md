@@ -83,7 +83,24 @@ Build a renderer using the AIA A101 stipulated-sum structure. Variables: project
 ### P3.1 — Referral program
 Schema: `referrals` table (`referrer_user_id`, `referred_user_id`, `status`, `reward_applied_at`). Accept referral codes on signup. Reward: extend referrer's trial by 14 days when the referred user converts (configurable in env).
 
-**Acceptance:** A user can copy their referral link from settings; signups via that link are tracked; reward fires on the referred user's first paid charge.
+**Status:** Backend complete — migration `022_referrals.sql` and routes `/api/referrals/{me,attribute,fire-reward}` are merged. Reward extends `customers.trial_ends_at` (the column the existing Stripe webhook already manages). The three sub-tasks below complete the loop and are explicitly **deferred** — do not start until the user gives the go-ahead.
+
+#### P3.1a — Settings UI for referral link
+In `/settings`, call `GET /api/referrals/me`, render the share URL with a one-click copy button, and display the summary counts (pending / converted / rewarded). Keep it lightweight; no need for a dedicated referrals page yet.
+
+**Acceptance:** A signed-in user can find their referral link in settings and copy it in one click; the three counts render.
+
+#### P3.1b — Signup attribution wire-up
+On the signup page, capture `?ref=<code>` from the URL into a short-lived cookie or session before Supabase auth runs. Immediately after the user is created, make a server-to-server `POST /api/referrals/attribute` with `{ referredUserId, referralCode }` and the `x-internal-secret` header. Set `INTERNAL_API_SECRET` in Vercel env.
+
+**Acceptance:** Signups carrying a valid `?ref=` code create a `referrals` row with `status='signed_up'`; the existing signup flow is unchanged for users without a code.
+
+#### P3.1c — Stripe webhook reward trigger
+In `src/app/api/stripe/webhook/route.ts`, on the first successful `invoice.payment_succeeded` for a referred user, make a server-to-server `POST /api/referrals/fire-reward` with `{ referredUserId }` and the `x-internal-secret` header. Treat this as best-effort — don't fail the webhook on reward errors.
+
+**Acceptance:** When a referred user's first invoice succeeds, the referrer's `customers.trial_ends_at` is extended by `REFERRAL_TRIAL_EXTENSION_DAYS` (default 14); the matching `referrals` row flips to `status='reward_applied'`.
+
+**Acceptance (overall):** A user can copy their referral link from settings; signups via that link are tracked; reward fires on the referred user's first paid charge.
 
 ### P3.2 — Shareable job/estimate links
 Public, tokenized URLs for estimates and contracts that customers can view without an account. Adds a soft viral surface and removes friction for customer review.
