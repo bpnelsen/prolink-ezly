@@ -8,6 +8,7 @@ import {
 } from 'lucide-react'
 import Breadcrumbs from '../../../components/Breadcrumbs'
 import { supabase } from '../../../lib/supabase-client'
+import { apiFetch } from '../../../lib/api-fetch'
 
 type InvoiceStatus = 'draft' | 'sent' | 'viewed' | 'partially_paid' | 'paid' | 'overdue' | 'cancelled'
 
@@ -79,12 +80,39 @@ export default function InvoicesPage() {
     setOpenMenuId(null)
   }
 
-  const copyPortalLink = (token: string) => {
-    const url = `${window.location.origin}/invoice/${token}`
-    navigator.clipboard.writeText(url)
+  // Ensures the invoice has a public_token (lazily generating one if the
+  // row pre-dates the public_token default) and returns the customer-facing
+  // URL. Without this, old invoices link to /invoice/undefined and the
+  // public page renders "Invoice not found".
+  const ensurePublicUrl = async (invoiceId: string): Promise<string | null> => {
+    const r = await apiFetch<{ url: string }>(
+      `/api/v1/invoices/${invoiceId}/public-link`,
+      { method: 'POST' }
+    )
+    return r.data?.url ?? null
+  }
+
+  const copyPortalLink = async (invoiceId: string) => {
+    setOpenMenuId(null)
+    const url = await ensurePublicUrl(invoiceId)
+    if (!url) {
+      setCopyMsg('Could not create portal link.')
+      setTimeout(() => setCopyMsg(null), 2500)
+      return
+    }
+    try { await navigator.clipboard.writeText(url) } catch { /* fall through */ }
     setCopyMsg('Customer portal link copied!')
     setTimeout(() => setCopyMsg(null), 2000)
+  }
+
+  const viewAsCustomer = async (invoiceId: string) => {
     setOpenMenuId(null)
+    const url = await ensurePublicUrl(invoiceId)
+    if (url) window.open(url, '_blank', 'noopener,noreferrer')
+    else {
+      setCopyMsg('Could not open customer view.')
+      setTimeout(() => setCopyMsg(null), 2500)
+    }
   }
 
   // Aggregate stats
@@ -258,14 +286,14 @@ export default function InvoicesPage() {
                           className="flex items-center gap-2 px-3 py-2 text-xs font-semibold text-gray-700 hover:bg-gray-50">
                           <Eye size={12} /> View / Edit
                         </Link>
-                        <button onClick={() => copyPortalLink(inv.public_token)}
+                        <button onClick={() => copyPortalLink(inv.id)}
                           className="w-full text-left flex items-center gap-2 px-3 py-2 text-xs font-semibold text-gray-700 hover:bg-gray-50">
                           <Copy size={12} /> Copy Portal Link
                         </button>
-                        <Link href={`/invoice/${inv.public_token}`} target="_blank"
-                          className="flex items-center gap-2 px-3 py-2 text-xs font-semibold text-gray-700 hover:bg-gray-50">
+                        <button onClick={() => viewAsCustomer(inv.id)}
+                          className="w-full text-left flex items-center gap-2 px-3 py-2 text-xs font-semibold text-gray-700 hover:bg-gray-50">
                           <Eye size={12} /> View as Customer
-                        </Link>
+                        </button>
                         <button onClick={() => deleteInvoice(inv.id)}
                           className="w-full text-left flex items-center gap-2 px-3 py-2 text-xs font-semibold text-red-600 hover:bg-red-50 border-t border-gray-100">
                           <Trash2 size={12} /> Delete
@@ -352,14 +380,14 @@ export default function InvoicesPage() {
                                 className="flex items-center gap-2 px-3 py-2 text-xs font-semibold text-gray-700 hover:bg-gray-50">
                                 <Eye size={12} /> View / Edit
                               </Link>
-                              <button onClick={() => copyPortalLink(inv.public_token)}
+                              <button onClick={() => copyPortalLink(inv.id)}
                                 className="w-full text-left flex items-center gap-2 px-3 py-2 text-xs font-semibold text-gray-700 hover:bg-gray-50">
                                 <Copy size={12} /> Copy Portal Link
                               </button>
-                              <Link href={`/invoice/${inv.public_token}`} target="_blank"
-                                className="flex items-center gap-2 px-3 py-2 text-xs font-semibold text-gray-700 hover:bg-gray-50">
+                              <button onClick={() => viewAsCustomer(inv.id)}
+                                className="w-full text-left flex items-center gap-2 px-3 py-2 text-xs font-semibold text-gray-700 hover:bg-gray-50">
                                 <Eye size={12} /> View as Customer
-                              </Link>
+                              </button>
                               <button onClick={() => deleteInvoice(inv.id)}
                                 className="w-full text-left flex items-center gap-2 px-3 py-2 text-xs font-semibold text-red-600 hover:bg-red-50 border-t border-gray-100">
                                 <Trash2 size={12} /> Delete
