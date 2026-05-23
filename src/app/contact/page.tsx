@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { MarketingFooter } from '@/components/marketing/MarketingFooter'
 
 type Status = 'idle' | 'sending' | 'sent' | 'error'
@@ -12,6 +12,18 @@ export default function ContactPage() {
   const [website, setWebsite] = useState('') // honeypot
   const [status, setStatus] = useState<Status>('idle')
   const [errorMsg, setErrorMsg] = useState('')
+
+  // The homepage renders /ezly-marketing.html in an iframe. If a link in
+  // that marketing HTML lacks target="_top", /contact loads inside the
+  // iframe — and every link on this page then navigates only the iframe,
+  // making them feel broken. Pop back to the top window so the page (and
+  // its links) behave normally.
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    if (window.self !== window.top && window.top) {
+      window.top.location.href = window.location.href
+    }
+  }, [])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
