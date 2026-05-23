@@ -27,3 +27,14 @@ export function getStripe(): Stripe | null {
 export function billingConfigured(): boolean {
   return Boolean(SECRET && STRIPE_BASE_PRICE_ID && STRIPE_SEAT_PRICE_ID)
 }
+
+/** Connect account lifecycle as stored in customers.stripe_account_status. */
+export type ConnectStatus = 'pending' | 'onboarded' | 'restricted' | 'disabled'
+
+/** Map a Stripe Account object onto our four-state enum. */
+export function deriveConnectStatus(account: Stripe.Account): ConnectStatus {
+  if (account.requirements?.disabled_reason) return 'disabled'
+  if (!account.details_submitted) return 'pending'
+  if (account.charges_enabled && account.payouts_enabled) return 'onboarded'
+  return 'restricted'
+}

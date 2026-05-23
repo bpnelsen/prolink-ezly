@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import type Stripe from 'stripe'
-import { getStripe, STRIPE_WEBHOOK_SECRET, STRIPE_SEAT_PRICE_ID } from '@/lib/stripe'
+import { getStripe, STRIPE_WEBHOOK_SECRET, STRIPE_SEAT_PRICE_ID, deriveConnectStatus } from '@/lib/stripe'
 import { serviceClient } from '@/lib/server-auth'
 
 export const runtime = 'nodejs'
@@ -68,6 +68,19 @@ export async function POST(req: NextRequest) {
           trial_ends_at: sub.trial_end ? new Date(sub.trial_end * 1000).toISOString() : null,
         })
         .eq('stripe_customer_id', customerId)
+    } else if (event.type === 'account.updated') {
+      // Stripe Connect (Express) — sync onboarding/capability state. Fires
+      // throughout onboarding and any time Stripe re-evaluates the account.
+      const account = event.data.object as Stripe.Account
+      await svc
+        .from('customers')
+        .update({
+          stripe_account_status: deriveConnectStatus(account),
+          stripe_charges_enabled: account.charges_enabled ?? false,
+          stripe_payouts_enabled: account.payouts_enabled ?? false,
+          stripe_details_submitted: account.details_submitted ?? false,
+        })
+        .eq('stripe_account_id', account.id)
     }
   } catch {
     // Acknowledge anyway so Stripe doesn't hammer retries on a transient

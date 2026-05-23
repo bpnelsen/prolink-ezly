@@ -72,10 +72,9 @@ const SETTINGS_CARDS = [
   },
   {
     title: 'Payouts',
-    desc: 'Bank account where customer payments are deposited',
+    desc: 'Connect Stripe to receive customer payments',
     href: '/settings/payouts',
     icon: Banknote,
-    soon: true,
   },
   {
     title: 'Refer & Earn',

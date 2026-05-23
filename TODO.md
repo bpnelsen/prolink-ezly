@@ -55,6 +55,8 @@ After P1.1, scaffold Connect account creation and the onboarding link flow. Use 
 
 **Acceptance:** A contractor can complete Stripe onboarding end-to-end from the app; the returned account ID persists to the DB.
 
+**Status:** Implemented. Migration `023_stripe_connect.sql` adds the Connect columns to `customers`; `POST /api/stripe/connect/onboard` creates an Express account and returns a Stripe-hosted onboarding link; `POST /api/stripe/connect/dashboard` returns an Express Dashboard login link for onboarded contractors; `GET /api/stripe/connect/status` powers the UI; `account.updated` is handled in the existing Stripe webhook; UI lives at `/settings/payouts`. Open question 5 (international contractors) is hard-coded to `country: 'US'` for now — revisit when international support is in scope.
+
 ### P1.3 — Conditional payout flow
 Implement the "release on completion" pattern: customer pays → funds held → contractor marks job complete with photo proof → manual or automatic release to the contractor's connected account.
 
