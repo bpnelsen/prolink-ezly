@@ -1,12 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 
 export async function POST(req: NextRequest) {
-  // Stripe placeholder. To enable online payments:
-  // 1. Add STRIPE_SECRET_KEY and STRIPE_PUBLISHABLE_KEY env vars
-  // 2. Install @stripe/stripe-js and stripe packages
-  // 3. Replace this stub with real Stripe Checkout Session creation
-  // 4. Add /api/stripe/webhook to handle payment_intent.succeeded events
-  //    that auto-insert into the payments table
+  // Stripe placeholder for invoice payments. To enable:
+  // 1. Set STRIPE_SECRET_KEY and NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY in env
+  // 2. Replace this stub with a real Stripe Checkout Session creation
+  // 3. Extend /api/stripe/webhook to handle payment_intent.succeeded and
+  //    auto-insert into the payments table
 
   const body = await req.json().catch(() => ({}))
 
