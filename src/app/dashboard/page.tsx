@@ -2,7 +2,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import {
   CalendarDays, Users, Briefcase, BarChart2, LogOut,
-  Bell, Search, Plus, TrendingUp, Clock, ChevronRight,
+  Bell, Search, Plus, Clock, ChevronDown,
   FileText, Settings, User,
 } from 'lucide-react';
 import Link from 'next/link';
@@ -79,6 +79,7 @@ export default function Dashboard() {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchOpen, setSearchOpen] = useState(false);
   const [avatarOpen, setAvatarOpen] = useState(false);
+  const [kpiOpen, setKpiOpen] = useState(true);
 
   const fetchDashboard = useCallback(async () => {
     try {
@@ -271,45 +272,103 @@ export default function Dashboard() {
             </div>
           ) : (
             <>
-              {/* KPI Section */}
-              <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
-                <div className="flex items-center justify-between mb-5">
+              {/* Action Tiles */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <Link href="/new-job" className="group bg-teal-600 hover:bg-teal-700 rounded-2xl p-5 shadow-sm transition flex flex-col items-start gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center">
+                    <Plus size={20} className="text-white" />
+                  </div>
                   <div>
-                    <h3 className="font-bold text-gray-900">KPIs</h3>
-                    <p className="text-xs text-gray-400 mt-0.5">This month at a glance</p>
+                    <p className="text-white font-bold">New Job</p>
+                    <p className="text-white/70 text-xs mt-0.5">Create a new job</p>
                   </div>
-                  <Link href="/dashboard/kpis" className="flex items-center gap-1.5 text-xs font-semibold text-teal-600 hover:text-teal-700">
-                    <BarChart2 size={13} /> View All KPIs
-                  </Link>
-                </div>
-                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                  <div className="bg-gray-50 rounded-xl p-4 border border-gray-100">
-                    <p className="text-[10px] uppercase font-bold text-gray-400 tracking-wider mb-2">Revenue This Month</p>
-                    <p className="text-2xl font-bold text-teal-600">
-                      ${revenueThisMonth >= 1000 ? `${(revenueThisMonth / 1000).toFixed(1)}k` : revenueThisMonth.toLocaleString()}
-                    </p>
-                    <p className="text-xs text-gray-400 mt-1">${revenueTotal >= 1000 ? `${(revenueTotal / 1000).toFixed(1)}k` : revenueTotal.toLocaleString()} all time</p>
+                </Link>
+                <Link href="/customers/new" className="group bg-white hover:bg-gray-50 border border-gray-100 rounded-2xl p-5 shadow-sm transition flex flex-col items-start gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-blue-100 flex items-center justify-center">
+                    <Users size={20} className="text-blue-600" />
                   </div>
-                  <div className="bg-gray-50 rounded-xl p-4 border border-gray-100">
-                    <p className="text-[10px] uppercase font-bold text-gray-400 tracking-wider mb-2">Outstanding</p>
-                    <p className={`text-2xl font-bold ${outstanding > 0 ? 'text-orange-500' : 'text-gray-400'}`}>
-                      ${outstanding >= 1000 ? `${(outstanding / 1000).toFixed(1)}k` : outstanding.toLocaleString()}
-                    </p>
-                    <p className="text-xs text-gray-400 mt-1">{openInvoices.length} open invoice{openInvoices.length !== 1 ? 's' : ''}</p>
+                  <div>
+                    <p className="text-gray-900 font-bold">Add Customer</p>
+                    <p className="text-gray-400 text-xs mt-0.5">Create new customer</p>
                   </div>
-                  <div className="bg-gray-50 rounded-xl p-4 border border-gray-100">
-                    <p className="text-[10px] uppercase font-bold text-gray-400 tracking-wider mb-2">Active Jobs</p>
-                    <p className="text-2xl font-bold text-blue-600">{activeJobs.length}</p>
-                    <p className="text-xs text-gray-400 mt-1">
-                      ${pipelineValue >= 1000 ? `${(pipelineValue / 1000).toFixed(1)}k` : pipelineValue.toLocaleString()} pipeline
-                    </p>
+                </Link>
+                <Link href="/dispatch" className="group bg-white hover:bg-gray-50 border border-gray-100 rounded-2xl p-5 shadow-sm transition flex flex-col items-start gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-orange-100 flex items-center justify-center">
+                    <CalendarDays size={20} className="text-orange-600" />
                   </div>
-                  <div className="bg-gray-50 rounded-xl p-4 border border-gray-100">
-                    <p className="text-[10px] uppercase font-bold text-gray-400 tracking-wider mb-2">New Customers</p>
-                    <p className="text-2xl font-bold text-gray-900">{customersThisMonth}</p>
-                    <p className="text-xs text-gray-400 mt-1">{totalCustomers} total</p>
+                  <div>
+                    <p className="text-gray-900 font-bold">View Schedule</p>
+                    <p className="text-gray-400 text-xs mt-0.5">Today&apos;s appointments</p>
                   </div>
-                </div>
+                </Link>
+                <Link href="/customers" className="group bg-[#0f1d35] hover:bg-[#1a3060] rounded-2xl p-5 shadow-sm transition flex flex-col items-start gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center">
+                    <Briefcase size={20} className="text-white" />
+                  </div>
+                  <div>
+                    <p className="text-white font-bold">Customer Hub</p>
+                    <p className="text-white/70 text-xs mt-0.5">All customers</p>
+                  </div>
+                </Link>
+              </div>
+
+              {/* KPI Accordion */}
+              <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+                <button
+                  onClick={() => setKpiOpen(v => !v)}
+                  aria-expanded={kpiOpen}
+                  className="w-full flex items-center justify-between p-6 hover:bg-gray-50 transition text-left"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="w-9 h-9 rounded-xl bg-teal-50 flex items-center justify-center">
+                      <BarChart2 size={16} className="text-teal-600" />
+                    </div>
+                    <div>
+                      <h3 className="font-bold text-gray-900">KPIs</h3>
+                      <p className="text-xs text-gray-400 mt-0.5">This month at a glance</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-4">
+                    <Link
+                      href="/dashboard/kpis"
+                      onClick={e => e.stopPropagation()}
+                      className="text-xs font-semibold text-teal-600 hover:text-teal-700"
+                    >
+                      View All
+                    </Link>
+                    <ChevronDown size={18} className={`text-gray-400 transition-transform ${kpiOpen ? 'rotate-180' : ''}`} />
+                  </div>
+                </button>
+                {kpiOpen && (
+                  <div className="px-6 pb-6 grid grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div className="bg-gray-50 rounded-xl p-4 border border-gray-100">
+                      <p className="text-[10px] uppercase font-bold text-gray-400 tracking-wider mb-2">Revenue This Month</p>
+                      <p className="text-2xl font-bold text-teal-600">
+                        ${revenueThisMonth >= 1000 ? `${(revenueThisMonth / 1000).toFixed(1)}k` : revenueThisMonth.toLocaleString()}
+                      </p>
+                      <p className="text-xs text-gray-400 mt-1">${revenueTotal >= 1000 ? `${(revenueTotal / 1000).toFixed(1)}k` : revenueTotal.toLocaleString()} all time</p>
+                    </div>
+                    <div className="bg-gray-50 rounded-xl p-4 border border-gray-100">
+                      <p className="text-[10px] uppercase font-bold text-gray-400 tracking-wider mb-2">Outstanding</p>
+                      <p className={`text-2xl font-bold ${outstanding > 0 ? 'text-orange-500' : 'text-gray-400'}`}>
+                        ${outstanding >= 1000 ? `${(outstanding / 1000).toFixed(1)}k` : outstanding.toLocaleString()}
+                      </p>
+                      <p className="text-xs text-gray-400 mt-1">{openInvoices.length} open invoice{openInvoices.length !== 1 ? 's' : ''}</p>
+                    </div>
+                    <div className="bg-gray-50 rounded-xl p-4 border border-gray-100">
+                      <p className="text-[10px] uppercase font-bold text-gray-400 tracking-wider mb-2">Active Jobs</p>
+                      <p className="text-2xl font-bold text-blue-600">{activeJobs.length}</p>
+                      <p className="text-xs text-gray-400 mt-1">
+                        ${pipelineValue >= 1000 ? `${(pipelineValue / 1000).toFixed(1)}k` : pipelineValue.toLocaleString()} pipeline
+                      </p>
+                    </div>
+                    <div className="bg-gray-50 rounded-xl p-4 border border-gray-100">
+                      <p className="text-[10px] uppercase font-bold text-gray-400 tracking-wider mb-2">New Customers</p>
+                      <p className="text-2xl font-bold text-gray-900">{customersThisMonth}</p>
+                      <p className="text-xs text-gray-400 mt-1">{totalCustomers} total</p>
+                    </div>
+                  </div>
+                )}
               </div>
 
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -374,29 +433,6 @@ export default function Dashboard() {
 
                 {/* Right column */}
                 <div className="space-y-6">
-                  {/* Quick Actions */}
-                  <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
-                    <h3 className="font-bold text-gray-900 mb-4">Quick Actions</h3>
-                    <div className="space-y-2">
-                      <Link href="/new-job" className="flex items-center justify-between w-full p-3 rounded-xl bg-teal-600 hover:bg-teal-700 text-white transition">
-                        <div className="flex items-center gap-2.5"><Plus size={15} /><span className="text-sm font-bold">New Job</span></div>
-                        <ChevronRight size={14} />
-                      </Link>
-                      <Link href="/customers/new" className="flex items-center justify-between w-full p-3 rounded-xl border border-gray-200 hover:bg-gray-50 text-gray-700 transition">
-                        <div className="flex items-center gap-2.5"><Users size={15} className="text-gray-400" /><span className="text-sm font-semibold">Add Customer</span></div>
-                        <ChevronRight size={14} className="text-gray-400" />
-                      </Link>
-                      <Link href="/dispatch" className="flex items-center justify-between w-full p-3 rounded-xl border border-gray-200 hover:bg-gray-50 text-gray-700 transition">
-                        <div className="flex items-center gap-2.5"><CalendarDays size={15} className="text-gray-400" /><span className="text-sm font-semibold">View Schedule</span></div>
-                        <ChevronRight size={14} className="text-gray-400" />
-                      </Link>
-                      <Link href="/customers" className="flex items-center justify-between w-full p-3 rounded-xl border border-gray-200 hover:bg-gray-50 text-gray-700 transition">
-                        <div className="flex items-center gap-2.5"><Briefcase size={15} className="text-gray-400" /><span className="text-sm font-semibold">Customer Hub</span></div>
-                        <ChevronRight size={14} className="text-gray-400" />
-                      </Link>
-                    </div>
-                  </div>
-
                   {/* Recent Activity */}
                   <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
                     <h3 className="font-bold text-gray-900 mb-4">Recent Activity</h3>
