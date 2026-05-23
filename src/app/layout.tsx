@@ -4,6 +4,7 @@ import { cookies } from 'next/headers'
 import ForemanWrapper from '@/components/ForemanWrapper'
 import AppShell from '@/components/AppShell'
 import ReportBugButton from '@/components/ReportBugButton'
+import GoogleMapsProvider from '@/components/maps/GoogleMapsProvider'
 import { AppProvider } from '../context/AppContext'
 import { ConsentProvider } from '@/components/consent/ConsentProvider'
 import { CookieBanner } from '@/components/consent/CookieBanner'
@@ -48,9 +49,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className="bg-gray-50 text-gray-700">
         <ConsentProvider initialRegime={initialRegime}>
           <AppProvider>
-            <AppShell>{children}</AppShell>
-            <ForemanWrapper />
-            <ReportBugButton />
+            <GoogleMapsProvider>
+              <AppShell>{children}</AppShell>
+              <ForemanWrapper />
+              <ReportBugButton />
+            </GoogleMapsProvider>
           </AppProvider>
           {GA_ID && (
             <ConsentGate category="analytics">
