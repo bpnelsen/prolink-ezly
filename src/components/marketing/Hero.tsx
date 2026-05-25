@@ -45,9 +45,10 @@ export function Hero() {
             <br />
             <span className="text-[#F97316]">on Autopilot.</span>
           </h1>
-          <p className="mt-5 max-w-[440px] text-base leading-relaxed text-white/65 sm:text-[18px]">
-            Ezly connects the key aspects of your business — scheduling,
-            invoicing, CRM, and more — so nothing falls through the cracks.
+          <p className="mt-5 max-w-[480px] text-base leading-relaxed text-white/65 sm:text-[18px]">
+            Scheduling, dispatch, CRM, invoicing, contracts, client portal,
+            automations — plus a public website that brings in new leads.
+            One platform, end to end.
           </p>
 
           <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:gap-4">

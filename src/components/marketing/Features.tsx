@@ -1,34 +1,44 @@
 /**
- * Features grid. Highlight card (Business Analytics) spans the full width
- * on mobile and 2 columns on >=md. Other cards: 1 col on mobile, 2 on sm,
- * 3 on lg.
+ * Features grid. Highlight card (Contractor Websites) spans the full width
+ * on mobile and 2 columns on >=sm. Seven regular cards fill out a clean
+ * 3-row layout on lg (9 grid slots = 2 from highlight + 7 cards).
  */
 export function Features() {
   const cards = [
     {
       icon: '🔧',
       title: 'Job Management',
-      desc: 'Track every job from lead to completion. Schedule, assign, and monitor progress in real-time.',
+      desc: 'Track every job from lead to completion. Photos, notes, line items, and status all in one place.',
     },
     {
       icon: '👥',
       title: 'Customer CRM',
-      desc: 'Never lose a customer again. Built-in follow-ups, notes, and history for every client.',
+      desc: 'Pipeline, deals, activity timeline, and follow-ups. Built-in analytics so you see what is actually closing.',
+    },
+    {
+      icon: '🗓️',
+      title: 'Dispatch & Scheduling',
+      desc: 'Day, week, and month views with technician availability. Drag-and-drop assignments and route-aware planning.',
+    },
+    {
+      icon: '⚙️',
+      title: 'Automations',
+      desc: 'Trigger-based SMS and email — appointment reminders, status updates, payment nudges — that run themselves.',
     },
     {
       icon: '🧾',
       title: 'Invoicing & Payments',
-      desc: 'Generate professional invoices in seconds. Accept payments online with zero hassle.',
+      desc: 'Generate professional invoices in seconds. Send a secure link and get paid online without phone tag.',
     },
     {
-      icon: '⚡',
-      title: 'Lead Pipeline',
-      desc: 'New customer leads flow into your dashboard automatically. Never miss an opportunity.',
+      icon: '💬',
+      title: 'Client Portal & Chat',
+      desc: 'Customers see jobs, invoices, and contracts in their own portal — and chat with you without downloading an app.',
     },
     {
-      icon: '🚀',
-      title: 'Easy Setup',
-      desc: 'Get started in minutes. Import your existing customers and jobs with one click.',
+      icon: '📄',
+      title: 'Contracts & Change Orders',
+      desc: 'Templates, versions, and e-signatures. Push scope or price changes through a clean change-order workflow.',
     },
   ]
 
@@ -52,19 +62,19 @@ export function Features() {
           {/* Highlight card */}
           <div className="rounded-2xl border border-[#0F3A7D] bg-[#0F3A7D] p-7 transition-all hover:-translate-y-1 hover:border-[#F97316] hover:shadow-[0_8px_40px_rgba(15,58,125,0.35)] sm:col-span-2 sm:p-8 lg:flex lg:items-center lg:gap-10">
             <div className="mb-5 flex h-14 w-14 items-center justify-center rounded-2xl bg-white/10 text-[26px] lg:mb-0 lg:h-16 lg:w-16 lg:text-[28px]">
-              📊
+              🌐
             </div>
             <div>
               <h3 className="font-['Inter',sans-serif] text-lg font-bold text-white sm:text-xl">
-                Business Analytics that actually make sense
+                Your own contractor website — generated for you
               </h3>
               <p className="mt-2 text-[15px] leading-relaxed text-white/65">
-                Track revenue, jobs, and customer trends in real time. See
-                exactly what&apos;s driving growth — and what&apos;s not. Make
-                smarter decisions without the spreadsheets.
+                Spin up a branded public site with your services, photos, and
+                service area in minutes. Visitors request quotes and those
+                leads land straight in your dashboard, 24/7.
               </p>
               <span className="mt-4 inline-block rounded-full bg-[#F97316]/20 px-3 py-1 font-['Inter',sans-serif] text-[11px] font-bold uppercase tracking-wider text-[#F97316]">
-                NEW — Real-time Insights
+                NEW — Lead Capture Built In
               </span>
             </div>
           </div>

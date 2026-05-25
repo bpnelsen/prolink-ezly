@@ -7,23 +7,23 @@ export function HowItWorks() {
     {
       n: '01',
       bg: 'bg-[#0F3A7D]',
-      title: 'Create your account',
+      title: 'Set up your account',
       desc:
-        'Sign up in 30 seconds. No credit card required to start your free 14-day trial.',
+        'Sign up in 30 seconds, add your team, and dial in your branding and invoicing. No credit card required for the 14-day trial.',
     },
     {
       n: '02',
       bg: 'bg-[#F97316]',
-      title: 'Import your data',
+      title: 'Run your day from one dashboard',
       desc:
-        'Bring your existing customers and jobs in minutes. We help you get set up fast.',
+        'Schedule and dispatch jobs, message customers in their portal, send contracts, and collect payment online — without juggling tabs.',
     },
     {
       n: '03',
       bg: 'bg-[#F97316]',
-      title: 'Watch your business grow',
+      title: 'Let automations bring in the rest',
       desc:
-        'Close more jobs. Get more leads. Spend less time on paperwork. Simple as that.',
+        'SMS reminders and status updates run themselves, and your contractor website captures new leads straight into your pipeline.',
     },
   ]
 
