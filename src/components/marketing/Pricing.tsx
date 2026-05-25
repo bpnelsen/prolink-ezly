@@ -8,8 +8,11 @@ import Link from 'next/link'
 export function Pricing() {
   const features = [
     'Everything included — no feature tiers',
+    'CRM, dispatch & scheduling, invoicing',
+    'Contracts, e-signatures & change orders',
+    'Client portal, chat & SMS/email automations',
+    'Branded contractor website with lead capture',
     'Unlimited customers, jobs & invoices',
-    'Customer portal, chat & AI deal plans',
     '$49/mo includes you — extra seats $15/mo each',
     '14-day free trial · cancel anytime',
   ]

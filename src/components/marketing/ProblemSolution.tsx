@@ -11,7 +11,7 @@ export function ProblemSolution() {
   ]
   const solutions = [
     'Everything in one dashboard — CRM, jobs, invoicing',
-    'New leads auto-populate into your pipeline instantly',
+    'Quote requests from your contractor website land in your pipeline automatically',
     'Generate professional invoices in seconds, not hours',
     'Real-time analytics on your most profitable work',
   ]
