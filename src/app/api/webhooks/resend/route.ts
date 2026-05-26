@@ -60,6 +60,9 @@ export async function POST(req: NextRequest) {
     case 'email.opened':
       await handleOpen(svc, msgId, event)
       break
+    case 'email.clicked':
+      await handleClick(svc, msgId, event)
+      break
     case 'email.bounced':
       await handleBounce(svc, msgId, event)
       break
@@ -130,6 +133,66 @@ async function handleOpen(svc: ReturnType<typeof serviceClient>, msgId: string, 
     recipient_id:      recipientId,
     campaign_id:       campaignId,
     ip, user_agent: ua,
+    occurred_at:       occurredAt,
+  })
+}
+
+// Click handling mirrors open handling: bump counters on whichever parent
+// row matches (single-send activity OR campaign recipient), and log the
+// raw event with the clicked URL for the audit trail. A click implies
+// the email was also opened, but we let the separate email.opened event
+// handle the open counters.
+async function handleClick(svc: ReturnType<typeof serviceClient>, msgId: string, event: ResendEvent) {
+  const occurredAt = event.data?.click?.timestamp || event.created_at || new Date().toISOString()
+  const url = event.data?.click?.link || null
+  const ip = event.data?.click?.ipAddress || null
+  const ua = event.data?.click?.userAgent || null
+
+  const { data: activity } = await svc
+    .from('crm_activities')
+    .select('id, contractor_id, first_clicked_at, click_count')
+    .eq('resend_message_id', msgId)
+    .maybeSingle()
+
+  let activityId: string | null = null
+  let activityContractorId: string | null = null
+  if (activity) {
+    activityId = activity.id
+    activityContractorId = activity.contractor_id
+    await svc.from('crm_activities').update({
+      first_clicked_at: activity.first_clicked_at || occurredAt,
+      last_clicked_at:  occurredAt,
+      click_count:      (activity.click_count || 0) + 1,
+    }).eq('id', activity.id)
+  }
+
+  const { data: recipient } = await svc
+    .from('crm_campaign_recipients')
+    .select('id, contractor_id, campaign_id, first_clicked_at, click_count')
+    .eq('resend_message_id', msgId)
+    .maybeSingle()
+
+  let recipientId: string | null = null
+  let recipientContractorId: string | null = null
+  let campaignId: string | null = null
+  if (recipient) {
+    recipientId = recipient.id
+    recipientContractorId = recipient.contractor_id
+    campaignId = recipient.campaign_id
+    await svc.from('crm_campaign_recipients').update({
+      first_clicked_at: recipient.first_clicked_at || occurredAt,
+      last_clicked_at:  occurredAt,
+      click_count:      (recipient.click_count || 0) + 1,
+    }).eq('id', recipient.id)
+  }
+
+  await svc.from('crm_email_clicks').insert({
+    resend_message_id: msgId,
+    contractor_id:     activityContractorId || recipientContractorId,
+    activity_id:       activityId,
+    recipient_id:      recipientId,
+    campaign_id:       campaignId,
+    url, ip, user_agent: ua,
     occurred_at:       occurredAt,
   })
 }

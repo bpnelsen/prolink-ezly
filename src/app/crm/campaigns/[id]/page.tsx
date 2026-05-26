@@ -32,6 +32,9 @@ type Recipient = {
   first_opened_at: string | null
   last_opened_at: string | null
   open_count: number
+  first_clicked_at: string | null
+  last_clicked_at: string | null
+  click_count: number
   contractor: { id: string; business_name: string | null; email: string | null; contact_status: string | null } | null
 }
 
@@ -68,6 +71,7 @@ export default function CampaignDetailPage({ params }: { params: { id: string } 
   if (!campaign) return <div className="text-sm text-gray-500">Not found.</div>
 
   const uniqueOpens = recipients.filter(r => r.open_count > 0).length
+  const uniqueClicks = recipients.filter(r => r.click_count > 0).length
 
   return (
     <div className="space-y-6">
@@ -86,10 +90,11 @@ export default function CampaignDetailPage({ params }: { params: { id: string } 
         </div>
       </header>
 
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+      <div className="grid grid-cols-2 md:grid-cols-6 gap-3">
         <Stat label="Total recipients" value={campaign.total_recipients} />
         <Stat label="Sent" value={campaign.sent_count} tone="good" />
         <Stat label="Opened (unique)" value={uniqueOpens} tone="good" />
+        <Stat label="Clicked (unique)" value={uniqueClicks} tone="good" />
         <Stat label="Skipped" value={campaign.skipped_count} tone="muted" />
         <Stat label="Failed" value={campaign.failed_count} tone={campaign.failed_count > 0 ? 'bad' : 'muted'} />
       </div>
@@ -108,6 +113,7 @@ export default function CampaignDetailPage({ params }: { params: { id: string } 
               <th className="text-left px-4 py-3">Email</th>
               <th className="text-left px-4 py-3">Status</th>
               <th className="text-left px-4 py-3">Opens</th>
+              <th className="text-left px-4 py-3">Clicks</th>
               <th className="text-left px-4 py-3">When / detail</th>
             </tr>
           </thead>
@@ -130,6 +136,18 @@ export default function CampaignDetailPage({ params }: { params: { id: string } 
                       title={r.first_opened_at ? `First opened ${formatDateTime(r.first_opened_at)}` : ''}
                     >
                       {r.open_count}× · last {r.last_opened_at ? formatDateTime(r.last_opened_at) : '—'}
+                    </span>
+                  ) : (
+                    <span className="text-gray-300">—</span>
+                  )}
+                </td>
+                <td className="px-4 py-2.5 align-top text-[11px] text-gray-700">
+                  {r.click_count > 0 ? (
+                    <span
+                      className="inline-flex items-center gap-1 text-fuchsia-700 font-semibold"
+                      title={r.first_clicked_at ? `First clicked ${formatDateTime(r.first_clicked_at)}` : ''}
+                    >
+                      {r.click_count}× · last {r.last_clicked_at ? formatDateTime(r.last_clicked_at) : '—'}
                     </span>
                   ) : (
                     <span className="text-gray-300">—</span>
