@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import type Stripe from 'stripe'
+import { Resend } from 'resend'
 import { getStripe, STRIPE_WEBHOOK_SECRET, STRIPE_SEAT_PRICE_ID } from '@/lib/stripe'
 import { serviceClient } from '@/lib/server-auth'
+import { sendSmsNotification } from '@/lib/twilio-service'
 
 export const runtime = 'nodejs'
 
@@ -68,6 +70,17 @@ export async function POST(req: NextRequest) {
           trial_ends_at: sub.trial_end ? new Date(sub.trial_end * 1000).toISOString() : null,
         })
         .eq('stripe_customer_id', customerId)
+
+      // Alert on first paid activation: new subscription going active, or trial converting to active
+      const isNewPaid = event.type === 'customer.subscription.created' && sub.status === 'active'
+      const prev = (event.data as any).previous_attributes as Partial<Stripe.Subscription> | undefined
+      const isTrialConversion = event.type === 'customer.subscription.updated'
+        && sub.status === 'active'
+        && prev?.status === 'trialing'
+
+      if (isNewPaid || isTrialConversion) {
+        firePaymentAlert(customerId, svc, isTrialConversion).catch(console.error)
+      }
     }
   } catch {
     // Acknowledge anyway so Stripe doesn't hammer retries on a transient
@@ -76,4 +89,57 @@ export async function POST(req: NextRequest) {
   }
 
   return NextResponse.json({ received: true })
+}
+
+async function firePaymentAlert(
+  stripeCustomerId: string,
+  svc: ReturnType<typeof serviceClient>,
+  isConversion: boolean,
+) {
+  const { data: customer } = await svc
+    .from('customers')
+    .select('business_name, user_id')
+    .eq('stripe_customer_id', stripeCustomerId)
+    .maybeSingle()
+
+  let email = ''
+  let name = customer?.business_name || stripeCustomerId
+  if (customer?.user_id) {
+    const { data: profile } = await svc
+      .from('profiles')
+      .select('email, full_name')
+      .eq('id', customer.user_id)
+      .maybeSingle()
+    email = profile?.email || ''
+    name = customer.business_name || profile?.full_name || email || stripeCustomerId
+  }
+
+  const label = isConversion ? 'Trial converted to paid' : 'New paid subscription'
+  const subject = `UseEzly: ${label} — ${name}`
+  const text = `${label} on UseEzly.\n\nBusiness: ${name}\nEmail: ${email || '(unknown)'}\nStripe customer: ${stripeCustomerId}`
+  const html = `
+    <div style="font-family:sans-serif;max-width:480px;margin:0 auto;">
+      <h2 style="color:#0F3A7D;margin-bottom:4px;">💳 ${label}</h2>
+      <table style="border-collapse:collapse;width:100%;margin-top:12px;">
+        <tr><td style="padding:6px 0;color:#555;width:100px;">Business</td><td style="padding:6px 0;font-weight:600;">${name}</td></tr>
+        <tr><td style="padding:6px 0;color:#555;">Email</td><td style="padding:6px 0;">${email || '(unknown)'}</td></tr>
+        <tr><td style="padding:6px 0;color:#555;">Stripe ID</td><td style="padding:6px 0;font-size:12px;">${stripeCustomerId}</td></tr>
+      </table>
+      <p style="margin-top:20px;"><a href="https://app.useezly.com/dashboard/admin" style="color:#0F3A7D;">View admin dashboard →</a></p>
+    </div>`
+
+  const adminEmail = process.env.CRM_FROM_EMAIL || 'Brian@useezly.com'
+  const adminPhone = process.env.NOTIFY_PHONE_NUMBER || ''
+
+  await Promise.allSettled([
+    (async () => {
+      const apiKey = process.env.RESEND_API_KEY
+      if (!apiKey) return
+      const resend = new Resend(apiKey)
+      await resend.emails.send({ from: adminEmail, to: adminEmail, subject, html, text })
+    })(),
+    adminPhone
+      ? sendSmsNotification(adminPhone, `UseEzly: ${label} — ${name} (${email || stripeCustomerId})`)
+      : Promise.resolve(),
+  ])
 }
