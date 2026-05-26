@@ -4,7 +4,7 @@ import { usePathname, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import {
   LayoutDashboard, Users, KanbanSquare, ClipboardList, Upload,
-  Mail, LogOut, Menu, X, Search,
+  Mail, Megaphone, LogOut, Menu, X, Search,
 } from 'lucide-react'
 import { supabase } from '@/lib/supabase-client'
 import { ADMIN_EMAIL } from '@/lib/admin'
@@ -15,6 +15,7 @@ const NAV = [
   { label: 'Contractors', href: '/crm/contractors', icon: Users },
   { label: 'Pipeline', href: '/crm/pipeline', icon: KanbanSquare },
   { label: 'Activities', href: '/crm/activities', icon: ClipboardList },
+  { label: 'Campaigns', href: '/crm/campaigns', icon: Megaphone },
   { label: 'Templates', href: '/crm/templates', icon: Mail },
   { label: 'Import', href: '/crm/import', icon: Upload },
 ]
