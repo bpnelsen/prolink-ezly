@@ -44,6 +44,13 @@ export default function ContractorsListPage() {
   useEffect(() => { load() }, [load])
   useEffect(() => { crmAPI.stages().then(s => setStages(s.stages)).catch(() => {}) }, [])
 
+  // Remember the list view so the contractor detail page's "back" can
+  // return us to the same filters + page instead of resetting.
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    sessionStorage.setItem('crm:contractors:lastList', params.toString())
+  }, [params])
+
   const update = (patch: Record<string, string>) => {
     const next = new URLSearchParams(params.toString())
     Object.entries(patch).forEach(([k, v]) => {
@@ -96,6 +103,8 @@ export default function ContractorsListPage() {
       </div>
 
       {error && <div className="text-sm text-rose-600">{error}</div>}
+
+      <TopPager total={total} offset={offset} onChange={(o) => update({ offset: String(o) })} />
 
       <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
         <div className="overflow-x-auto">
@@ -198,6 +207,28 @@ function FilterSelect({
       <option value="">{placeholder}</option>
       {options.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
     </select>
+  )
+}
+
+function TopPager({
+  total, offset, onChange,
+}: { total: number; offset: number; onChange: (o: number) => void }) {
+  if (total <= PAGE_SIZE) return null
+  const atStart = offset === 0
+  const atEnd = offset + PAGE_SIZE >= total
+  return (
+    <div className="flex justify-end gap-2">
+      <button
+        onClick={() => onChange(Math.max(0, offset - PAGE_SIZE))}
+        disabled={atStart}
+        className="text-xs font-bold px-3 py-1.5 border border-gray-200 rounded-lg disabled:opacity-40 hover:border-teal-500"
+      >← Prev</button>
+      <button
+        onClick={() => onChange(offset + PAGE_SIZE)}
+        disabled={atEnd}
+        className="text-xs font-bold px-3 py-1.5 border border-gray-200 rounded-lg disabled:opacity-40 hover:border-teal-500"
+      >Next →</button>
+    </div>
   )
 }
 
