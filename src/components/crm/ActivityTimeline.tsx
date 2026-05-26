@@ -1,6 +1,6 @@
 'use client'
 import { useState } from 'react'
-import { StickyNote, Phone, Mail, MessageSquare, ClipboardList, Calendar, Check, Trash2 } from 'lucide-react'
+import { StickyNote, Phone, Mail, MessageSquare, ClipboardList, Calendar, Check, Trash2, Eye, MousePointerClick } from 'lucide-react'
 import { crmAPI, formatDateTime } from '@/lib/crm-client'
 import type { Activity, ActivityKind } from '@/lib/crm-types'
 
@@ -121,6 +121,24 @@ function Item({
           )}
           {activity.completed && activity.completed_at && (
             <span className="text-emerald-700 font-semibold">· Done {formatDateTime(activity.completed_at)}</span>
+          )}
+          {activity.kind === 'email' && activity.open_count > 0 && (
+            <span
+              className="text-teal-700 font-semibold inline-flex items-center gap-1"
+              title={`First opened ${activity.first_opened_at ? formatDateTime(activity.first_opened_at) : '—'}`}
+            >
+              · <Eye size={11} /> Opened {activity.open_count}×
+              {activity.last_opened_at && <> (last {formatDateTime(activity.last_opened_at)})</>}
+            </span>
+          )}
+          {activity.kind === 'email' && activity.click_count > 0 && (
+            <span
+              className="text-fuchsia-700 font-semibold inline-flex items-center gap-1"
+              title={`First clicked ${activity.first_clicked_at ? formatDateTime(activity.first_clicked_at) : '—'}`}
+            >
+              · <MousePointerClick size={11} /> Clicked {activity.click_count}×
+              {activity.last_clicked_at && <> (last {formatDateTime(activity.last_clicked_at)})</>}
+            </span>
           )}
         </div>
       </div>
