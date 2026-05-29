@@ -18,6 +18,14 @@ export function userClient(req: NextRequest): SupabaseClient {
 }
 
 /**
+ * Whether the service-role key is configured. Lets callers branch to a clear,
+ * actionable error before invoking `serviceClient()` (which throws).
+ */
+export function hasServiceRole(): boolean {
+  return Boolean(SUPABASE_SERVICE_ROLE_KEY)
+}
+
+/**
  * Service-role client. Use sparingly — only for trusted server-only operations
  * (storage uploads, signed webhook handlers, etc.). NEVER expose to the browser.
  */

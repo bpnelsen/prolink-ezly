@@ -8,12 +8,17 @@
 
 import { SupabaseClient } from '@supabase/supabase-js'
 import { renderContractHTML, renderContractPDF, ContractRenderInput } from './contract-renderer'
-import { serviceClient } from './server-auth'
+import { serviceClient, hasServiceRole } from './server-auth'
 
 export const STORAGE_BUCKET = 'contract-documents'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Row = Record<string, any>
+
+/** Discriminated result so callers can surface a precise, actionable reason. */
+export type TemplateResult =
+  | { template: Row }
+  | { error: string; details?: string }
 
 /**
  * Default v1 owner-contractor template content. Mirrors the seed in
@@ -83,13 +88,23 @@ async function lookupActiveTemplate(
 export async function getActiveTemplate(
   supabase: SupabaseClient,
   jurisdictionState: string | null
-): Promise<Row | null> {
+): Promise<TemplateResult> {
   const existing = await lookupActiveTemplate(supabase, jurisdictionState)
-  if (existing) return existing
+  if (existing) return { template: existing }
 
-  // None present (typical when the SQL seed in migration 010 hasn't been
-  // run on this Supabase project). Insert the default v1 national template
-  // via the service-role client so contract creation doesn't dead-end.
+  // No template row found (typical when the SQL seed in migration 010 hasn't
+  // been run on this Supabase project). We auto-seed the default v1 national
+  // template — but inserting into contract_templates requires the service-role
+  // client (there is no INSERT RLS policy for ordinary users).
+  if (!hasServiceRole()) {
+    return {
+      error:
+        'No contract template is configured and the default cannot be created automatically. ' +
+        'Add SUPABASE_SERVICE_ROLE_KEY to your environment (Vercel → Settings → Environment ' +
+        'Variables) and redeploy, or run migrations/010_contract_module.sql on your Supabase project.',
+    }
+  }
+
   try {
     const svc = serviceClient()
     const today = new Date().toISOString().slice(0, 10)
@@ -106,12 +121,20 @@ export async function getActiveTemplate(
       .single()
     if (error) {
       console.error('[contract-service] auto-seed template failed', error)
-      return null
+      return {
+        error:
+          'No contract template was found and the default could not be seeded. ' +
+          'Run migrations/010_contract_module.sql on your Supabase project to create the contract tables.',
+        details: error.message,
+      }
     }
-    return inserted
+    return { template: inserted }
   } catch (err) {
     console.error('[contract-service] auto-seed template threw', err)
-    return null
+    return {
+      error: 'Could not initialize the default contract template.',
+      details: String(err),
+    }
   }
 }
 
@@ -189,6 +212,12 @@ export async function renderAndStoreVersion(
   reason: 'initial' | 'edit' | 'change_order',
   changeOrderId: string | null = null
 ): Promise<{ version_number: number; pdf_url: string | null }> {
+  if (!hasServiceRole()) {
+    throw new Error(
+      'SUPABASE_SERVICE_ROLE_KEY is not configured — it is required to render and store contract ' +
+        'documents. Add it in Vercel → Settings → Environment Variables and redeploy.'
+    )
+  }
   const svc = serviceClient()
   const ctx = await loadContractContext(svc, contractId)
   if (!ctx) throw new Error(`Contract ${contractId} not found`)
