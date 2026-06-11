@@ -7,10 +7,11 @@ import Link from 'next/link'
  */
 export function Pricing() {
   const features = [
+    'Unlimited users — every teammate included',
     'Everything included — no feature tiers',
     'Unlimited customers, jobs & invoices',
     'Customer portal, chat & AI deal plans',
-    '$49/mo includes you — extra seats $15/mo each',
+    'No per-seat fees. No per-job fees. Ever.',
     '14-day free trial · cancel anytime',
   ]
 
@@ -28,7 +29,7 @@ export function Pricing() {
             Simple, transparent pricing
           </h2>
           <p className="mx-auto mt-3.5 max-w-[520px] text-base leading-relaxed text-gray-500 sm:text-[17px]">
-            One flat plan. Free for 14 days. Add seats as your team grows.
+            One price. Every user. No exceptions. Free for 14 days.
           </p>
         </div>
 
@@ -42,7 +43,7 @@ export function Pricing() {
               Prolink
             </h3>
             <p className="mt-1 text-[13px] text-white/55">
-              Everything included. No tiers, no surprises.
+              Unlimited users. Everything included. No surprises.
             </p>
 
             <div className="mt-6 font-['Inter',sans-serif] text-[44px] font-black leading-none text-white">
@@ -50,7 +51,7 @@ export function Pricing() {
               <span className="text-base font-medium text-white/40">/mo</span>
             </div>
             <p className="mt-1 text-xs text-white/40">
-              + $15/mo per additional user · 14-day free trial
+              Flat rate · unlimited users · 14-day free trial
             </p>
 
             <ul className="mt-7 flex flex-col gap-3">

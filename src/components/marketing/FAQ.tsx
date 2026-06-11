@@ -22,8 +22,12 @@ export function FAQ() {
       a: 'Absolutely. Start with a 14-day free trial. No credit card required. Cancel anytime — no strings attached.',
     },
     {
+      q: 'How does pricing work?',
+      a: 'One flat price: $49/month for unlimited users. Add your whole crew at no extra cost. No per-seat fees, no per-job fees, no surprise upcharges — ever.',
+    },
+    {
       q: 'What happens after my trial ends?',
-      a: 'Choose the plan that fits your needs. We offer monthly or annual billing, with discounts for annual subscriptions.',
+      a: 'You stay on the same flat $49/month plan — unlimited users, everything included. Monthly or annual billing, with a discount when you pay annually.',
     },
     {
       q: 'Is my data secure?',
