@@ -81,6 +81,58 @@ export async function POST(req: NextRequest) {
           stripe_details_submitted: account.details_submitted ?? false,
         })
         .eq('stripe_account_id', account.id)
+    } else if (event.type === 'checkout.session.completed') {
+      // Invoice payment landed. Record it against the invoice, idempotently
+      // (Stripe retries on any non-2xx; the payment_intent id is unique).
+      const session = event.data.object as Stripe.Checkout.Session
+      if (session.mode !== 'payment' || session.payment_status !== 'paid') {
+        return NextResponse.json({ received: true })
+      }
+      const invoiceId = session.metadata?.invoice_id
+      const contractorId = session.metadata?.contractor_id
+      const paymentIntentId = typeof session.payment_intent === 'string'
+        ? session.payment_intent
+        : session.payment_intent?.id || ''
+      const amount = (session.amount_total ?? 0) / 100
+      if (!invoiceId || !contractorId || !paymentIntentId || amount <= 0) {
+        return NextResponse.json({ received: true, note: 'missing_metadata' })
+      }
+
+      // Idempotency: if we already recorded this payment_intent, ack and exit.
+      const { data: existing } = await svc
+        .from('payments')
+        .select('id')
+        .eq('reference_number', paymentIntentId)
+        .maybeSingle()
+      if (existing) return NextResponse.json({ received: true, note: 'duplicate' })
+
+      await svc.from('payments').insert({
+        invoice_id: invoiceId,
+        contractor_id: contractorId,
+        amount,
+        payment_method: 'stripe',
+        reference_number: paymentIntentId,
+      })
+
+      const { data: inv } = await svc
+        .from('invoices')
+        .select('total, amount_paid')
+        .eq('id', invoiceId)
+        .maybeSingle()
+      if (inv) {
+        const newPaid = Number(inv.amount_paid || 0) + amount
+        const newBalance = Math.max(0, Number(inv.total || 0) - newPaid)
+        const paidInFull = newBalance <= 0
+        await svc
+          .from('invoices')
+          .update({
+            amount_paid: newPaid,
+            balance_due: newBalance,
+            status: paidInFull ? 'paid' : 'partially_paid',
+            paid_at: paidInFull ? new Date().toISOString() : null,
+          })
+          .eq('id', invoiceId)
+      }
     }
   } catch {
     // Acknowledge anyway so Stripe doesn't hammer retries on a transient

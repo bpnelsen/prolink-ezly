@@ -34,6 +34,13 @@ export default function PublicInvoicePage({ params }: { params: { token: string 
   const [loading, setLoading] = useState(true)
   const [loadError, setLoadError] = useState<string | null>(null)
   const [stripeMsg, setStripeMsg] = useState<string | null>(null)
+  const [paymentStatus, setPaymentStatus] = useState<'success' | 'cancelled' | null>(null)
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    const p = params.get('payment')
+    if (p === 'success' || p === 'cancelled') setPaymentStatus(p)
+  }, [])
 
   useEffect(() => {
     async function load() {
@@ -189,6 +196,18 @@ export default function PublicInvoicePage({ params }: { params: { token: string 
           <div className="no-print mb-4 mx-4 bg-gray-100 border border-gray-200 rounded-xl p-3 flex items-center gap-2">
             <AlertCircle size={16} className="text-gray-500 shrink-0" />
             <p className="text-sm font-semibold text-gray-700">This invoice has been cancelled</p>
+          </div>
+        )}
+        {paymentStatus === 'success' && (
+          <div className="no-print mb-4 mx-4 bg-green-50 border border-green-200 rounded-xl p-3 flex items-center gap-2">
+            <CheckCircle2 size={16} className="text-green-600 shrink-0" />
+            <p className="text-sm font-semibold text-green-800">Payment received — thank you! It may take a moment to reflect on this invoice.</p>
+          </div>
+        )}
+        {paymentStatus === 'cancelled' && (
+          <div className="no-print mb-4 mx-4 bg-amber-50 border border-amber-200 rounded-xl p-3 flex items-center gap-2">
+            <AlertCircle size={16} className="text-amber-600 shrink-0" />
+            <p className="text-sm font-semibold text-amber-800">Payment cancelled — no charge was made.</p>
           </div>
         )}
         {stripeMsg && (
