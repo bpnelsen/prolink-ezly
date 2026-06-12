@@ -109,7 +109,7 @@ function PayoutsInner() {
               </p>
               <p className="text-sm text-gray-500 mt-0.5">
                 {onboarded
-                  ? 'Your bank account is connected. Customer payments route through Prolink and release to you on job completion.'
+                  ? 'Customer payments deposit directly into your Stripe balance and pay out to your bank on Stripe’s schedule. Prolink never touches the money.'
                   : 'Connect a Stripe account to receive customer payments. Stripe handles bank verification and KYC; Prolink never sees your card or bank details.'}
               </p>
             </div>
@@ -169,11 +169,19 @@ function PayoutsInner() {
           )}
         </div>
 
-        <div className="bg-gray-50 rounded-2xl border border-gray-200 p-5 text-sm text-gray-500 mt-6">
-          <p className="font-semibold text-gray-700 mb-1">How payouts work</p>
-          <p>
-            When a customer pays an invoice, funds land in Prolink&apos;s platform balance. After you mark the job complete with photo proof, the funds are released to your connected Stripe account and paid out to your bank on Stripe&apos;s schedule. Prolink doesn&apos;t take a cut — only Stripe&apos;s processing fees apply.
-          </p>
+        <div className="bg-gray-50 rounded-2xl border border-gray-200 p-5 text-sm text-gray-500 mt-6 space-y-3">
+          <div>
+            <p className="font-semibold text-gray-700 mb-1">How payouts work</p>
+            <p>
+              When a customer pays an invoice online, the charge goes straight to your Stripe account — Prolink doesn&apos;t hold or route the funds. Stripe pays out to your bank on the schedule you set in your Stripe dashboard. Prolink doesn&apos;t take a cut; only Stripe&apos;s processing fees apply.
+            </p>
+          </div>
+          <div>
+            <p className="font-semibold text-gray-700 mb-1">Refunds and disputes</p>
+            <p>
+              Because charges land in your account, you&apos;re the merchant of record. Refunds and chargeback responses are handled from your Stripe dashboard.
+            </p>
+          </div>
         </div>
       </div>
     </div>
