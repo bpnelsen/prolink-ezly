@@ -82,8 +82,11 @@ export async function POST(req: NextRequest) {
         })
         .eq('stripe_account_id', account.id)
     } else if (event.type === 'checkout.session.completed') {
-      // Invoice payment landed. Record it against the invoice, idempotently
-      // (Stripe retries on any non-2xx; the payment_intent id is unique).
+      // Invoice payment landed. With direct charges on Connect, this event
+      // fires on the connected account (event.account === acct_...). Record
+      // it against the invoice idempotently — payment_intent id is globally
+      // unique so it works as the idempotency key regardless of which
+      // account the charge was created on.
       const session = event.data.object as Stripe.Checkout.Session
       if (session.mode !== 'payment' || session.payment_status !== 'paid') {
         return NextResponse.json({ received: true })

@@ -13,10 +13,12 @@ export const runtime = 'nodejs'
  * public_token. We re-derive the amount from the DB; the client-supplied
  * amount is ignored.
  *
- * The charge lands on Prolink's platform balance — per
- * docs/stripe-connect.md (separate charges and transfers). P1.3 will issue
- * the Transfer to the contractor's connected account on job completion,
- * keyed off the transfer_group set here.
+ * Charge model: direct charges on the contractor's Connect Express
+ * account. The Checkout Session is created via stripeAccount, so funds
+ * land directly in the contractor's Stripe balance — they never touch
+ * Prolink's. Prolink is not merchant of record; chargebacks and refunds
+ * are the contractor's. This supersedes the separate-charges-and-transfers
+ * plan in docs/stripe-connect.md (see the revised-decision note there).
  */
 export async function POST(req: NextRequest) {
   const stripe = getStripe()
@@ -46,47 +48,56 @@ export async function POST(req: NextRequest) {
   const balance = Number(invoice.balance_due)
   if (!(balance > 0)) return badRequest('This invoice has no balance due.')
 
-  // Pull the contractor's business name for the Checkout line description.
   const { data: contractor } = await svc
     .from('customers')
-    .select('business_name')
+    .select('business_name, stripe_account_id, stripe_charges_enabled')
     .eq('id', invoice.contractor_id)
     .maybeSingle()
 
+  if (!contractor?.stripe_account_id || !contractor.stripe_charges_enabled) {
+    return NextResponse.json(
+      {
+        error: 'contractor_not_onboarded',
+        message: 'This contractor hasn’t finished setting up online payments yet. Please contact them to arrange payment another way.',
+      },
+      { status: 400 }
+    )
+  }
+
   try {
     const origin = process.env.NEXT_PUBLIC_SITE_URL || req.nextUrl.origin
-    const session = await stripe.checkout.sessions.create({
-      mode: 'payment',
-      line_items: [
-        {
-          price_data: {
-            currency: 'usd',
-            product_data: {
-              name: `Invoice ${invoice.invoice_number}`,
-              description: contractor?.business_name || undefined,
+    const session = await stripe.checkout.sessions.create(
+      {
+        mode: 'payment',
+        line_items: [
+          {
+            price_data: {
+              currency: 'usd',
+              product_data: {
+                name: `Invoice ${invoice.invoice_number}`,
+                description: contractor.business_name || undefined,
+              },
+              unit_amount: Math.round(balance * 100),
             },
-            unit_amount: Math.round(balance * 100),
+            quantity: 1,
           },
-          quantity: 1,
+        ],
+        payment_intent_data: {
+          description: `Invoice ${invoice.invoice_number}`,
+          metadata: {
+            invoice_id: invoice.id,
+            contractor_id: invoice.contractor_id,
+          },
         },
-      ],
-      payment_intent_data: {
-        description: `Invoice ${invoice.invoice_number}`,
-        // transfer_group links this charge to a future Transfer to the
-        // contractor's connected account (P1.3 — release on job completion).
-        transfer_group: `invoice_${invoice.id}`,
         metadata: {
           invoice_id: invoice.id,
           contractor_id: invoice.contractor_id,
         },
+        success_url: `${origin}/invoice/${invoice.public_token}?payment=success`,
+        cancel_url: `${origin}/invoice/${invoice.public_token}?payment=cancelled`,
       },
-      metadata: {
-        invoice_id: invoice.id,
-        contractor_id: invoice.contractor_id,
-      },
-      success_url: `${origin}/invoice/${invoice.public_token}?payment=success`,
-      cancel_url: `${origin}/invoice/${invoice.public_token}?payment=cancelled`,
-    })
+      { stripeAccount: contractor.stripe_account_id }
+    )
 
     return NextResponse.json({ data: { url: session.url }, url: session.url })
   } catch (err) {

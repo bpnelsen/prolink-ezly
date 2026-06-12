@@ -4,6 +4,27 @@ Decision doc to unblock P1 implementation in `TODO.md`. Recommendation up top; r
 
 ---
 
+## Revised decision (Jun 2026): Direct charges, no platform hold
+
+Replaces Decisions 2 and 3 below. Account type (Express) stays. After implementing P1.2 we revisited the charge model — the founder wanted contractors to "have their own Stripe account; money doesn't run through Prolink's." That cleanly maps to **direct charges on Connect Express accounts**.
+
+| Was | Now |
+|---|---|
+| Separate charges and transfers | **Direct charges** on connected accounts (via `stripeAccount` option) |
+| Funds held on Prolink's platform balance | Funds land directly in the contractor's Connect balance |
+| Release on job completion + photo proof | **Dropped.** No hold → no release trigger. Customer pays, contractor has the money. |
+| Prolink is merchant of record | **Contractor is merchant of record.** Chargebacks and refunds are theirs. |
+| Application fee: 0% | **Application fee: 0%** (unchanged — SaaS revenue only) |
+
+Implications:
+- P1.3 ("release on completion") is dropped in its current form. If we ever want a hold mechanism back, the realistic option is manual capture, but that's capped at 7 days and only works for same-day or near-term jobs.
+- The `customers` table already has the Connect columns from migration 023 — no schema changes needed.
+- The invoice checkout (`/api/stripe/checkout`) now creates the Session with `stripeAccount: contractor.stripe_account_id`. The webhook handler is unchanged — `checkout.session.completed` arrives via the same Connect webhook subscription used for `account.updated`.
+
+The original "separate charges and transfers" analysis is preserved below for context.
+
+---
+
 ## TL;DR Recommendation
 
 | Decision | Choice |

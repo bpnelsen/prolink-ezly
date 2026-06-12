@@ -134,6 +134,7 @@ export default function PublicInvoicePage({ params }: { params: { token: string 
   const customerName = client.first_name ? `${client.first_name} ${client.last_name}` : ''
   const isPaid = Number(invoice.balance_due) <= 0 && Number(invoice.total) > 0
   const isCancelled = invoice.status === 'cancelled'
+  const canPayOnline = Boolean(biz.stripe_charges_enabled)
 
   const techName = job?.technicians?.name || null
   const serviceDate = job?.scheduled_start
@@ -175,7 +176,7 @@ export default function PublicInvoicePage({ params }: { params: { token: string 
             className="flex items-center gap-1.5 px-3 py-1.5 border border-gray-200 rounded-lg text-xs font-semibold text-gray-600 hover:bg-gray-50">
             <Printer size={12} /> Print / Save PDF
           </button>
-          {!isPaid && !isCancelled && (
+          {!isPaid && !isCancelled && canPayOnline && (
             <button onClick={handlePayOnline}
               className="flex items-center gap-1.5 px-4 py-1.5 bg-teal-600 hover:bg-teal-700 text-white rounded-lg text-xs font-bold">
               <CreditCard size={12} /> Pay Online
@@ -412,7 +413,7 @@ export default function PublicInvoicePage({ params }: { params: { token: string 
         </div>
 
         {/* Pay online CTA (non-print) */}
-        {!isPaid && !isCancelled && (
+        {!isPaid && !isCancelled && canPayOnline && (
           <div className="no-print mx-4 mt-4 bg-gray-800 rounded-xl p-5 text-white flex items-center justify-between gap-4">
             <div>
               <p className="text-xs text-white/60 uppercase font-bold tracking-wider">Balance Due</p>

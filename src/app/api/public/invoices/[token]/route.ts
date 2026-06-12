@@ -65,7 +65,7 @@ export async function GET(_req: NextRequest, { params }: { params: { token: stri
     invoice.contractor_id
       ? supabase
           .from('customers')
-          .select('business_name, logo_url, phone, street_address, city, state, zip_code, website')
+          .select('business_name, logo_url, phone, street_address, city, state, zip_code, website, stripe_charges_enabled')
           .eq('id', invoice.contractor_id)
           .maybeSingle()
       : Promise.resolve({ data: null }),
