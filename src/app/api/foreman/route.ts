@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { requireUser } from '@/lib/server-auth'
+import type { SupabaseClient } from '@supabase/supabase-js'
 
 export const dynamic = 'force-dynamic'
 
@@ -36,6 +37,12 @@ Do NOT:
 
 // Cap input to bound cost-amplification if someone gets past auth.
 const MAX_PROMPT_CHARS = 8_000
+// How far back the History button reaches.
+const HISTORY_DAYS = 15
+// How many prior turns we feed the model for context. Keeps follow-ups
+// coherent without ballooning token cost on every request.
+const MEMORY_TURNS = 12
+const OFFLINE_MSG = 'Foreman is off-site right now. Try again in a moment.'
 
 // Per-user rate limit. Uses Node process memory — fine for the current
 // single-region Vercel deployment; a Redis-backed limiter is the right next
@@ -59,11 +66,57 @@ function checkRate(key: string): { ok: boolean; retryAfter: number } {
   return { ok: true, retryAfter: 0 }
 }
 
-export async function POST(req: NextRequest) {
+type ChatTurn = { role: 'user' | 'ai'; content: string }
+
+// Pull a clean, capped list of recent turns from whatever the client sent.
+function sanitizeHistory(raw: unknown): ChatTurn[] {
+  if (!Array.isArray(raw)) return []
+  const turns: ChatTurn[] = []
+  for (const item of raw) {
+    const role = (item as { role?: unknown })?.role
+    const content = (item as { content?: unknown })?.content
+    if ((role === 'user' || role === 'ai') && typeof content === 'string' && content.trim()) {
+      turns.push({ role, content: content.slice(0, MAX_PROMPT_CHARS) })
+    }
+  }
+  return turns.slice(-MEMORY_TURNS)
+}
+
+// Persist a single turn. Best-effort: a logging failure must never break chat.
+async function persist(supabase: SupabaseClient, userId: string, role: 'user' | 'ai', content: string) {
+  try {
+    await supabase.from('foreman_messages').insert({ user_id: userId, role, content })
+  } catch (err) {
+    console.error('Foreman persist error:', err)
+  }
+}
+
+// GET /api/foreman — the last HISTORY_DAYS of this user's Foreman log,
+// oldest first, ready to drop straight into the chat panel.
+export async function GET(req: NextRequest) {
   const authed = await requireUser(req)
   if ('error' in authed) return authed.error
 
-  const rate = checkRate(authed.user.id)
+  const since = new Date(Date.now() - HISTORY_DAYS * 24 * 60 * 60 * 1000).toISOString()
+  const { data, error } = await authed.supabase
+    .from('foreman_messages')
+    .select('role, content, created_at')
+    .gte('created_at', since)
+    .order('created_at', { ascending: true })
+
+  if (error) {
+    console.error('Foreman history error:', error)
+    return NextResponse.json({ messages: [], error: 'history_unavailable' }, { status: 200 })
+  }
+  return NextResponse.json({ messages: data ?? [] })
+}
+
+export async function POST(req: NextRequest) {
+  const authed = await requireUser(req)
+  if ('error' in authed) return authed.error
+  const { user, supabase } = authed
+
+  const rate = checkRate(user.id)
   if (!rate.ok) {
     return NextResponse.json(
       { error: 'rate_limited', message: 'Slow down — try again shortly.' },
@@ -82,53 +135,63 @@ export async function POST(req: NextRequest) {
   if (!prompt || typeof prompt !== 'string') {
     return NextResponse.json({ error: 'bad_request', message: 'prompt is required' }, { status: 400 })
   }
-  const trimmed = prompt.slice(0, MAX_PROMPT_CHARS)
+  const trimmed = prompt.slice(0, MAX_PROMPT_CHARS).trim()
+  if (!trimmed) {
+    return NextResponse.json({ error: 'bad_request', message: 'prompt is required' }, { status: 400 })
+  }
+
+  // Optional live job context, kept OUT of the stored history so the saved
+  // log stays clean — it's only mixed into the model's view of this turn.
+  const rawContext = (body as { context?: unknown })?.context
+  const context = typeof rawContext === 'string' ? rawContext.slice(0, MAX_PROMPT_CHARS) : ''
+  const history = sanitizeHistory((body as { history?: unknown })?.history)
+
+  // Save the user's clean message immediately so it survives even if the
+  // model call below fails.
+  await persist(supabase, user.id, 'user', trimmed)
 
   const apiKey = process.env.OPENROUTER_API_KEY
+  let response: string
+
   if (!apiKey) {
-    return NextResponse.json(
-      { response: 'Foreman is offline. OpenRouter API key is not configured.' },
-      { status: 200 },
-    )
-  }
+    response = 'Foreman is offline. OpenRouter API key is not configured.'
+  } else {
+    const userContent = context ? `${trimmed}\n\n[CURRENT JOB CONTEXT]\n${context}` : trimmed
+    try {
+      const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${apiKey}`,
+          'Content-Type': 'application/json',
+          'HTTP-Referer': process.env.NEXT_PUBLIC_SITE_URL || 'https://app.useezly.com',
+          'X-Title': 'Prolink Foreman AI',
+        },
+        body: JSON.stringify({
+          model: 'anthropic/claude-haiku-4-5-20251001',
+          messages: [
+            { role: 'system', content: SYSTEM_PROMPT },
+            ...history.map(t => ({ role: t.role === 'ai' ? 'assistant' : 'user', content: t.content })),
+            { role: 'user', content: userContent },
+          ],
+          max_tokens: 1024,
+        }),
+      })
 
-  try {
-    const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${apiKey}`,
-        'Content-Type': 'application/json',
-        'HTTP-Referer': process.env.NEXT_PUBLIC_SITE_URL || 'https://app.useezly.com',
-        'X-Title': 'Prolink Foreman AI',
-      },
-      body: JSON.stringify({
-        model: 'anthropic/claude-haiku-4-5-20251001',
-        messages: [
-          { role: 'system', content: SYSTEM_PROMPT },
-          { role: 'user', content: trimmed },
-        ],
-        max_tokens: 1024,
-      }),
-    })
-
-    if (!res.ok) {
-      // Never echo the upstream body back — it can include the API key on auth
-      // failures, model errors, etc. Log on the server only.
-      console.error('OpenRouter error:', res.status)
-      return NextResponse.json(
-        { response: 'Foreman is off-site right now. Try again in a moment.' },
-        { status: 200 },
-      )
+      if (!res.ok) {
+        // Never echo the upstream body back — it can include the API key on auth
+        // failures, model errors, etc. Log on the server only.
+        console.error('OpenRouter error:', res.status)
+        response = OFFLINE_MSG
+      } else {
+        const data = await res.json()
+        response = data.choices?.[0]?.message?.content || 'No response from Foreman.'
+      }
+    } catch (err) {
+      console.error('Foreman route error:', err)
+      response = OFFLINE_MSG
     }
-
-    const data = await res.json()
-    const response = data.choices?.[0]?.message?.content || 'No response from Foreman.'
-    return NextResponse.json({ response })
-  } catch (err) {
-    console.error('Foreman route error:', err)
-    return NextResponse.json(
-      { response: 'Foreman is off-site right now. Try again in a moment.' },
-      { status: 200 },
-    )
   }
+
+  await persist(supabase, user.id, 'ai', response)
+  return NextResponse.json({ response })
 }

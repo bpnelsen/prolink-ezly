@@ -1,6 +1,6 @@
 'use client'
 import { useState, useRef, useEffect } from 'react'
-import { Bot, X, Send, Wrench, Loader2, Zap, AlertTriangle, FileText, MessageSquare, ChevronDown } from 'lucide-react'
+import { Bot, X, Send, Wrench, Loader2, Zap, AlertTriangle, FileText, MessageSquare, ChevronDown, History } from 'lucide-react'
 import { supabase } from '@/lib/supabase-client'
 
 const QUICK_PROMPTS = [
@@ -10,44 +10,21 @@ const QUICK_PROMPTS = [
   { icon: MessageSquare, label: 'Customer dispute', prompt: 'A customer is pushing back on an additional charge for unforeseen work. Help me communicate this professionally.' },
 ]
 
-const SYSTEM_PROMPT = `You are "Prolink Foreman" — a veteran construction foreman with 30+ years of hands-on experience in residential and light commercial trades (HVAC, plumbing, electrical, roofing, remodeling, and general contracting).
+// NOTE: The Foreman system prompt lives server-side in /api/foreman/route.ts.
+// Keep it there as the single source of truth — the client only relays turns.
 
-Your role: Be the contractor's trusted on-the-job advisor. When they're on a job site, stuck on a quoting decision, or dealing with a tricky customer situation — you're their silent partner with the answers.
+const GREETING = "⚡ Prolink Foreman online.\n\nI'm your job-site partner — code questions, quote reviews, customer issues. What are we working on?"
 
-Personality & tone:
-- Calm, practical, no-nonsense — like a foreman who's seen everything twice
-- Speak in plain contractor language, not jargon
-- Always err on the side of safety and code compliance
-- When uncertain, say "Based on what I can see..." and offer options
-
-Your expertise covers:
-- Building codes (IRC, NEC, UPC, local amendments)
-- Trade best practices and material selection
-- Job site safety (OSHA standards and practical safety)
-- Scope-of-work writing and change order language
-- Customer communication and de-escalation
-- Material cost estimation (current market rates)
-- Permit and inspection requirements
-- Profit-margin advice for contractors
-
-When a contractor asks about a specific job situation, always:
-1. Acknowledge the situation first
-2. Give a direct, actionable answer
-3. Flag any code, safety, or liability concerns clearly
-4. If the question is vague, ask for key details (address, trade, scope)
-
-Do NOT:
-- Make up specific code sections (cite general codes, not fictional section numbers)
-- Be overly cautious to the point of being unhelpful
-- Offer legal advice — always recommend they consult a licensed engineer or attorney for liability questions`
+type ChatMessage = { role: 'user' | 'ai'; content: string }
 
 export default function AIForeman() {
   const [isOpen, setIsOpen] = useState(false)
   const [input, setInput] = useState('')
-  const [messages, setMessages] = useState<{role: 'user' | 'ai', content: string}[]>([
-    { role: 'ai', content: "⚡ Prolink Foreman online.\n\nI'm your job-site partner — code questions, quote reviews, customer issues. What are we working on?" }
+  const [messages, setMessages] = useState<ChatMessage[]>([
+    { role: 'ai', content: GREETING }
   ])
   const [loading, setLoading] = useState(false)
+  const [loadingHistory, setLoadingHistory] = useState(false)
   const [jobContext, setJobContext] = useState<string | null>(null)
   const [expanded, setExpanded] = useState(false)
   const bottomRef = useRef<HTMLDivElement>(null)
@@ -85,6 +62,36 @@ export default function AIForeman() {
     }
   }
 
+  // History button: pull the last 15 days of saved chat and drop it straight
+  // into the panel, oldest -> newest, replacing the current session view.
+  const loadHistory = async () => {
+    setLoadingHistory(true)
+    try {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session) {
+        setMessages([{ role: 'ai', content: 'Sign in to load your Foreman history.' }])
+        return
+      }
+      const resp = await fetch('/api/foreman', {
+        method: 'GET',
+        headers: { Authorization: `Bearer ${session.access_token}` },
+      })
+      const data = await resp.json()
+      const rows: ChatMessage[] = Array.isArray(data.messages)
+        ? data.messages.map((m: { role: 'user' | 'ai'; content: string }) => ({ role: m.role, content: m.content }))
+        : []
+      setMessages(
+        rows.length > 0
+          ? [{ role: 'ai', content: '📜 Loaded your last 15 days of Foreman history.' }, ...rows]
+          : [{ role: 'ai', content: 'No Foreman history in the last 15 days yet. Ask me something and it’ll be saved here.' }]
+      )
+    } catch {
+      setMessages(prev => [...prev, { role: 'ai', content: 'Couldn’t load history right now. Try again in a moment.' }])
+    } finally {
+      setLoadingHistory(false)
+    }
+  }
+
   const sendToForeman = async (prompt: string, includeContext: boolean = false) => {
     if (includeContext) {
         await fetchBusinessContext();
@@ -98,10 +105,11 @@ export default function AIForeman() {
     if (!text.trim()) return
 
     setInput('')
+    // Capture prior turns for model memory before appending the new message.
+    // Drop the canned greeting — it's UI filler, not real context.
+    const priorTurns = messages.filter(m => m.content !== GREETING)
     setMessages(prev => [...prev, { role: 'user', content: text }])
     setLoading(true)
-
-    const contextNote = jobContext ? `\n\n[CURRENT JOB CONTEXT]\n${jobContext}` : ''
 
     try {
       const { data: { session } } = await supabase.auth.getSession()
@@ -116,7 +124,9 @@ export default function AIForeman() {
           Authorization: `Bearer ${session.access_token}`,
         },
         body: JSON.stringify({
-          prompt: text + contextNote,
+          prompt: text,
+          context: jobContext || undefined,
+          history: priorTurns,
         }),
       })
       if (resp.status === 429) {
@@ -152,11 +162,19 @@ export default function AIForeman() {
                 Prolink Foreman AI
               </div>
               <div className="flex items-center gap-2 mt-2">
-                 <button 
+                 <button
                    onClick={fetchBusinessContext}
                    className="text-[10px] bg-white/10 hover:bg-white/20 px-2 py-1 rounded-md transition border border-white/10"
                  >
                    Refresh Data
+                 </button>
+                 <button
+                   onClick={loadHistory}
+                   disabled={loadingHistory}
+                   className="text-[10px] bg-white/10 hover:bg-white/20 disabled:opacity-50 px-2 py-1 rounded-md transition border border-white/10 flex items-center gap-1"
+                 >
+                   {loadingHistory ? <Loader2 size={11} className="animate-spin" /> : <History size={11} />}
+                   History
                  </button>
                  {jobContext && <span className="text-[10px] text-teal-400">Data Loaded</span>}
               </div>
