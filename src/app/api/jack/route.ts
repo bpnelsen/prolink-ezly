@@ -99,13 +99,13 @@ function sanitizeHistory(raw: unknown): ChatTurn[] {
 // Persist a single turn. Best-effort: a logging failure must never break chat.
 async function persist(supabase: SupabaseClient, userId: string, role: 'user' | 'ai', content: string) {
   try {
-    await supabase.from('foreman_messages').insert({ user_id: userId, role, content })
+    await supabase.from('jack_messages').insert({ user_id: userId, role, content })
   } catch (err) {
     console.error('Jack persist error:', err)
   }
 }
 
-// GET /api/foreman — the last HISTORY_DAYS of this user's Jack log,
+// GET /api/jack — the last HISTORY_DAYS of this user's Jack log,
 // oldest first, ready to drop straight into the chat panel.
 export async function GET(req: NextRequest) {
   const authed = await requireUser(req)
@@ -113,7 +113,7 @@ export async function GET(req: NextRequest) {
 
   const since = new Date(Date.now() - HISTORY_DAYS * 24 * 60 * 60 * 1000).toISOString()
   const { data, error } = await authed.supabase
-    .from('foreman_messages')
+    .from('jack_messages')
     .select('role, content, created_at')
     .gte('created_at', since)
     .order('created_at', { ascending: true })
@@ -225,7 +225,7 @@ export async function POST(req: NextRequest) {
 
 // Turn a model tool-call into a Proposal the contractor can approve. Resolves
 // customers/jobs server-side (RLS-scoped) but never writes — writes happen only
-// on approval via POST /api/foreman/action.
+// on approval via POST /api/jack/action.
 async function buildProposal(
   supabase: SupabaseClient,
   toolCall: any,
