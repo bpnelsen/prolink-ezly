@@ -1,6 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { requireUser } from '@/lib/server-auth'
 import type { SupabaseClient } from '@supabase/supabase-js'
+import {
+  FOREMAN_TOOLS,
+  type Proposal,
+  normalizeLineItems,
+  computeTotals,
+  resolveCustomer,
+  splitName,
+} from './tools'
 
 export const dynamic = 'force-dynamic'
 
@@ -29,6 +37,12 @@ When a contractor asks about a specific job situation, always:
 2. Give a direct, actionable answer
 3. Flag any code, safety, or liability concerns clearly
 4. If the question is vague, ask for key details (address, trade, scope)
+
+You can also take actions in the contractor's account using the provided tools:
+- create_quote: when they ask to add/save/create a quote or estimate for a customer or job. Include every line item with quantity and dollar rate.
+- create_customer: when they ask to add a new customer.
+- create_job: when they ask to open a new job for an existing customer.
+Call the matching tool whenever the contractor asks you to record something — never claim you lack access to their data. Every tool action is shown to the contractor for approval before anything is saved, so don't ask for separate confirmation in text; just call the tool.
 
 Do NOT:
 - Make up specific code sections (cite general codes, not fictional section numbers)
@@ -152,6 +166,7 @@ export async function POST(req: NextRequest) {
 
   const apiKey = process.env.OPENROUTER_API_KEY
   let response: string
+  let proposal: Proposal | null = null
 
   if (!apiKey) {
     response = 'Foreman is offline. OpenRouter API key is not configured.'
@@ -173,6 +188,8 @@ export async function POST(req: NextRequest) {
             ...history.map(t => ({ role: t.role === 'ai' ? 'assistant' : 'user', content: t.content })),
             { role: 'user', content: userContent },
           ],
+          tools: FOREMAN_TOOLS,
+          tool_choice: 'auto',
           max_tokens: 1024,
         }),
       })
@@ -186,7 +203,15 @@ export async function POST(req: NextRequest) {
         response = OFFLINE_MSG
       } else {
         const data = await res.json()
-        response = data.choices?.[0]?.message?.content || 'No response from Foreman.'
+        const msg = data.choices?.[0]?.message
+        const toolCall = msg?.tool_calls?.[0]
+        if (toolCall) {
+          const built = await buildProposal(supabase, toolCall)
+          response = built.response
+          proposal = built.proposal
+        } else {
+          response = msg?.content || 'No response from Foreman.'
+        }
       }
     } catch (err) {
       console.error('Foreman route error:', err)
@@ -195,5 +220,126 @@ export async function POST(req: NextRequest) {
   }
 
   await persist(supabase, user.id, 'ai', response)
-  return NextResponse.json({ response })
+  return NextResponse.json({ response, proposal })
+}
+
+// Turn a model tool-call into a Proposal the contractor can approve. Resolves
+// customers/jobs server-side (RLS-scoped) but never writes — writes happen only
+// on approval via POST /api/foreman/action.
+async function buildProposal(
+  supabase: SupabaseClient,
+  toolCall: any,
+): Promise<{ response: string; proposal: Proposal | null }> {
+  let args: any = {}
+  try {
+    args = JSON.parse(toolCall?.function?.arguments || '{}')
+  } catch {
+    args = {}
+  }
+  const name = toolCall?.function?.name
+
+  if (name === 'create_quote') {
+    const items = normalizeLineItems(args.line_items)
+    if (items.length === 0) {
+      return { response: "I couldn't read clear line items for that quote. Can you list the items, quantities and prices?", proposal: null }
+    }
+    const totals = computeTotals(items, args.tax_rate)
+    const res = await resolveCustomer(supabase, args.customer_name)
+
+    if (res.status === 'many') {
+      const names = res.clients.map(c => `${c.first_name} ${c.last_name}`.trim()).join(', ')
+      return { response: `You have a few customers matching “${args.customer_name}”: ${names}. Which one should this quote go under?`, proposal: null }
+    }
+
+    if (res.status === 'none') {
+      const nm = splitName(args.customer_name)
+      const fullName = `${nm.first_name} ${nm.last_name}`.trim()
+      return {
+        response: `I don't see “${args.customer_name}” in your customers yet. Approve below and I'll add them and save this as a draft quote.`,
+        proposal: {
+          type: 'create_quote',
+          summary: `Add customer ${fullName} + draft quote — $${totals.total.toFixed(2)}`,
+          client_id: null,
+          new_client: nm,
+          client_name: fullName,
+          job_id: null,
+          new_job: args.job_title ? { title: String(args.job_title) } : null,
+          job_title: args.job_title || null,
+          line_items: items,
+          ...totals,
+          notes: args.notes || null,
+        },
+      }
+    }
+
+    // Exactly one customer — try to attach a job by title, else offer to create it.
+    const c = res.client
+    const cn = `${c.first_name} ${c.last_name}`.trim()
+    let job_id: string | null = null
+    let new_job: { title: string } | null = null
+    const { data: jobs } = await supabase.from('jobs').select('id, title').eq('client_id', c.id)
+    const jl = (jobs ?? []) as { id: string; title: string }[]
+    if (args.job_title) {
+      const match = jl.find(j => (j.title ?? '').toLowerCase() === String(args.job_title).toLowerCase())
+      if (match) job_id = match.id
+      else new_job = { title: String(args.job_title) }
+    } else if (jl.length === 1) {
+      job_id = jl[0].id
+    }
+
+    return {
+      response: `Here's the draft quote for ${cn} — review it and hit Approve to save it as a draft invoice.`,
+      proposal: {
+        type: 'create_quote',
+        summary: `Draft quote for ${cn} — $${totals.total.toFixed(2)}`,
+        client_id: c.id,
+        new_client: null,
+        client_name: cn,
+        job_id,
+        new_job,
+        job_title: args.job_title || null,
+        line_items: items,
+        ...totals,
+        notes: args.notes || null,
+      },
+    }
+  }
+
+  if (name === 'create_customer') {
+    const first = String(args.first_name || '').trim()
+    const last = String(args.last_name || '').trim()
+    if (!first) return { response: "What's the customer's name?", proposal: null }
+    return {
+      response: `Add ${`${first} ${last}`.trim()} to your customers? Approve to confirm.`,
+      proposal: {
+        type: 'create_customer',
+        summary: `Add customer ${`${first} ${last}`.trim()}`,
+        first_name: first,
+        last_name: last,
+        phone: args.phone || null,
+        email: args.email || null,
+        address: args.address || null,
+      },
+    }
+  }
+
+  if (name === 'create_job') {
+    const title = String(args.title || '').trim()
+    if (!title) return { response: 'What should I call this job?', proposal: null }
+    const res = await resolveCustomer(supabase, args.customer_name)
+    if (res.status === 'one') {
+      const c = res.client
+      const cn = `${c.first_name} ${c.last_name}`.trim()
+      return {
+        response: `Create job “${title}” under ${cn}? Approve to confirm.`,
+        proposal: { type: 'create_job', summary: `New job “${title}” for ${cn}`, client_id: c.id, client_name: cn, title, description: args.description || null },
+      }
+    }
+    if (res.status === 'many') {
+      return { response: `Which customer is this job for? Several match “${args.customer_name}”.`, proposal: null }
+    }
+    return { response: `I don't see “${args.customer_name}” in your customers. Want me to add them first?`, proposal: null }
+  }
+
+  return { response: 'No response from Foreman.', proposal: null }
 }
