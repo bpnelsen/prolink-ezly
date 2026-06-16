@@ -1,6 +1,6 @@
 'use client'
 import { useState, useRef, useEffect } from 'react'
-import { Bot, X, Send, Wrench, Loader2, Zap, AlertTriangle, FileText, MessageSquare, ChevronDown } from 'lucide-react'
+import { Bot, X, Send, Wrench, Loader2, Zap, AlertTriangle, FileText, MessageSquare, ChevronDown, History, Check } from 'lucide-react'
 import { supabase } from '@/lib/supabase-client'
 
 const QUICK_PROMPTS = [
@@ -10,46 +10,33 @@ const QUICK_PROMPTS = [
   { icon: MessageSquare, label: 'Customer dispute', prompt: 'A customer is pushing back on an additional charge for unforeseen work. Help me communicate this professionally.' },
 ]
 
-const SYSTEM_PROMPT = `You are "Prolink Foreman" — a veteran construction foreman with 30+ years of hands-on experience in residential and light commercial trades (HVAC, plumbing, electrical, roofing, remodeling, and general contracting).
+// NOTE: The Foreman system prompt lives server-side in /api/foreman/route.ts.
+// Keep it there as the single source of truth — the client only relays turns.
 
-Your role: Be the contractor's trusted on-the-job advisor. When they're on a job site, stuck on a quoting decision, or dealing with a tricky customer situation — you're their silent partner with the answers.
+const GREETING = "⚡ Prolink Foreman online.\n\nI'm your job-site partner — code questions, quote reviews, customer issues. What are we working on?"
 
-Personality & tone:
-- Calm, practical, no-nonsense — like a foreman who's seen everything twice
-- Speak in plain contractor language, not jargon
-- Always err on the side of safety and code compliance
-- When uncertain, say "Based on what I can see..." and offer options
+type ChatMessage = { role: 'user' | 'ai'; content: string }
 
-Your expertise covers:
-- Building codes (IRC, NEC, UPC, local amendments)
-- Trade best practices and material selection
-- Job site safety (OSHA standards and practical safety)
-- Scope-of-work writing and change order language
-- Customer communication and de-escalation
-- Material cost estimation (current market rates)
-- Permit and inspection requirements
-- Profit-margin advice for contractors
-
-When a contractor asks about a specific job situation, always:
-1. Acknowledge the situation first
-2. Give a direct, actionable answer
-3. Flag any code, safety, or liability concerns clearly
-4. If the question is vague, ask for key details (address, trade, scope)
-
-Do NOT:
-- Make up specific code sections (cite general codes, not fictional section numbers)
-- Be overly cautious to the point of being unhelpful
-- Offer legal advice — always recommend they consult a licensed engineer or attorney for liability questions`
+// Mirror of the server-side Proposal (see api/foreman/tools.ts). The widget
+// renders it as an Approve/Cancel card and echoes it back on approval.
+type QuoteLine = { description: string; qty: number; unit: string; rate: number; amount: number }
+type Proposal =
+  | { type: 'create_quote'; summary: string; client_name: string; job_title: string | null; line_items: QuoteLine[]; subtotal: number; tax_rate: number; tax_amount: number; total: number; [k: string]: unknown }
+  | { type: 'create_customer'; summary: string; [k: string]: unknown }
+  | { type: 'create_job'; summary: string; [k: string]: unknown }
 
 export default function AIForeman() {
   const [isOpen, setIsOpen] = useState(false)
   const [input, setInput] = useState('')
-  const [messages, setMessages] = useState<{role: 'user' | 'ai', content: string}[]>([
-    { role: 'ai', content: "⚡ Prolink Foreman online.\n\nI'm your job-site partner — code questions, quote reviews, customer issues. What are we working on?" }
+  const [messages, setMessages] = useState<ChatMessage[]>([
+    { role: 'ai', content: GREETING }
   ])
   const [loading, setLoading] = useState(false)
+  const [loadingHistory, setLoadingHistory] = useState(false)
   const [jobContext, setJobContext] = useState<string | null>(null)
   const [expanded, setExpanded] = useState(false)
+  const [proposal, setProposal] = useState<Proposal | null>(null)
+  const [approving, setApproving] = useState(false)
   const bottomRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -85,6 +72,36 @@ export default function AIForeman() {
     }
   }
 
+  // History button: pull the last 15 days of saved chat and drop it straight
+  // into the panel, oldest -> newest, replacing the current session view.
+  const loadHistory = async () => {
+    setLoadingHistory(true)
+    try {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session) {
+        setMessages([{ role: 'ai', content: 'Sign in to load your Foreman history.' }])
+        return
+      }
+      const resp = await fetch('/api/foreman', {
+        method: 'GET',
+        headers: { Authorization: `Bearer ${session.access_token}` },
+      })
+      const data = await resp.json()
+      const rows: ChatMessage[] = Array.isArray(data.messages)
+        ? data.messages.map((m: { role: 'user' | 'ai'; content: string }) => ({ role: m.role, content: m.content }))
+        : []
+      setMessages(
+        rows.length > 0
+          ? [{ role: 'ai', content: '📜 Loaded your last 15 days of Foreman history.' }, ...rows]
+          : [{ role: 'ai', content: 'No Foreman history in the last 15 days yet. Ask me something and it’ll be saved here.' }]
+      )
+    } catch {
+      setMessages(prev => [...prev, { role: 'ai', content: 'Couldn’t load history right now. Try again in a moment.' }])
+    } finally {
+      setLoadingHistory(false)
+    }
+  }
+
   const sendToForeman = async (prompt: string, includeContext: boolean = false) => {
     if (includeContext) {
         await fetchBusinessContext();
@@ -98,10 +115,11 @@ export default function AIForeman() {
     if (!text.trim()) return
 
     setInput('')
+    // Capture prior turns for model memory before appending the new message.
+    // Drop the canned greeting — it's UI filler, not real context.
+    const priorTurns = messages.filter(m => m.content !== GREETING)
     setMessages(prev => [...prev, { role: 'user', content: text }])
     setLoading(true)
-
-    const contextNote = jobContext ? `\n\n[CURRENT JOB CONTEXT]\n${jobContext}` : ''
 
     try {
       const { data: { session } } = await supabase.auth.getSession()
@@ -116,7 +134,9 @@ export default function AIForeman() {
           Authorization: `Bearer ${session.access_token}`,
         },
         body: JSON.stringify({
-          prompt: text + contextNote,
+          prompt: text,
+          context: jobContext || undefined,
+          history: priorTurns,
         }),
       })
       if (resp.status === 429) {
@@ -125,11 +145,47 @@ export default function AIForeman() {
       }
       const data = await resp.json()
       setMessages(prev => [...prev, { role: 'ai', content: data.response || 'Foreman is off-site. Try again.' }])
+      setProposal(data.proposal ?? null)
     } catch {
       setMessages(prev => [...prev, { role: 'ai', content: 'Foreman is offline right now. Try again in a moment.' }])
     } finally {
       setLoading(false)
     }
+  }
+
+  // Approve a proposed action: write it for real via the action endpoint.
+  const approveProposal = async () => {
+    if (!proposal) return
+    setApproving(true)
+    try {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session) {
+        setMessages(prev => [...prev, { role: 'ai', content: 'Sign in to save changes.' }])
+        return
+      }
+      const resp = await fetch('/api/foreman/action', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
+        body: JSON.stringify({ action: proposal }),
+      })
+      const data = await resp.json()
+      if (data.ok) {
+        const link = data.link ? ` ${data.link}` : ''
+        setMessages(prev => [...prev, { role: 'ai', content: `✅ ${data.message}${link}` }])
+        setProposal(null)
+      } else {
+        setMessages(prev => [...prev, { role: 'ai', content: `Couldn't save that: ${data.message || 'unknown error'}` }])
+      }
+    } catch {
+      setMessages(prev => [...prev, { role: 'ai', content: 'Couldn’t save that right now. Try again in a moment.' }])
+    } finally {
+      setApproving(false)
+    }
+  }
+
+  const cancelProposal = () => {
+    setProposal(null)
+    setMessages(prev => [...prev, { role: 'ai', content: 'No problem — nothing saved. Want me to change anything?' }])
   }
 
   return (
@@ -152,11 +208,19 @@ export default function AIForeman() {
                 Prolink Foreman AI
               </div>
               <div className="flex items-center gap-2 mt-2">
-                 <button 
+                 <button
                    onClick={fetchBusinessContext}
                    className="text-[10px] bg-white/10 hover:bg-white/20 px-2 py-1 rounded-md transition border border-white/10"
                  >
                    Refresh Data
+                 </button>
+                 <button
+                   onClick={loadHistory}
+                   disabled={loadingHistory}
+                   className="text-[10px] bg-white/10 hover:bg-white/20 disabled:opacity-50 px-2 py-1 rounded-md transition border border-white/10 flex items-center gap-1"
+                 >
+                   {loadingHistory ? <Loader2 size={11} className="animate-spin" /> : <History size={11} />}
+                   History
                  </button>
                  {jobContext && <span className="text-[10px] text-teal-400">Data Loaded</span>}
               </div>
@@ -217,6 +281,66 @@ export default function AIForeman() {
               <div className="flex items-center gap-2 text-gray-400 text-xs pl-2">
                 <Loader2 size={14} className="animate-spin" />
                 Foreman is thinking...
+              </div>
+            )}
+
+            {proposal && (
+              <div className="bg-white border-2 border-[#14b8a6] rounded-2xl shadow-sm overflow-hidden">
+                <div className="bg-teal-50 px-3 py-2 text-[11px] font-bold text-teal-800 border-b border-teal-100">
+                  Approve to save · {proposal.summary}
+                </div>
+                {proposal.type === 'create_quote' && (
+                  <div className="p-3">
+                    <div className="text-[11px] text-gray-500 mb-2">
+                      <span className="font-semibold text-gray-700">{proposal.client_name}</span>
+                      {proposal.job_title ? ` · ${proposal.job_title}` : ''}
+                    </div>
+                    <table className="w-full text-[10px] text-gray-700">
+                      <thead>
+                        <tr className="text-gray-400 text-left">
+                          <th className="font-medium pb-1">Item</th>
+                          <th className="font-medium pb-1 text-right">Qty</th>
+                          <th className="font-medium pb-1 text-right">Rate</th>
+                          <th className="font-medium pb-1 text-right">Total</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {proposal.line_items.map((li, idx) => (
+                          <tr key={idx} className="border-t border-gray-100">
+                            <td className="py-1 pr-2">{li.description}</td>
+                            <td className="py-1 text-right whitespace-nowrap">{li.qty} {li.unit}</td>
+                            <td className="py-1 text-right whitespace-nowrap">${li.rate.toFixed(2)}</td>
+                            <td className="py-1 text-right whitespace-nowrap">${li.amount.toFixed(2)}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                    <div className="mt-2 pt-2 border-t border-gray-200 text-[10px] text-gray-600 space-y-0.5">
+                      <div className="flex justify-between"><span>Subtotal</span><span>${proposal.subtotal.toFixed(2)}</span></div>
+                      {proposal.tax_rate > 0 && (
+                        <div className="flex justify-between"><span>Tax ({proposal.tax_rate}%)</span><span>${proposal.tax_amount.toFixed(2)}</span></div>
+                      )}
+                      <div className="flex justify-between font-bold text-gray-900 text-[11px]"><span>Total</span><span>${proposal.total.toFixed(2)}</span></div>
+                    </div>
+                  </div>
+                )}
+                <div className="flex gap-2 p-3 pt-0">
+                  <button
+                    onClick={approveProposal}
+                    disabled={approving}
+                    className="flex-1 flex items-center justify-center gap-1.5 bg-[#14b8a6] disabled:opacity-50 text-white text-xs font-bold py-2 rounded-xl hover:bg-[#0d9e8c] transition"
+                  >
+                    {approving ? <Loader2 size={13} className="animate-spin" /> : <Check size={13} />}
+                    Approve
+                  </button>
+                  <button
+                    onClick={cancelProposal}
+                    disabled={approving}
+                    className="flex-1 bg-gray-100 disabled:opacity-50 text-gray-600 text-xs font-bold py-2 rounded-xl hover:bg-gray-200 transition"
+                  >
+                    Cancel
+                  </button>
+                </div>
               </div>
             )}
             <div ref={bottomRef} />
