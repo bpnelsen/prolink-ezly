@@ -31,7 +31,7 @@ const ACTIVITY_LABEL: Record<ActivityKind, string> = {
 }
 
 const ACTIVITY_TONE: Record<ActivityKind, string> = {
-  email: 'bg-violet-100 text-violet-600',
+  email: 'bg-indigo-100 text-indigo-600',
   call: 'bg-emerald-100 text-emerald-600',
   sms: 'bg-sky-100 text-sky-600',
   dm: 'bg-sky-100 text-sky-600',
@@ -112,7 +112,7 @@ export default function CRMDashboard() {
   if (!stats || !derived) {
     return (
       <div className="flex items-center justify-center py-20">
-        <div className="w-8 h-8 border-2 border-gray-200 border-t-violet-600 rounded-full animate-spin" />
+        <div className="w-8 h-8 border-2 border-gray-200 border-t-indigo-600 rounded-full animate-spin" />
       </div>
     )
   }
@@ -124,9 +124,9 @@ export default function CRMDashboard() {
       {/* Top bar */}
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">{greeting()}, Prolink</h1>
-          <p className="text-sm text-gray-500 mt-1">
-            Prolink has handled <span className="font-bold text-gray-900">{stats.recent_activity_count_7d} activities</span> this week. Here&apos;s today at a glance.
+          <h1 className="text-3xl lg:text-4xl font-bold text-[#050f2c] tracking-tight">{greeting()}, Prolink</h1>
+          <p className="text-sm text-gray-500 mt-2">
+            Prolink has handled <span className="font-bold text-[#050f2c]">{stats.recent_activity_count_7d} activities</span> this week. Here&apos;s today at a glance.
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -136,31 +136,35 @@ export default function CRMDashboard() {
           </span>
           <Link
             href="/crm/activities"
-            className="inline-flex items-center gap-2 bg-[#0f0a1f] hover:bg-[#1a1233] text-white text-xs font-bold px-4 py-2 rounded-full shadow-sm"
+            className="inline-flex items-center gap-2 bg-[#050f2c] hover:bg-[#0b1c4d] text-white text-xs font-bold px-4 py-2 rounded-full shadow-sm"
           >
-            <Sparkles size={13} className="text-violet-300" />
+            <Sparkles size={13} className="text-[#5468FF]" />
             {overdueLabel}
           </Link>
         </div>
       </div>
 
-      {/* Hero AI banner */}
-      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-[#2a1a52] via-[#231346] to-[#1a0e38] p-6 shadow-sm">
+      {/* Hero AI banner — Algolia-style multi-stop gradient */}
+      <div className="relative overflow-hidden rounded-3xl bg-[#050f2c] p-7 shadow-sm">
         <div
           aria-hidden
-          className="pointer-events-none absolute -right-12 -top-12 w-64 h-64 rounded-full bg-violet-500/10 blur-3xl"
+          className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_15%_20%,#3369e7_0%,transparent_40%),radial-gradient(circle_at_50%_60%,#8e43e7_0%,transparent_45%),radial-gradient(circle_at_90%_30%,#ff4f81_0%,transparent_35%),radial-gradient(circle_at_75%_100%,#ff6c5f_0%,transparent_40%)] opacity-90"
+        />
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-0 bg-[#050f2c]/30"
         />
         <div className="relative flex flex-col lg:flex-row lg:items-center gap-6">
           <div className="flex items-center gap-5 lg:flex-1">
-            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-violet-400 to-fuchsia-500 flex items-center justify-center shadow-lg shadow-violet-900/40 shrink-0">
+            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-[#5468FF] via-[#8e43e7] to-[#ff4f81] flex items-center justify-center shadow-lg shadow-[#050f2c]/40 ring-1 ring-white/20 shrink-0">
               <Sparkles size={26} className="text-white" />
             </div>
             <div className="min-w-0">
-              <div className="inline-flex items-center gap-1.5 bg-white/10 border border-white/15 rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-widest text-white/80">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+              <div className="inline-flex items-center gap-1.5 bg-white/10 border border-white/20 rounded-full px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-white/90 backdrop-blur-sm">
+                <span className="w-1.5 h-1.5 rounded-full bg-[#2dde98] animate-pulse" />
                 Outreach engine · live
               </div>
-              <h2 className="text-white font-bold text-lg mt-2">
+              <h2 className="text-white font-bold text-2xl lg:text-3xl mt-3 leading-tight tracking-tight">
                 Tracking {stats.total_contractors.toLocaleString()} contractors across the pipeline
               </h2>
               <div className="flex flex-wrap gap-2 mt-3">
@@ -206,7 +210,7 @@ export default function CRMDashboard() {
           sub={`${derived.newContacts.toLocaleString()} new · ${derived.qualified.toLocaleString()} qualified`}
           progress={derived.engagementPct}
           progressLabel="Engaged"
-          progressTone="bg-violet-500"
+          progressTone="bg-[#5468FF]"
           href="/crm/contractors"
         />
         <KpiCard
@@ -248,7 +252,7 @@ export default function CRMDashboard() {
         <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm">
           <div className="flex items-start justify-between mb-5">
             <div>
-              <h2 className="font-bold text-gray-900">Recent activity</h2>
+              <h2 className="font-bold text-[#050f2c] tracking-tight">Recent activity</h2>
               <p className="text-xs text-gray-500 mt-0.5 flex items-center gap-1.5">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
                 Live · last 7 days
@@ -256,7 +260,7 @@ export default function CRMDashboard() {
             </div>
             <Link
               href="/crm/activities"
-              className="text-xs font-bold text-violet-700 hover:text-violet-800 border border-gray-200 hover:border-violet-300 rounded-full px-3 py-1.5"
+              className="text-xs font-bold text-indigo-700 hover:text-indigo-800 border border-gray-200 hover:border-indigo-300 rounded-full px-3 py-1.5"
             >
               View all
             </Link>
@@ -278,7 +282,7 @@ export default function CRMDashboard() {
                       <Icon size={14} />
                     </div>
                     <div className="min-w-0 flex-1">
-                      <p className="text-sm font-semibold text-gray-900 truncate">
+                      <p className="text-sm font-semibold text-[#050f2c] truncate">
                         {a.subject || ACTIVITY_LABEL[a.kind] || 'Activity'}
                       </p>
                       <p className="text-xs text-gray-500 mt-0.5 flex items-center gap-1.5">
@@ -299,14 +303,14 @@ export default function CRMDashboard() {
         <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm">
           <div className="flex items-start justify-between mb-5">
             <div>
-              <h2 className="font-bold text-gray-900">Pipeline by stage</h2>
+              <h2 className="font-bold text-[#050f2c] tracking-tight">Pipeline by stage</h2>
               <p className="text-xs text-gray-500 mt-0.5">
                 {derived.openDealCount} open · {formatCurrencyCents(derived.pipelineValue)} value
               </p>
             </div>
             <Link
               href="/crm/pipeline"
-              className="text-xs font-bold text-violet-700 hover:text-violet-800 flex items-center gap-1"
+              className="text-xs font-bold text-indigo-700 hover:text-indigo-800 flex items-center gap-1"
             >
               Open board <ArrowRight size={12} />
             </Link>
@@ -322,11 +326,11 @@ export default function CRMDashboard() {
                 const pct = Math.round((v.count / max) * 100)
                 const isWon = s.is_won
                 const isLost = s.is_lost
-                const barTone = isWon ? 'bg-emerald-500' : isLost ? 'bg-gray-300' : 'bg-violet-500'
+                const barTone = isWon ? 'bg-[#2dde98]' : isLost ? 'bg-gray-300' : 'bg-[#5468FF]'
                 return (
                   <li key={s.key}>
                     <div className="flex items-center justify-between text-sm mb-1.5">
-                      <span className="text-gray-800 font-semibold">{s.label}</span>
+                      <span className="text-[#050f2c] font-semibold">{s.label}</span>
                       <span className="text-xs text-gray-500 tabular-nums">
                         {v.count} · {formatCurrencyCents(v.value_cents)}
                       </span>
@@ -346,14 +350,14 @@ export default function CRMDashboard() {
       <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm">
         <div className="flex items-start justify-between mb-5">
           <div>
-            <h2 className="font-bold text-gray-900">Contact status</h2>
+            <h2 className="font-bold text-[#050f2c] tracking-tight">Contact status</h2>
             <p className="text-xs text-gray-500 mt-0.5">
               Lifecycle breakdown · {stats.total_contractors.toLocaleString()} contractors
             </p>
           </div>
           <Link
             href="/crm/contractors"
-            className="text-xs font-bold text-violet-700 hover:text-violet-800 flex items-center gap-1"
+            className="text-xs font-bold text-indigo-700 hover:text-indigo-800 flex items-center gap-1"
           >
             View all <ChevronRight size={12} />
           </Link>
@@ -382,7 +386,7 @@ function HeroStat({ label, value, bars }: { label: string; value: string; bars: 
           {bars.map((b, i) => (
             <span
               key={i}
-              className="w-1 rounded-sm bg-gradient-to-t from-violet-400/40 to-violet-200/90"
+              className="w-1 rounded-sm bg-gradient-to-t from-[#5468FF]/40 via-[#8e43e7]/70 to-[#ff4f81]/95"
               style={{ height: `${(b / max) * 100}%` }}
             />
           ))}
@@ -405,20 +409,22 @@ function KpiCard({
   href: string
   tone?: 'warn'
 }) {
-  const ringCls = tone === 'warn' ? 'bg-rose-50 text-rose-600' : 'bg-violet-50 text-violet-600'
+  const ringCls = tone === 'warn'
+    ? 'bg-[#ff6c5f]/10 text-[#ff4f81]'
+    : 'bg-[#5468FF]/10 text-[#5468FF]'
   return (
     <Link
       href={href}
-      className="group bg-white border border-gray-200 hover:border-violet-300 rounded-2xl p-5 shadow-sm hover:shadow transition flex flex-col"
+      className="group bg-white border border-gray-200 hover:border-[#5468FF]/40 hover:shadow-[0_8px_30px_rgba(84,104,255,0.08)] rounded-2xl p-5 shadow-sm transition flex flex-col"
     >
       <div className="flex items-center justify-between">
-        <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${ringCls}`}>
+        <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${ringCls}`}>
           {icon}
         </div>
-        <ChevronRight size={14} className="text-gray-300 group-hover:text-violet-500 transition" />
+        <ChevronRight size={14} className="text-gray-300 group-hover:text-[#5468FF] transition" />
       </div>
-      <p className="text-xs font-semibold text-gray-500 mt-4">{label}</p>
-      <p className="text-2xl font-bold text-gray-900 mt-1 tabular-nums">{value}</p>
+      <p className="text-xs font-semibold text-gray-500 mt-4 uppercase tracking-wide">{label}</p>
+      <p className="text-2xl font-bold text-[#050f2c] mt-1 tabular-nums tracking-tight">{value}</p>
       <p className="text-xs text-gray-400 mt-1 truncate">{sub}</p>
       <div className="mt-4">
         <div className="flex items-center justify-between text-[10px] font-semibold text-gray-500 mb-1">
@@ -437,11 +443,11 @@ function KpiCard({
 }
 
 const STATUS_TONE: Record<string, { dot: string; chip: string }> = {
-  new: { dot: 'bg-sky-500', chip: 'text-sky-700' },
-  contacted: { dot: 'bg-violet-500', chip: 'text-violet-700' },
-  qualified: { dot: 'bg-emerald-500', chip: 'text-emerald-700' },
+  new: { dot: 'bg-[#00aeff]', chip: 'text-[#003666]' },
+  contacted: { dot: 'bg-[#5468FF]', chip: 'text-[#3369e7]' },
+  qualified: { dot: 'bg-[#2dde98]', chip: 'text-emerald-700' },
   unqualified: { dot: 'bg-gray-400', chip: 'text-gray-600' },
-  do_not_contact: { dot: 'bg-rose-500', chip: 'text-rose-700' },
+  do_not_contact: { dot: 'bg-[#ff4f81]', chip: 'text-[#b84592]' },
 }
 
 function StatusPill({ statusKey, count, total }: { statusKey: string; count: number; total: number }) {
@@ -454,7 +460,7 @@ function StatusPill({ statusKey, count, total }: { statusKey: string; count: num
         <span className={`w-2 h-2 rounded-full ${tone.dot}`} />
         <p className={`text-[10px] uppercase font-bold tracking-wider truncate ${tone.chip}`}>{label}</p>
       </div>
-      <p className="text-xl font-bold text-gray-900 mt-2 tabular-nums">{count.toLocaleString()}</p>
+      <p className="text-2xl font-bold text-[#050f2c] tracking-tight mt-2 tabular-nums">{count.toLocaleString()}</p>
       <p className="text-[10px] text-gray-400 mt-0.5 tabular-nums">{pct}% of total</p>
     </div>
   )
