@@ -3,7 +3,7 @@ import { requireUser, notFound, serverError } from '../../../../../../lib/server
 
 export const runtime = 'nodejs'
 
-const MODEL = 'anthropic/claude-haiku-4-5-20251001'
+const MODEL = 'anthropic/claude-haiku-4.5'
 const SECTIONS = [
   'scope', 'pricing', 'schedule', 'decisions', 'action_items',
   'change_order_opportunities', 'value_engineering', 'upgrade_opportunities',

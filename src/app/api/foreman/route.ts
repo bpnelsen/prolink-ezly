@@ -167,7 +167,7 @@ export async function POST(req: NextRequest) {
           'X-Title': 'Prolink Foreman AI',
         },
         body: JSON.stringify({
-          model: 'anthropic/claude-haiku-4-5-20251001',
+          model: 'anthropic/claude-haiku-4.5',
           messages: [
             { role: 'system', content: SYSTEM_PROMPT },
             ...history.map(t => ({ role: t.role === 'ai' ? 'assistant' : 'user', content: t.content })),
@@ -178,9 +178,11 @@ export async function POST(req: NextRequest) {
       })
 
       if (!res.ok) {
-        // Never echo the upstream body back — it can include the API key on auth
-        // failures, model errors, etc. Log on the server only.
-        console.error('OpenRouter error:', res.status)
+        // Never echo the upstream body back to the client — it can include the
+        // API key on auth failures, model errors, etc. Log status + body
+        // server-side only so failures (bad model slug, 401, 402) are diagnosable.
+        const detail = await res.text().catch(() => '')
+        console.error('OpenRouter error:', res.status, detail.slice(0, 500))
         response = OFFLINE_MSG
       } else {
         const data = await res.json()
