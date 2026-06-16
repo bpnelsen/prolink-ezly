@@ -2,10 +2,8 @@
 import Link from 'next/link'
 
 /**
- * Blog preview grid linking to four existing blog posts. Uses the local
- * thumbnails in /public/blog rather than external Unsplash photos so the
- * page works offline and loads instantly. 1-col on mobile, 2-col on sm,
- * 4-col on lg.
+ * Blog preview grid. Light section with cards that pick up the
+ * Algolia-blue accent on hover.
  */
 export function BlogPreview() {
   const posts = [
@@ -40,16 +38,16 @@ export function BlogPreview() {
   ]
 
   return (
-    <section id="blog" className="scroll-mt-24 bg-gray-50 py-16 sm:py-20 lg:py-24">
-      <div className="mx-auto max-w-[1160px] px-4 sm:px-6">
-        <div className="mb-12 text-center sm:mb-14">
-          <span className="font-['Inter',sans-serif] text-[11px] font-bold uppercase tracking-[0.12em] text-[#F97316]">
+    <section id="blog" className="relative scroll-mt-24 overflow-hidden bg-[#F7F8FC] py-20 sm:py-24 lg:py-28">
+      <div className="relative mx-auto max-w-[1200px] px-4 sm:px-6">
+        <div className="mb-14 text-center sm:mb-16">
+          <span className="inline-block rounded-full border border-[#5468FF]/20 bg-[#5468FF]/5 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.12em] text-[#5468FF]">
             From the Blog
           </span>
-          <h2 className="mx-auto mt-2.5 font-['Inter',sans-serif] text-[clamp(26px,4.5vw,42px)] font-extrabold leading-[1.15] tracking-tight text-[#0F3A7D]">
+          <h2 className="mx-auto mt-4 max-w-[680px] text-[clamp(28px,4.8vw,46px)] font-extrabold leading-[1.1] tracking-[-0.02em] text-[#0B0B1F]">
             Tips &amp; insights for contractors
           </h2>
-          <p className="mx-auto mt-3.5 max-w-[560px] text-base leading-relaxed text-gray-500 sm:text-[17px]">
+          <p className="mx-auto mt-4 max-w-[580px] text-[17px] leading-relaxed text-gray-500">
             Practical guides, industry trends, and business advice — written
             for people who run with dirty boots.
           </p>
@@ -60,7 +58,7 @@ export function BlogPreview() {
             <Link
               key={p.href}
               href={p.href}
-              className="group flex flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white transition-all hover:-translate-y-1 hover:border-[#F97316] hover:shadow-[0_8px_32px_rgba(249,115,22,0.1)]"
+              className="group flex flex-col overflow-hidden rounded-2xl border border-gray-200/70 bg-white transition-all hover:-translate-y-1 hover:border-[#5468FF]/40 hover:shadow-[0_20px_40px_-12px_rgba(84,104,255,0.25)]"
             >
               <div className="aspect-[16/9] overflow-hidden">
                 <img
@@ -71,29 +69,29 @@ export function BlogPreview() {
                 />
               </div>
               <div className="flex flex-1 flex-col p-5 sm:p-6">
-                <span className="inline-block self-start rounded-full bg-[#F97316]/10 px-2.5 py-1 font-['Inter',sans-serif] text-[10px] font-bold uppercase tracking-wider text-[#F97316]">
+                <span className="inline-block self-start rounded-full border border-[#5468FF]/20 bg-[#5468FF]/10 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-[#5468FF]">
                   {p.tag}
                 </span>
-                <h3 className="mt-3 font-['Inter',sans-serif] text-[15px] font-extrabold leading-tight text-[#0F3A7D]">
+                <h3 className="mt-3 text-[15px] font-extrabold leading-tight tracking-tight text-[#0B0B1F]">
                   {p.title}
                 </h3>
                 <p className="mt-2 flex-1 text-[13px] leading-relaxed text-gray-500">
                   {p.desc}
                 </p>
-                <span className="mt-4 font-['Inter',sans-serif] text-xs font-bold text-[#F97316]">
-                  Read More →
+                <span className="mt-4 inline-flex items-center gap-1 text-xs font-bold text-[#5468FF] transition-transform group-hover:translate-x-0.5">
+                  Read more <span aria-hidden="true">→</span>
                 </span>
               </div>
             </Link>
           ))}
         </div>
 
-        <div className="mt-10 text-center">
+        <div className="mt-12 text-center">
           <Link
             href="/blog"
-            className="inline-flex min-h-[48px] items-center justify-center rounded-xl border-2 border-gray-200 bg-transparent px-8 py-3.5 font-['Inter',sans-serif] text-sm font-bold text-[#0F3A7D] transition-colors hover:border-[#0F3A7D] hover:bg-[#0F3A7D]/5"
+            className="inline-flex min-h-[48px] items-center justify-center rounded-xl border border-gray-300 bg-white px-7 py-3.5 text-sm font-bold text-[#0B0B1F] transition-all hover:-translate-y-0.5 hover:border-[#5468FF]/40 hover:shadow-[0_8px_20px_-6px_rgba(84,104,255,0.3)]"
           >
-            View All Posts →
+            View all posts <span aria-hidden="true" className="ml-1.5">→</span>
           </Link>
         </div>
       </div>

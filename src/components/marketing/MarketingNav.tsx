@@ -5,11 +5,9 @@ import Link from 'next/link'
 import Image from 'next/image'
 
 /**
- * Sticky top navigation for the marketing homepage. Becomes more compact
- * with a subtle shadow once the user has scrolled past 40px. Mobile layout
- * stacks the action buttons in a full-width row below the logo and hides
- * the secondary link row (the page anchors are still reachable via the
- * footer and direct anchor links).
+ * Glass-morphism marketing nav. Stays semi-transparent white with a
+ * backdrop blur so it reads cleanly over both the dark hero and the
+ * lighter sections below.
  */
 export function MarketingNav() {
   const [scrolled, setScrolled] = useState(false)
@@ -23,15 +21,16 @@ export function MarketingNav() {
 
   return (
     <nav
-      className={`fixed top-0 inset-x-0 z-50 bg-white transition-shadow duration-300 ${
-        scrolled ? 'shadow-[0_2px_20px_rgba(0,0,0,0.07)] border-b border-gray-200' : 'border-b border-transparent'
+      className={`fixed inset-x-0 top-0 z-50 backdrop-blur-xl transition-all duration-300 ${
+        scrolled
+          ? 'border-b border-gray-200/70 bg-white/85 shadow-[0_2px_24px_rgba(15,23,42,0.06)]'
+          : 'border-b border-white/10 bg-white/40'
       }`}
     >
-      <div className="max-w-[1160px] mx-auto px-4 sm:px-6">
-        {/* Row 1: Logo + Actions */}
+      <div className="mx-auto max-w-[1200px] px-4 sm:px-6">
         <div
           className={`flex flex-wrap items-center justify-between gap-2 transition-[padding] duration-300 ${
-            scrolled ? 'py-1' : 'py-1.5'
+            scrolled ? 'py-1.5' : 'py-2.5'
           }`}
         >
           <Link href="/" className="shrink-0" aria-label="Ezly home">
@@ -48,52 +47,42 @@ export function MarketingNav() {
             />
           </Link>
 
-          <div className="flex w-full sm:w-auto items-center justify-center sm:justify-end gap-2 flex-wrap">
+          <div className="hidden items-center gap-7 lg:flex">
+            <a href="/#features" className="text-[13px] font-semibold text-gray-600 transition-colors hover:text-[#0F3A7D]">
+              Features
+            </a>
+            <a href="/#how-it-works" className="text-[13px] font-semibold text-gray-600 transition-colors hover:text-[#0F3A7D]">
+              How it works
+            </a>
+            <a href="/#pricing" className="text-[13px] font-semibold text-gray-600 transition-colors hover:text-[#0F3A7D]">
+              Pricing
+            </a>
+            <Link href="/blog" className="text-[13px] font-semibold text-gray-600 transition-colors hover:text-[#0F3A7D]">
+              Blog
+            </Link>
+            <a href="/#faq" className="text-[13px] font-semibold text-gray-600 transition-colors hover:text-[#0F3A7D]">
+              FAQ
+            </a>
+          </div>
+
+          <div className="flex w-full flex-wrap items-center justify-center gap-2 sm:w-auto sm:justify-end">
             <Link
               href="/login"
-              className="flex-1 sm:flex-none text-center min-h-[44px] inline-flex items-center justify-center px-3 sm:px-5 py-2.5 rounded-[11px] border-2 border-[#0F3A7D] text-[#0F3A7D] font-extrabold text-[13.5px] sm:text-[15px] font-['Inter',sans-serif] whitespace-nowrap hover:bg-[#0F3A7D] hover:text-white transition-colors"
+              className="hidden min-h-[40px] items-center justify-center rounded-lg px-3 text-[13.5px] font-semibold text-gray-700 transition-colors hover:text-[#0F3A7D] sm:inline-flex"
             >
-              Contractor Log in
+              Sign in
             </Link>
             <Link
               href="/portal/login"
-              className="flex-1 sm:flex-none text-center min-h-[44px] inline-flex items-center justify-center px-3 sm:px-5 py-2.5 rounded-[11px] border-2 border-[#0F3A7D] text-[#0F3A7D] font-extrabold text-[13.5px] sm:text-[15px] font-['Inter',sans-serif] whitespace-nowrap hover:bg-[#0F3A7D] hover:text-white transition-colors"
+              className="hidden min-h-[40px] items-center justify-center rounded-lg px-3 text-[13.5px] font-semibold text-gray-700 transition-colors hover:text-[#0F3A7D] sm:inline-flex"
             >
-              Homeowner Log in
+              Homeowner portal
             </Link>
             <Link
               href="/signup"
-              className="flex-1 sm:flex-none text-center min-h-[44px] inline-flex items-center justify-center gap-1.5 px-3 sm:px-6 py-3 rounded-[11px] bg-[#F97316] text-white font-extrabold text-[13.5px] sm:text-[15px] font-['Inter',sans-serif] whitespace-nowrap shadow-[0_2px_8px_rgba(249,115,22,0.3)] hover:bg-[#e05f0a] hover:-translate-y-px transition-all"
+              className="inline-flex min-h-[40px] flex-1 items-center justify-center gap-1.5 rounded-lg bg-gradient-to-r from-[#0F3A7D] to-[#5468FF] px-4 py-2 text-[13.5px] font-bold text-white shadow-[0_4px_14px_-2px_rgba(84,104,255,0.45)] transition-all hover:-translate-y-px hover:shadow-[0_6px_18px_-2px_rgba(84,104,255,0.6)] sm:flex-none sm:px-5"
             >
-              Get Started <span aria-hidden="true">→</span>
-            </Link>
-          </div>
-        </div>
-
-        {/* Row 2: Section links (hidden on mobile) */}
-        <div
-          className={`hidden md:flex items-center border-t border-gray-100 transition-[padding] duration-300 ${
-            scrolled ? 'py-1' : 'py-1.5'
-          }`}
-        >
-          <div className="flex items-center gap-7 flex-wrap">
-            <a href="/#features" className="font-['Inter',sans-serif] text-xs font-semibold text-gray-500 hover:text-[#0F3A7D] transition-colors">
-              Features
-            </a>
-            <Link href="/blog" className="font-['Inter',sans-serif] text-xs font-semibold text-gray-500 hover:text-[#0F3A7D] transition-colors">
-              Blog
-            </Link>
-            <a href="/#how-it-works" className="font-['Inter',sans-serif] text-xs font-semibold text-gray-500 hover:text-[#0F3A7D] transition-colors">
-              How It Works
-            </a>
-            <a href="/#pricing" className="font-['Inter',sans-serif] text-xs font-semibold text-gray-500 hover:text-[#0F3A7D] transition-colors">
-              Pricing
-            </a>
-            <a href="/#faq" className="font-['Inter',sans-serif] text-xs font-semibold text-gray-500 hover:text-[#0F3A7D] transition-colors">
-              FAQ
-            </a>
-            <Link href="/contact" className="font-['Inter',sans-serif] text-xs font-semibold text-gray-500 hover:text-[#0F3A7D] transition-colors">
-              Contact
+              Get started <span aria-hidden="true">→</span>
             </Link>
           </div>
         </div>

@@ -1,5 +1,5 @@
 /**
- * 3-up trust strip. Stacks on mobile, 3-col on >=md.
+ * 3-up trust strip — light, narrow, with Algolia-blue icon chips.
  */
 export function Trust() {
   const items = [
@@ -9,15 +9,15 @@ export function Trust() {
   ]
 
   return (
-    <section className="border-y border-gray-200 bg-white py-14 sm:py-16">
-      <div className="mx-auto max-w-[1160px] px-4 sm:px-6">
-        <div className="mx-auto grid max-w-[800px] grid-cols-1 gap-8 text-center sm:grid-cols-3 sm:gap-6">
+    <section className="border-y border-gray-200/70 bg-white py-14 sm:py-16">
+      <div className="mx-auto max-w-[1200px] px-4 sm:px-6">
+        <div className="mx-auto grid max-w-[860px] grid-cols-1 gap-10 text-center sm:grid-cols-3 sm:gap-8">
           {items.map(i => (
-            <div key={i.title}>
-              <div className="mb-3 text-3xl" aria-hidden="true">
+            <div key={i.title} className="flex flex-col items-center">
+              <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-xl border border-[#5468FF]/15 bg-gradient-to-br from-[#5468FF]/10 to-[#F97316]/10 text-2xl">
                 {i.icon}
               </div>
-              <div className="font-['Inter',sans-serif] text-[15px] font-bold text-[#0F3A7D]">
+              <div className="text-[15px] font-bold tracking-tight text-[#0B0B1F]">
                 {i.title}
               </div>
               <p className="mx-auto mt-1.5 max-w-[260px] text-[13px] leading-relaxed text-gray-500">
