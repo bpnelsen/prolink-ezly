@@ -1,9 +1,9 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 
 // ---------------------------------------------------------------------------
-// Foreman action tools.
+// Jack action tools.
 //
-// Foreman is a chat assistant with a small set of WRITE actions (draft quotes,
+// Jack is a chat assistant with a small set of WRITE actions (draft quotes,
 // new customers, new jobs). Nothing here writes until the contractor approves
 // in the UI: the POST /api/foreman route turns a model tool-call into a
 // `Proposal`, the widget renders an Approve/Cancel card, and only on approve

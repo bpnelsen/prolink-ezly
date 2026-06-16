@@ -5,7 +5,7 @@ import { executeAction } from '../tools'
 export const dynamic = 'force-dynamic'
 
 // POST /api/foreman/action — execute an action the contractor approved in the
-// Foreman widget. The body is the Proposal the route previously returned. All
+// Jack widget. The body is the Proposal the route previously returned. All
 // writes are RLS-scoped to the caller; totals and ownership are re-verified in
 // executeAction, so a tampered payload can't write outside the caller's account.
 export async function POST(req: NextRequest) {
@@ -29,7 +29,7 @@ export async function POST(req: NextRequest) {
   try {
     result = await executeAction(supabase, user.id, action)
   } catch (err) {
-    console.error('Foreman action error:', err)
+    console.error('Jack action error:', err)
     return NextResponse.json({ ok: false, message: 'Something went wrong saving that.' }, { status: 200 })
   }
 
@@ -37,11 +37,11 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: false, message: result.error }, { status: 200 })
   }
 
-  // Log the completed action into the contractor's Foreman history.
+  // Log the completed action into the contractor's Jack history.
   try {
     await supabase.from('foreman_messages').insert({ user_id: user.id, role: 'ai', content: `✅ ${result.summary}` })
   } catch (err) {
-    console.error('Foreman action persist error:', err)
+    console.error('Jack action persist error:', err)
   }
 
   return NextResponse.json({ ok: true, message: result.summary, link: result.link ?? null })

@@ -1,10 +1,10 @@
 'use client'
 import { useEffect, useState } from 'react'
 import { usePathname } from 'next/navigation'
-import AIForeman from './AIForeman'
+import Jack from './Jack'
 import { supabase } from '@/lib/supabase-client'
 
-export default function ForemanWrapper() {
+export default function JackWrapper() {
   const pathname = usePathname() || ''
   const [session, setSession] = useState<any>(null)
   const [loading, setLoading] = useState(true)
@@ -30,8 +30,8 @@ export default function ForemanWrapper() {
   // Don't show until we've confirmed session status
   if (loading) return null
   if (!session) return null
-  // The AI Foreman is a contractor-app assistant; hide it on the sales CRM.
+  // Jack is a contractor-app assistant; hide it on the sales CRM.
   if (pathname.startsWith('/crm')) return null
 
-  return <AIForeman />
+  return <Jack />
 }
