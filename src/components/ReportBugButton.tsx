@@ -102,7 +102,7 @@ export default function ReportBugButton() {
   return (
     <>
       {/* Floating button — bottom-left so it doesn't collide with the in-app
-          AI Foreman widget (bottom-right) or the mobile hamburger (top-left).
+          Jack widget (bottom-right) or the mobile hamburger (top-left).
           On desktop app routes the sidebar renders its own trigger below
           Logout, so we hide this one at md+ to prevent overlap. */}
       <button

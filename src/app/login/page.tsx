@@ -54,7 +54,7 @@ export default function LoginPage() {
             The all-in-one platform built for contractors who want to win more jobs and get paid faster.
           </p>
           <div className="space-y-4">
-            {['Pipeline & lead tracking', 'Dispatch & scheduling', 'AI Technical Foreman'].map(f => (
+            {['Pipeline & lead tracking', 'Dispatch & scheduling', 'Jack — AI job-site assistant'].map(f => (
               <div key={f} className="flex items-center gap-3">
                 <div className="w-5 h-5 rounded-full bg-[#14b8a6] flex items-center justify-center flex-shrink-0">
                   <svg width="10" height="10" viewBox="0 0 12 12" fill="none">

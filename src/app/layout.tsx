@@ -1,7 +1,7 @@
 import './globals.css'
 import Script from 'next/script'
 import { cookies } from 'next/headers'
-import ForemanWrapper from '@/components/ForemanWrapper'
+import JackWrapper from '@/components/JackWrapper'
 import AppShell from '@/components/AppShell'
 import ReportBugButton from '@/components/ReportBugButton'
 import GoogleMapsProvider from '@/components/maps/GoogleMapsProvider'
@@ -51,7 +51,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <AppProvider>
             <GoogleMapsProvider>
               <AppShell>{children}</AppShell>
-              <ForemanWrapper />
+              <JackWrapper />
               <ReportBugButton />
             </GoogleMapsProvider>
           </AppProvider>

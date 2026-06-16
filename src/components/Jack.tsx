@@ -10,10 +10,10 @@ const QUICK_PROMPTS = [
   { icon: MessageSquare, label: 'Customer dispute', prompt: 'A customer is pushing back on an additional charge for unforeseen work. Help me communicate this professionally.' },
 ]
 
-// NOTE: The Foreman system prompt lives server-side in /api/foreman/route.ts.
+// NOTE: Jack's system prompt lives server-side in /api/foreman/route.ts.
 // Keep it there as the single source of truth — the client only relays turns.
 
-const GREETING = "⚡ Prolink Foreman online.\n\nI'm your job-site partner — code questions, quote reviews, customer issues. What are we working on?"
+const GREETING = "⚡ Jack online.\n\nI'm your job-site partner — code questions, quote reviews, customer issues. What are we working on?"
 
 type ChatMessage = { role: 'user' | 'ai'; content: string }
 
@@ -25,7 +25,7 @@ type Proposal =
   | { type: 'create_customer'; summary: string; [k: string]: unknown }
   | { type: 'create_job'; summary: string; [k: string]: unknown }
 
-export default function AIForeman() {
+export default function Jack() {
   const [isOpen, setIsOpen] = useState(false)
   const [input, setInput] = useState('')
   const [messages, setMessages] = useState<ChatMessage[]>([
@@ -66,7 +66,7 @@ export default function AIForeman() {
 
       setJobContext(summary);
     } catch (e) {
-        console.error("Foreman context fetch error:", e);
+        console.error("Jack context fetch error:", e);
     } finally {
         setLoading(false);
     }
@@ -79,7 +79,7 @@ export default function AIForeman() {
     try {
       const { data: { session } } = await supabase.auth.getSession()
       if (!session) {
-        setMessages([{ role: 'ai', content: 'Sign in to load your Foreman history.' }])
+        setMessages([{ role: 'ai', content: 'Sign in to load your Jack history.' }])
         return
       }
       const resp = await fetch('/api/foreman', {
@@ -92,8 +92,8 @@ export default function AIForeman() {
         : []
       setMessages(
         rows.length > 0
-          ? [{ role: 'ai', content: '📜 Loaded your last 15 days of Foreman history.' }, ...rows]
-          : [{ role: 'ai', content: 'No Foreman history in the last 15 days yet. Ask me something and it’ll be saved here.' }]
+          ? [{ role: 'ai', content: '📜 Loaded your last 15 days of Jack history.' }, ...rows]
+          : [{ role: 'ai', content: 'No Jack history in the last 15 days yet. Ask me something and it’ll be saved here.' }]
       )
     } catch {
       setMessages(prev => [...prev, { role: 'ai', content: 'Couldn’t load history right now. Try again in a moment.' }])
@@ -102,7 +102,7 @@ export default function AIForeman() {
     }
   }
 
-  const sendToForeman = async (prompt: string, includeContext: boolean = false) => {
+  const sendToJack = async (prompt: string, includeContext: boolean = false) => {
     if (includeContext) {
         await fetchBusinessContext();
     }
@@ -124,7 +124,7 @@ export default function AIForeman() {
     try {
       const { data: { session } } = await supabase.auth.getSession()
       if (!session) {
-        setMessages(prev => [...prev, { role: 'ai', content: 'Sign in to chat with Foreman.' }])
+        setMessages(prev => [...prev, { role: 'ai', content: 'Sign in to chat with Jack.' }])
         return
       }
       const resp = await fetch('/api/foreman', {
@@ -144,10 +144,10 @@ export default function AIForeman() {
         return
       }
       const data = await resp.json()
-      setMessages(prev => [...prev, { role: 'ai', content: data.response || 'Foreman is off-site. Try again.' }])
+      setMessages(prev => [...prev, { role: 'ai', content: data.response || 'Jack is off-site. Try again.' }])
       setProposal(data.proposal ?? null)
     } catch {
-      setMessages(prev => [...prev, { role: 'ai', content: 'Foreman is offline right now. Try again in a moment.' }])
+      setMessages(prev => [...prev, { role: 'ai', content: 'Jack is offline right now. Try again in a moment.' }])
     } finally {
       setLoading(false)
     }
@@ -196,7 +196,7 @@ export default function AIForeman() {
           className="bg-[#0f3a7d] text-white p-4 rounded-full shadow-2xl hover:bg-[#082860] transition-all flex items-center gap-2 group"
         >
           <Bot size={22} />
-          <span className="text-sm font-bold pr-1">Foreman AI</span>
+          <span className="text-sm font-bold pr-1">Jack</span>
         </button>
       ) : (
         <div className="bg-white border border-gray-200 rounded-2xl shadow-2xl w-88 flex flex-col overflow-hidden" style={{ width: 380, height: 520 }}>
@@ -205,7 +205,7 @@ export default function AIForeman() {
             <div>
               <div className="flex items-center gap-2 font-bold text-sm mb-0.5">
                 <Wrench size={15} />
-                Prolink Foreman AI
+                Jack
               </div>
               <div className="flex items-center gap-2 mt-2">
                  <button
@@ -229,7 +229,7 @@ export default function AIForeman() {
               <X size={16} />
             </button>
           </div>
-          
+
           {jobContext && (
             <div className="bg-blue-900/50 p-3 text-[10px] text-blue-100 border-b border-white/5 whitespace-pre-line">
               <span className="font-bold flex items-center gap-1 mb-1 text-teal-400">
@@ -253,7 +253,7 @@ export default function AIForeman() {
                 {QUICK_PROMPTS.map((qp, i) => (
                   <button
                     key={i}
-                    onClick={() => sendToForeman(qp.prompt)}
+                    onClick={() => sendToJack(qp.prompt)}
                     className="flex items-center gap-2 bg-white border border-gray-200 rounded-xl px-3 py-2 text-xs font-medium text-gray-600 hover:border-[#14b8a6] hover:text-teal-700 transition shadow-sm"
                   >
                     <qp.icon size={13} className="text-[#14b8a6] shrink-0" />
@@ -280,7 +280,7 @@ export default function AIForeman() {
             {loading && (
               <div className="flex items-center gap-2 text-gray-400 text-xs pl-2">
                 <Loader2 size={14} className="animate-spin" />
-                Foreman is thinking...
+                Jack is thinking...
               </div>
             )}
 

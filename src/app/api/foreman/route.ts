@@ -12,7 +12,7 @@ import {
 
 export const dynamic = 'force-dynamic'
 
-const SYSTEM_PROMPT = `You are "Prolink Foreman" — a veteran construction foreman with 30+ years of hands-on experience in residential and light commercial trades (HVAC, plumbing, electrical, roofing, remodeling, and general contracting).
+const SYSTEM_PROMPT = `You are "Jack" — a veteran construction foreman with 30+ years of hands-on experience in residential and light commercial trades (HVAC, plumbing, electrical, roofing, remodeling, and general contracting).
 
 Your role: Be the contractor's trusted on-the-job advisor. When they're on a job site, stuck on a quoting decision, or dealing with a tricky customer situation — you're their silent partner with the answers.
 
@@ -56,7 +56,7 @@ const HISTORY_DAYS = 15
 // How many prior turns we feed the model for context. Keeps follow-ups
 // coherent without ballooning token cost on every request.
 const MEMORY_TURNS = 12
-const OFFLINE_MSG = 'Foreman is off-site right now. Try again in a moment.'
+const OFFLINE_MSG = 'Jack is off-site right now. Try again in a moment.'
 
 // Per-user rate limit. Uses Node process memory — fine for the current
 // single-region Vercel deployment; a Redis-backed limiter is the right next
@@ -64,7 +64,7 @@ const OFFLINE_MSG = 'Foreman is off-site right now. Try again in a moment.'
 type Bucket = { count: number; resetAt: number }
 const RATE_WINDOW_MS = 60_000
 const RATE_LIMIT_PER_WINDOW = 20
-const buckets: Map<string, Bucket> = (globalThis as any).__foremanBuckets ??= new Map<string, Bucket>()
+const buckets: Map<string, Bucket> = (globalThis as any).__jackBuckets ??= new Map<string, Bucket>()
 
 function checkRate(key: string): { ok: boolean; retryAfter: number } {
   const now = Date.now()
@@ -101,11 +101,11 @@ async function persist(supabase: SupabaseClient, userId: string, role: 'user' | 
   try {
     await supabase.from('foreman_messages').insert({ user_id: userId, role, content })
   } catch (err) {
-    console.error('Foreman persist error:', err)
+    console.error('Jack persist error:', err)
   }
 }
 
-// GET /api/foreman — the last HISTORY_DAYS of this user's Foreman log,
+// GET /api/foreman — the last HISTORY_DAYS of this user's Jack log,
 // oldest first, ready to drop straight into the chat panel.
 export async function GET(req: NextRequest) {
   const authed = await requireUser(req)
@@ -119,7 +119,7 @@ export async function GET(req: NextRequest) {
     .order('created_at', { ascending: true })
 
   if (error) {
-    console.error('Foreman history error:', error)
+    console.error('Jack history error:', error)
     return NextResponse.json({ messages: [], error: 'history_unavailable' }, { status: 200 })
   }
   return NextResponse.json({ messages: data ?? [] })
@@ -169,7 +169,7 @@ export async function POST(req: NextRequest) {
   let proposal: Proposal | null = null
 
   if (!apiKey) {
-    response = 'Foreman is offline. OpenRouter API key is not configured.'
+    response = 'Jack is offline. OpenRouter API key is not configured.'
   } else {
     const userContent = context ? `${trimmed}\n\n[CURRENT JOB CONTEXT]\n${context}` : trimmed
     try {
@@ -179,7 +179,7 @@ export async function POST(req: NextRequest) {
           'Authorization': `Bearer ${apiKey}`,
           'Content-Type': 'application/json',
           'HTTP-Referer': process.env.NEXT_PUBLIC_SITE_URL || 'https://app.useezly.com',
-          'X-Title': 'Prolink Foreman AI',
+          'X-Title': 'Prolink Jack',
         },
         body: JSON.stringify({
           model: 'google/gemini-3.1-flash-lite-preview',
@@ -210,11 +210,11 @@ export async function POST(req: NextRequest) {
           response = built.response
           proposal = built.proposal
         } else {
-          response = msg?.content || 'No response from Foreman.'
+          response = msg?.content || 'No response from Jack.'
         }
       }
     } catch (err) {
-      console.error('Foreman route error:', err)
+      console.error('Jack route error:', err)
       response = OFFLINE_MSG
     }
   }
@@ -341,5 +341,5 @@ async function buildProposal(
     return { response: `I don't see “${args.customer_name}” in your customers. Want me to add them first?`, proposal: null }
   }
 
-  return { response: 'No response from Foreman.', proposal: null }
+  return { response: 'No response from Jack.', proposal: null }
 }
