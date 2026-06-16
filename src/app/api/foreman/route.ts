@@ -167,7 +167,7 @@ export async function POST(req: NextRequest) {
           'X-Title': 'Prolink Foreman AI',
         },
         body: JSON.stringify({
-          model: 'anthropic/claude-haiku-4.5',
+          model: 'google/gemini-3.1-flash-lite-preview',
           messages: [
             { role: 'system', content: SYSTEM_PROMPT },
             ...history.map(t => ({ role: t.role === 'ai' ? 'assistant' : 'user', content: t.content })),

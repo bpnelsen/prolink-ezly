@@ -3,7 +3,7 @@ import { requireUser, notFound, serverError } from '../../../../../../lib/server
 
 export const runtime = 'nodejs'
 
-const MODEL = 'anthropic/claude-haiku-4.5'
+const MODEL = 'google/gemini-3.1-flash-lite-preview'
 const SECTIONS = [
   'scope', 'pricing', 'schedule', 'decisions', 'action_items',
   'change_order_opportunities', 'value_engineering', 'upgrade_opportunities',
