@@ -5,9 +5,9 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 //
 // Jack is a chat assistant with a small set of WRITE actions (draft quotes,
 // new customers, new jobs). Nothing here writes until the contractor approves
-// in the UI: the POST /api/foreman route turns a model tool-call into a
+// in the UI: the POST /api/jack route turns a model tool-call into a
 // `Proposal`, the widget renders an Approve/Cancel card, and only on approve
-// does POST /api/foreman/action call executeAction(). Every write is scoped to
+// does POST /api/jack/action call executeAction(). Every write is scoped to
 // the authenticated contractor via the RLS-bound Supabase client.
 // ---------------------------------------------------------------------------
 
