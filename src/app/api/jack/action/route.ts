@@ -4,7 +4,7 @@ import { executeAction } from '../tools'
 
 export const dynamic = 'force-dynamic'
 
-// POST /api/foreman/action — execute an action the contractor approved in the
+// POST /api/jack/action — execute an action the contractor approved in the
 // Jack widget. The body is the Proposal the route previously returned. All
 // writes are RLS-scoped to the caller; totals and ownership are re-verified in
 // executeAction, so a tampered payload can't write outside the caller's account.
@@ -39,7 +39,7 @@ export async function POST(req: NextRequest) {
 
   // Log the completed action into the contractor's Jack history.
   try {
-    await supabase.from('foreman_messages').insert({ user_id: user.id, role: 'ai', content: `✅ ${result.summary}` })
+    await supabase.from('jack_messages').insert({ user_id: user.id, role: 'ai', content: `✅ ${result.summary}` })
   } catch (err) {
     console.error('Jack action persist error:', err)
   }

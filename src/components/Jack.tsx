@@ -10,14 +10,14 @@ const QUICK_PROMPTS = [
   { icon: MessageSquare, label: 'Customer dispute', prompt: 'A customer is pushing back on an additional charge for unforeseen work. Help me communicate this professionally.' },
 ]
 
-// NOTE: Jack's system prompt lives server-side in /api/foreman/route.ts.
+// NOTE: Jack's system prompt lives server-side in /api/jack/route.ts.
 // Keep it there as the single source of truth — the client only relays turns.
 
 const GREETING = "⚡ Jack online.\n\nI'm your job-site partner — code questions, quote reviews, customer issues. What are we working on?"
 
 type ChatMessage = { role: 'user' | 'ai'; content: string }
 
-// Mirror of the server-side Proposal (see api/foreman/tools.ts). The widget
+// Mirror of the server-side Proposal (see api/jack/tools.ts). The widget
 // renders it as an Approve/Cancel card and echoes it back on approval.
 type QuoteLine = { description: string; qty: number; unit: string; rate: number; amount: number }
 type Proposal =
@@ -82,7 +82,7 @@ export default function Jack() {
         setMessages([{ role: 'ai', content: 'Sign in to load your Jack history.' }])
         return
       }
-      const resp = await fetch('/api/foreman', {
+      const resp = await fetch('/api/jack', {
         method: 'GET',
         headers: { Authorization: `Bearer ${session.access_token}` },
       })
@@ -127,7 +127,7 @@ export default function Jack() {
         setMessages(prev => [...prev, { role: 'ai', content: 'Sign in to chat with Jack.' }])
         return
       }
-      const resp = await fetch('/api/foreman', {
+      const resp = await fetch('/api/jack', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -163,7 +163,7 @@ export default function Jack() {
         setMessages(prev => [...prev, { role: 'ai', content: 'Sign in to save changes.' }])
         return
       }
-      const resp = await fetch('/api/foreman/action', {
+      const resp = await fetch('/api/jack/action', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
         body: JSON.stringify({ action: proposal }),
