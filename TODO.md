@@ -111,8 +111,11 @@ Public, tokenized URLs for estimates and contracts that customers can view witho
 
 ## P4 — Longer horizon (don't start until P0–P2 ship)
 
-### P4.1 — "Foreman" AI agent
-In-app chat agent scoped to the contractor's own data — current job, schedule, customer notes. MVP: read-only Q&A using Supabase + RAG. **Do not** integrate building code references yet — see P4.2.
+### P4.1 — "Jack" AI agent ✅ Shipped
+In-app chat agent scoped to the contractor's own data — current jobs, leads,
+customer notes. Jack now does Q&A **plus** approval-gated write actions (draft
+quotes, customers, jobs), 15-day chat history, and conversation memory. See
+`docs/jack.md`. Building code references are still **not** integrated — see P4.2.
 
 ### P4.2 — Building code references (research only)
 IRC and most building codes are paywalled. Investigate:
