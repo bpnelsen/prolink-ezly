@@ -194,6 +194,15 @@ export const JACK_TOOLS = [
       },
     },
   },
+  {
+    type: 'function',
+    function: {
+      name: 'refill_price_book',
+      description:
+        'Populate (refill) the contractor\'s price book from their past quotes — adds items they\'ve quoted before but that aren\'t in the book yet, using their most recent rate. Call this when they ask to refill, rebuild, import, or seed the price book from history. The contractor must approve.',
+      parameters: { type: 'object', properties: {} },
+    },
+  },
 ] as const
 
 export const READ_TOOLS = new Set(['get_schedule', 'get_material_prices'])
@@ -279,6 +288,7 @@ export type Proposal =
       unit_cost: number | null
       category: string | null
     }
+  | { type: 'refill_price_book'; summary: string }
 
 type ClientRow = { id: string; first_name: string; last_name: string; email: string | null; phone: string | null }
 
@@ -433,6 +443,53 @@ export async function executeReadTool(
   return JSON.stringify({ error: 'unknown tool' })
 }
 
+// Refill the price book from past quote line items. Dedupes by item name,
+// keeps the MOST RECENT rate, and skips anything already in the book. With
+// commit:false it only previews the candidates (used to show a count before
+// the contractor approves). Scoped to the contractor's own invoices.
+export async function refillPriceBook(
+  supabase: SupabaseClient,
+  userId: string,
+  opts: { commit: boolean },
+): Promise<{ candidates: { name: string; unit: string; unit_price: number }[]; added: number }> {
+  const { data: existing } = await supabase.from('materials').select('name')
+  const have = new Set((existing ?? []).map((m: any) => String(m.name ?? '').trim().toLowerCase()))
+
+  const { data: li } = await supabase
+    .from('invoice_line_items')
+    .select('description, unit, rate, invoices!inner(contractor_id, created_at)')
+    .eq('invoices.contractor_id', userId)
+    .limit(3000)
+
+  // Most recent first, so the first time we see an item name wins.
+  const rows = ((li ?? []) as any[]).slice().sort(
+    (a, b) => new Date(b.invoices?.created_at ?? 0).getTime() - new Date(a.invoices?.created_at ?? 0).getTime(),
+  )
+
+  const seen = new Set<string>()
+  const candidates: { name: string; unit: string; unit_price: number }[] = []
+  for (const r of rows) {
+    const name = String(r.description ?? '').trim()
+    const key = name.toLowerCase()
+    const rate = Number(r.rate)
+    if (!name || !Number.isFinite(rate) || rate <= 0) continue
+    if (have.has(key) || seen.has(key)) continue
+    seen.add(key)
+    const unitRaw = String(r.unit ?? 'ea').toLowerCase().trim()
+    candidates.push({ name: name.slice(0, 200), unit: UNITS.has(unitRaw) ? unitRaw : 'ea', unit_price: round2(rate) })
+    if (candidates.length >= 200) break
+  }
+
+  let added = 0
+  if (opts.commit && candidates.length > 0) {
+    const { error } = await supabase
+      .from('materials')
+      .insert(candidates.map((c) => ({ contractor_id: userId, name: c.name, unit: c.unit, unit_price: c.unit_price })))
+    if (!error) added = candidates.length
+  }
+  return { candidates, added }
+}
+
 // ---------------------------------------------------------------------------
 // Execute an approved WRITE action. Totals are ALWAYS recomputed server-side;
 // any referenced record is re-verified for ownership. Returns a summary + link.
@@ -511,6 +568,12 @@ export async function executeAction(
     })
     if (error) return { ok: false, error: 'Could not save the material.' }
     return { ok: true, summary: `Added "${matName}" to your price book — $${round2(price).toFixed(2)}/${unit}` }
+  }
+
+  if (type === 'refill_price_book') {
+    const { added } = await refillPriceBook(supabase, userId, { commit: true })
+    if (added === 0) return { ok: true, summary: 'Price book already covers your past quotes — nothing to add.' }
+    return { ok: true, summary: `Added ${added} item${added > 1 ? 's' : ''} to your price book from past quotes`, link: '/settings/price-list' }
   }
 
   if (type === 'create_job') {

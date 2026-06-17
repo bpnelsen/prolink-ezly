@@ -28,6 +28,7 @@ type Proposal =
   | { type: 'create_job'; summary: string; [k: string]: unknown }
   | { type: 'schedule_job'; summary: string; [k: string]: unknown }
   | { type: 'add_material'; summary: string; [k: string]: unknown }
+  | { type: 'refill_price_book'; summary: string; [k: string]: unknown }
 
 export default function Jack() {
   const [isOpen, setIsOpen] = useState(false)

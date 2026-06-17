@@ -5,6 +5,7 @@ import {
   JACK_TOOLS,
   READ_TOOLS,
   executeReadTool,
+  refillPriceBook,
   formatWhen,
   type Proposal,
   normalizeLineItems,
@@ -46,6 +47,7 @@ You can take actions in the contractor's account using the provided tools. Call 
 - get_material_prices: to look up the contractor's own prices. Read-only.
 - create_quote / update_quote: to create a new draft quote, or change an existing draft quote. Include every line item with quantity and dollar rate. For an update, send the COMPLETE new line-item list (it replaces the old one).
 - add_material: to save an item and its standard price to the contractor's price book.
+- refill_price_book: to populate the price book from the contractor's past quotes (when they ask to refill/rebuild/import/seed it from history).
 - create_customer / update_customer: to add a new customer, or change a customer's phone, email, address, or name.
 - create_job: to open a new job for an existing customer.
 - schedule_job: to schedule or reschedule a job to a date/time.
@@ -248,7 +250,7 @@ async function runConversation(
 
     // A write tool-call short-circuits into an approval Proposal.
     if (!READ_TOOLS.has(toolCalls[0]?.function?.name)) {
-      return buildProposal(supabase, toolCalls[0])
+      return buildProposal(supabase, userId, toolCalls[0])
     }
 
     // Read tool-calls: execute and feed the results back for another round.
@@ -282,6 +284,7 @@ const FIELD_LABELS: Record<string, string> = {
 // happen only on approval via POST /api/jack/action.
 async function buildProposal(
   supabase: SupabaseClient,
+  userId: string,
   toolCall: any,
 ): Promise<{ response: string; proposal: Proposal | null }> {
   let args: any = {}
@@ -452,6 +455,19 @@ async function buildProposal(
     return {
       response: `Update ${cn} — ${human}? Approve to confirm.`,
       proposal: { type: 'update_customer', summary: `Update ${cn}`, client_id: c.id, client_name: cn, changes },
+    }
+  }
+
+  if (name === 'refill_price_book') {
+    const { candidates } = await refillPriceBook(supabase, userId, { commit: false })
+    if (candidates.length === 0) {
+      return { response: 'Your price book already covers everything in your past quotes — nothing new to add.', proposal: null }
+    }
+    const preview = candidates.slice(0, 6).map(c => `${c.name} ($${c.unit_price.toFixed(2)}/${c.unit})`).join(', ')
+    const more = candidates.length > 6 ? `, e.g. ${preview}` : `: ${preview}`
+    return {
+      response: `I can add ${candidates.length} item${candidates.length > 1 ? 's' : ''} from your past quotes${more}. Approve to add them to your price book.`,
+      proposal: { type: 'refill_price_book', summary: `Add ${candidates.length} item${candidates.length > 1 ? 's' : ''} to your price book from past quotes` },
     }
   }
 
