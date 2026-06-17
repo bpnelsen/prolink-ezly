@@ -66,16 +66,37 @@ The **Refresh Data** button pulls the contractor's top 3 active jobs and lead
 count from `pl_pipelines` and injects it into the next question — but it's kept
 **out of** the saved history so the log stays clean.
 
-### 5. Write actions (approval-gated)
+### 5. Read tools
+Some tools run server-side and feed their result back to the model so Jack can
+answer from live data (a short multi-step loop, capped at `MAX_STEPS`).
+
+| Tool | Reads | Notes |
+|------|-------|-------|
+| `get_schedule` | `jobs` (scheduled in a date range) | Answers schedule/calendar questions. Defaults to the next 14 days. |
+
+The current date is injected each turn so Jack resolves "today / tomorrow / next
+Tuesday" correctly.
+
+### 6. Write actions (approval-gated)
 Jack can take actions via OpenRouter function-calling. It never writes directly:
-a tool-call becomes a **Proposal**, the widget shows an **Approve / Cancel**
+a write tool-call becomes a **Proposal**, the widget shows an **Approve / Cancel**
 card, and only on approval does `POST /api/jack/action` write.
 
 | Tool | Writes to | Notes |
 |------|-----------|-------|
 | `create_quote` | `invoices` (status `draft`) + `invoice_line_items` | Quotes are draft invoices. Optionally creates/attaches a customer/job. |
+| `update_quote` | `invoices` + `invoice_line_items` | Edits an existing **draft** quote (drafts only). Replaces the full line-item set; recomputes totals. |
 | `create_customer` | `clients` | New customer record. |
+| `update_customer` | `clients` | Updates an existing customer's phone/email/address/name. |
 | `create_job` | `jobs` | New job for an existing customer. |
+| `schedule_job` | `jobs` (`scheduled_start` / `scheduled_end`) | Schedules or reschedules a job. Default duration 2h. |
+
+> Line items are written with **both** column conventions the table requires
+> (`qty`+`quantity`, `rate`+`unit_price`, `amount`+`total`, `position`+`sort_order`),
+> matching the manual invoice form.
+
+Before finalizing a quote, Jack proactively asks about commonly-missed items
+(disposal/haul fees, small parts, permits, tax) — then calls the tool.
 
 **Approval flow**
 1. Contractor asks Jack to do something (e.g. "add this quote to Mike Jones").
@@ -127,7 +148,9 @@ card, and only on approval does `POST /api/jack/action` write.
 ---
 
 ## Known limits / next steps
-- No `update_quote` yet (edit an existing draft) — create-only.
+- Material pricing is the model's general estimate, not live data — no price
+  book or pricing-API integration yet (see below).
+- `schedule_job` writes times in UTC; no per-contractor timezone handling yet.
 - No document/photo uploads.
 - In-memory rate limiter is single-region.
 - Building-code citations are general knowledge only — see `TODO.md` P4.2 and

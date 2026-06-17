@@ -3,41 +3,59 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 // ---------------------------------------------------------------------------
 // Jack action tools.
 //
-// Jack is a chat assistant with a small set of WRITE actions (draft quotes,
-// new customers, new jobs). Nothing here writes until the contractor approves
-// in the UI: the POST /api/jack route turns a model tool-call into a
-// `Proposal`, the widget renders an Approve/Cancel card, and only on approve
-// does POST /api/jack/action call executeAction(). Every write is scoped to
-// the authenticated contractor via the RLS-bound Supabase client.
+// Jack is a chat assistant with a set of tools. READ tools (get_schedule) run
+// server-side and feed results back to the model. WRITE tools (create/update
+// quotes, customers, jobs, scheduling) never write directly: the POST /api/jack
+// route turns a write tool-call into a `Proposal`, the widget renders an
+// Approve/Cancel card, and only on approve does POST /api/jack/action call
+// executeAction(). Every read/write is scoped to the authenticated contractor
+// via the RLS-bound Supabase client.
 // ---------------------------------------------------------------------------
 
+const LINE_ITEMS_SCHEMA = {
+  type: 'array',
+  description: 'The full set of priced line items (the complete desired result, not a diff).',
+  items: {
+    type: 'object',
+    properties: {
+      description: { type: 'string' },
+      qty: { type: 'number' },
+      unit: { type: 'string', description: 'Unit of measure: ea, hr, sqft, lft, day, lot.' },
+      rate: { type: 'number', description: 'Price per unit in dollars.' },
+    },
+    required: ['description', 'qty', 'rate'],
+  },
+} as const
+
 // OpenAI-compatible function definitions sent to OpenRouter.
-export const FOREMAN_TOOLS = [
+export const JACK_TOOLS = [
+  {
+    type: 'function',
+    function: {
+      name: 'get_schedule',
+      description:
+        'Look up the contractor\'s scheduled jobs in a date range. Call this to answer any question about the schedule/calendar (today, this week, upcoming, a specific customer). Read-only.',
+      parameters: {
+        type: 'object',
+        properties: {
+          start_date: { type: 'string', description: 'Range start as YYYY-MM-DD. Defaults to today.' },
+          end_date: { type: 'string', description: 'Range end as YYYY-MM-DD. Defaults to 14 days out.' },
+        },
+      },
+    },
+  },
   {
     type: 'function',
     function: {
       name: 'create_quote',
       description:
-        'Draft a price quote for a customer, saved as a DRAFT invoice. Call this when the contractor asks to add/create/save/send a quote or estimate to a customer or job. Always include every line item with quantity and dollar rate. This does NOT finalize anything — the contractor must approve it.',
+        'Draft a NEW price quote for a customer, saved as a DRAFT invoice. Call this when the contractor asks to add/create/save a new quote or estimate. Always include every line item. The contractor must approve before it saves.',
       parameters: {
         type: 'object',
         properties: {
           customer_name: { type: 'string', description: 'Full name of the customer, e.g. "Mike Jones".' },
           job_title: { type: 'string', description: 'Optional short job title, e.g. "Toilet Replacement".' },
-          line_items: {
-            type: 'array',
-            description: 'The priced line items for the quote.',
-            items: {
-              type: 'object',
-              properties: {
-                description: { type: 'string' },
-                qty: { type: 'number' },
-                unit: { type: 'string', description: 'Unit of measure: ea, hr, sqft, lft, day, lot.' },
-                rate: { type: 'number', description: 'Price per unit in dollars.' },
-              },
-              required: ['description', 'qty', 'rate'],
-            },
-          },
+          line_items: LINE_ITEMS_SCHEMA,
           tax_rate: { type: 'number', description: 'Optional tax rate as a percent, e.g. 8.25.' },
           notes: { type: 'string', description: 'Optional notes for the customer.' },
         },
@@ -48,9 +66,27 @@ export const FOREMAN_TOOLS = [
   {
     type: 'function',
     function: {
-      name: 'create_customer',
+      name: 'update_quote',
       description:
-        'Create a new customer (client) record. Call this when the contractor asks to add a new customer to their list.',
+        'Update an EXISTING draft quote for a customer. Call this when the contractor asks to change/edit/adjust/revise a quote. Provide the COMPLETE new line-item list (it replaces the old items, not a diff). The contractor must approve.',
+      parameters: {
+        type: 'object',
+        properties: {
+          customer_name: { type: 'string', description: 'Full name of the customer the quote belongs to.' },
+          invoice_number: { type: 'string', description: 'Optional quote/invoice number like "#0007" if the customer has more than one draft.' },
+          line_items: LINE_ITEMS_SCHEMA,
+          tax_rate: { type: 'number', description: 'Optional tax rate as a percent.' },
+          notes: { type: 'string' },
+        },
+        required: ['customer_name', 'line_items'],
+      },
+    },
+  },
+  {
+    type: 'function',
+    function: {
+      name: 'create_customer',
+      description: 'Create a new customer (client) record. Call this when the contractor asks to add a new customer.',
       parameters: {
         type: 'object',
         properties: {
@@ -58,7 +94,10 @@ export const FOREMAN_TOOLS = [
           last_name: { type: 'string' },
           phone: { type: 'string' },
           email: { type: 'string' },
-          address: { type: 'string' },
+          address: { type: 'string', description: 'Street address.' },
+          city: { type: 'string' },
+          state: { type: 'string' },
+          zip: { type: 'string' },
         },
         required: ['first_name', 'last_name'],
       },
@@ -67,9 +106,32 @@ export const FOREMAN_TOOLS = [
   {
     type: 'function',
     function: {
-      name: 'create_job',
+      name: 'update_customer',
       description:
-        'Create a new job for an existing customer. Call this when the contractor asks to add/open a new job for a customer.',
+        'Update an existing customer\'s contact info. Call this when the contractor asks to change/fix/update a customer\'s phone, email, address, or name. Only include the fields that change.',
+      parameters: {
+        type: 'object',
+        properties: {
+          customer_name: { type: 'string', description: 'Full name of the existing customer to update.' },
+          first_name: { type: 'string' },
+          last_name: { type: 'string' },
+          phone: { type: 'string' },
+          email: { type: 'string' },
+          address: { type: 'string', description: 'Street address.' },
+          city: { type: 'string' },
+          state: { type: 'string' },
+          zip: { type: 'string' },
+          notes: { type: 'string' },
+        },
+        required: ['customer_name'],
+      },
+    },
+  },
+  {
+    type: 'function',
+    function: {
+      name: 'create_job',
+      description: 'Create a new job for an existing customer. Call this when the contractor asks to open a new job.',
       parameters: {
         type: 'object',
         properties: {
@@ -81,7 +143,27 @@ export const FOREMAN_TOOLS = [
       },
     },
   },
+  {
+    type: 'function',
+    function: {
+      name: 'schedule_job',
+      description:
+        'Schedule or reschedule an existing job to a date/time. Call this when the contractor asks to schedule, book, move, or reschedule a job. The contractor must approve.',
+      parameters: {
+        type: 'object',
+        properties: {
+          customer_name: { type: 'string', description: 'Full name of the customer the job is for.' },
+          job_title: { type: 'string', description: 'Optional job title to disambiguate if the customer has multiple jobs.' },
+          start: { type: 'string', description: 'Start as a full ISO 8601 timestamp, e.g. "2026-06-20T09:00:00Z". Resolve relative dates (today/tomorrow/next Tue) yourself using the current date provided.' },
+          duration_hours: { type: 'number', description: 'Optional duration in hours (defaults to 2).' },
+        },
+        required: ['customer_name', 'start'],
+      },
+    },
+  },
 ] as const
+
+export const READ_TOOLS = new Set(['get_schedule'])
 
 // ---------------------------------------------------------------------------
 // Types
@@ -106,6 +188,20 @@ export type Proposal =
       notes: string | null
     }
   | {
+      type: 'update_quote'
+      summary: string
+      invoice_id: string
+      invoice_number: string
+      client_name: string
+      job_title: string | null
+      line_items: LineItem[]
+      subtotal: number
+      tax_rate: number
+      tax_amount: number
+      total: number
+      notes: string | null
+    }
+  | {
       type: 'create_customer'
       summary: string
       first_name: string
@@ -113,6 +209,16 @@ export type Proposal =
       phone: string | null
       email: string | null
       address: string | null
+      city: string | null
+      state: string | null
+      zip: string | null
+    }
+  | {
+      type: 'update_customer'
+      summary: string
+      client_id: string
+      client_name: string
+      changes: Record<string, string>
     }
   | {
       type: 'create_job'
@@ -121,6 +227,15 @@ export type Proposal =
       client_name: string
       title: string
       description: string | null
+    }
+  | {
+      type: 'schedule_job'
+      summary: string
+      job_id: string
+      job_title: string
+      client_name: string
+      scheduled_start: string
+      scheduled_end: string
     }
 
 type ClientRow = { id: string; first_name: string; last_name: string; email: string | null; phone: string | null }
@@ -162,6 +277,25 @@ export function computeTotals(items: LineItem[], taxRateRaw: unknown) {
   return { tax_rate, subtotal, tax_amount, total }
 }
 
+// Build the line-item rows. The table carries BOTH column conventions
+// (qty/quantity, rate/unit_price, amount/total, position/sort_order) — the
+// manual invoice form writes both, so we mirror it exactly.
+function lineItemRows(invoiceId: string, items: LineItem[]) {
+  return items.map((i, idx) => ({
+    invoice_id: invoiceId,
+    description: i.description,
+    quantity: i.qty,
+    qty: i.qty,
+    unit: i.unit,
+    unit_price: i.rate,
+    rate: i.rate,
+    total: i.amount,
+    amount: i.amount,
+    sort_order: idx,
+    position: idx,
+  }))
+}
+
 // Name-match against the contractor's own clients (RLS-scoped client).
 export async function resolveCustomer(
   supabase: SupabaseClient,
@@ -183,12 +317,52 @@ export async function resolveCustomer(
 }
 
 // ---------------------------------------------------------------------------
-// Execute an approved action. Totals are ALWAYS recomputed server-side; any
-// client_id is re-verified for ownership. Returns a human summary + link.
+// READ tools — executed server-side; the JSON string is fed back to the model.
+// ---------------------------------------------------------------------------
+function parseDateOnly(v: unknown, fallback: Date): Date {
+  if (typeof v === 'string' && /^\d{4}-\d{2}-\d{2}/.test(v)) {
+    const d = new Date(v.length === 10 ? `${v}T00:00:00Z` : v)
+    if (!isNaN(d.getTime())) return d
+  }
+  return fallback
+}
+
+export async function executeReadTool(
+  supabase: SupabaseClient,
+  name: string,
+  args: any,
+): Promise<string> {
+  if (name === 'get_schedule') {
+    const now = new Date()
+    const start = parseDateOnly(args?.start_date, now)
+    const end = parseDateOnly(args?.end_date, new Date(now.getTime() + 14 * 864e5))
+    const { data, error } = await supabase
+      .from('jobs')
+      .select('id, title, scheduled_start, scheduled_end, status, clients(first_name, last_name)')
+      .not('scheduled_start', 'is', null)
+      .gte('scheduled_start', start.toISOString())
+      .lte('scheduled_start', end.toISOString())
+      .order('scheduled_start')
+    if (error) return JSON.stringify({ error: 'Could not read the schedule.' })
+    const jobs = (data ?? []).map((j: any) => ({
+      title: j.title,
+      customer: j.clients ? `${j.clients.first_name ?? ''} ${j.clients.last_name ?? ''}`.trim() : null,
+      start: j.scheduled_start,
+      end: j.scheduled_end,
+      status: j.status,
+    }))
+    return JSON.stringify({ range: { start: start.toISOString(), end: end.toISOString() }, count: jobs.length, jobs })
+  }
+  return JSON.stringify({ error: 'unknown tool' })
+}
+
+// ---------------------------------------------------------------------------
+// Execute an approved WRITE action. Totals are ALWAYS recomputed server-side;
+// any referenced record is re-verified for ownership. Returns a summary + link.
 // ---------------------------------------------------------------------------
 export type ActionResult = { ok: true; summary: string; link?: string } | { ok: false; error: string }
 
-async function verifyOwnedClient(supabase: SupabaseClient, clientId: string): Promise<ClientRow | null> {
+async function ownedClient(supabase: SupabaseClient, clientId: string): Promise<ClientRow | null> {
   const { data } = await supabase
     .from('clients')
     .select('id, first_name, last_name, email, phone')
@@ -205,26 +379,45 @@ export async function executeAction(
   const type = action?.type
 
   if (type === 'create_customer') {
-    const { first_name, last_name } = splitNameFields(action)
-    if (!first_name) return { ok: false, error: 'A first name is required.' }
+    const first = String(action.first_name || '').trim() || splitName(action.customer_name || '').first_name
+    const last = String(action.last_name ?? splitName(action.customer_name || '').last_name).trim()
+    if (!first) return { ok: false, error: 'A first name is required.' }
     const { data, error } = await supabase
       .from('clients')
       .insert({
         contractor_id: userId,
-        first_name,
-        last_name: last_name || '',
+        first_name: first,
+        last_name: last || '',
         phone: action.phone || null,
         email: action.email || null,
-        street_address: action.address || null,
+        address_line1: action.address || null,
+        city: action.city || null,
+        state: action.state || null,
+        zip_code: action.zip || null,
       })
       .select('id')
       .single()
     if (error || !data) return { ok: false, error: 'Could not create the customer.' }
-    return { ok: true, summary: `Added customer ${first_name} ${last_name}`.trim(), link: `/customers/${data.id}` }
+    return { ok: true, summary: `Added customer ${first} ${last}`.trim(), link: `/customers/${data.id}` }
+  }
+
+  if (type === 'update_customer') {
+    if (!action.client_id) return { ok: false, error: 'No customer specified.' }
+    const owned = await ownedClient(supabase, action.client_id)
+    if (!owned) return { ok: false, error: 'That customer was not found in your list.' }
+    const changes = (action.changes ?? {}) as Record<string, string>
+    if (Object.keys(changes).length === 0) return { ok: false, error: 'No changes to apply.' }
+    const { error } = await supabase
+      .from('clients')
+      .update({ ...changes, updated_at: new Date().toISOString() })
+      .eq('id', action.client_id)
+    if (error) return { ok: false, error: 'Could not update the customer.' }
+    const name = `${changes.first_name ?? owned.first_name} ${changes.last_name ?? owned.last_name}`.trim()
+    return { ok: true, summary: `Updated ${name}`, link: `/customers/${action.client_id}` }
   }
 
   if (type === 'create_job') {
-    const clientId = await resolveClientIdForAction(supabase, userId, action)
+    const clientId = await resolveClientIdForAction(supabase, action)
     if (!clientId) return { ok: false, error: 'That customer was not found in your list.' }
     const title = String(action.title || '').trim()
     if (!title) return { ok: false, error: 'A job title is required.' }
@@ -243,12 +436,66 @@ export async function executeAction(
     return { ok: true, summary: `Created job "${title}"`, link: `/dashboard/jobs/${data.id}` }
   }
 
+  if (type === 'schedule_job') {
+    if (!action.job_id) return { ok: false, error: 'No job specified to schedule.' }
+    const { data: job } = await supabase.from('jobs').select('id, title').eq('id', action.job_id).maybeSingle()
+    if (!job) return { ok: false, error: 'That job was not found in your list.' }
+    const start = new Date(action.scheduled_start)
+    if (isNaN(start.getTime())) return { ok: false, error: 'I couldn\'t read that date/time.' }
+    const end = action.scheduled_end && !isNaN(new Date(action.scheduled_end).getTime())
+      ? new Date(action.scheduled_end)
+      : new Date(start.getTime() + 2 * 3600 * 1000)
+    const { error } = await supabase
+      .from('jobs')
+      .update({ scheduled_start: start.toISOString(), scheduled_end: end.toISOString() })
+      .eq('id', action.job_id)
+    if (error) return { ok: false, error: 'Could not schedule the job.' }
+    return { ok: true, summary: `Scheduled "${job.title}" for ${formatWhen(start)}`, link: `/dispatch` }
+  }
+
+  if (type === 'update_quote') {
+    if (!action.invoice_id) return { ok: false, error: 'No quote specified to update.' }
+    const { data: inv } = await supabase
+      .from('invoices')
+      .select('id, status, invoice_number, amount_paid')
+      .eq('id', action.invoice_id)
+      .maybeSingle()
+    if (!inv) return { ok: false, error: 'That quote was not found in your list.' }
+    if (inv.status !== 'draft') return { ok: false, error: `Quote ${inv.invoice_number} is ${inv.status} — only drafts can be edited.` }
+
+    const items = normalizeLineItems(action.line_items)
+    if (items.length === 0) return { ok: false, error: 'The quote has no valid line items.' }
+    const { tax_rate, subtotal, tax_amount, total } = computeTotals(items, action.tax_rate)
+
+    const update: Record<string, unknown> = {
+      subtotal,
+      tax_rate,
+      tax_amount,
+      total,
+      balance_due: round2(total - Number(inv.amount_paid || 0)),
+      updated_at: new Date().toISOString(),
+    }
+    if (typeof action.notes === 'string') update.notes = action.notes.slice(0, 2000) || null
+    const { error: upErr } = await supabase.from('invoices').update(update).eq('id', action.invoice_id)
+    if (upErr) return { ok: false, error: 'Could not update the quote.' }
+
+    await supabase.from('invoice_line_items').delete().eq('invoice_id', action.invoice_id)
+    const { error: liErr } = await supabase.from('invoice_line_items').insert(lineItemRows(action.invoice_id, items))
+    if (liErr) return { ok: false, error: 'Updated the quote but could not save the new line items.' }
+
+    return {
+      ok: true,
+      summary: `Updated quote ${inv.invoice_number} — $${total.toFixed(2)}`,
+      link: `/dashboard/invoices/${action.invoice_id}`,
+    }
+  }
+
   if (type === 'create_quote') {
     // Resolve / create the client.
     let clientId: string | null = action.client_id ?? null
     let clientName = action.client_name ?? ''
     if (clientId) {
-      const owned = await verifyOwnedClient(supabase, clientId)
+      const owned = await ownedClient(supabase, clientId)
       if (!owned) return { ok: false, error: 'That customer was not found in your list.' }
       clientName = `${owned.first_name} ${owned.last_name}`.trim()
     } else if (action.new_client?.first_name) {
@@ -313,17 +560,7 @@ export async function executeAction(
       .single()
     if (invErr || !invoice) return { ok: false, error: 'Could not save the draft quote.' }
 
-    const { error: liErr } = await supabase.from('invoice_line_items').insert(
-      items.map((i, idx) => ({
-        invoice_id: invoice.id,
-        description: i.description,
-        qty: i.qty,
-        unit: i.unit,
-        rate: i.rate,
-        amount: i.amount,
-        position: idx,
-      })),
-    )
+    const { error: liErr } = await supabase.from('invoice_line_items').insert(lineItemRows(invoice.id, items))
     if (liErr) return { ok: false, error: 'Saved the quote but could not add line items.' }
 
     return {
@@ -336,14 +573,20 @@ export async function executeAction(
   return { ok: false, error: 'Unknown action.' }
 }
 
-function splitNameFields(action: any): { first_name: string; last_name: string } {
-  if (action.first_name) return { first_name: String(action.first_name).trim(), last_name: String(action.last_name || '').trim() }
-  return splitName(action.customer_name || '')
+export function formatWhen(d: Date): string {
+  return d.toLocaleString('en-US', {
+    weekday: 'short',
+    month: 'short',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+    timeZone: 'UTC',
+  })
 }
 
-async function resolveClientIdForAction(supabase: SupabaseClient, _userId: string, action: any): Promise<string | null> {
+async function resolveClientIdForAction(supabase: SupabaseClient, action: any): Promise<string | null> {
   if (action.client_id) {
-    const owned = await verifyOwnedClient(supabase, action.client_id)
+    const owned = await ownedClient(supabase, action.client_id)
     return owned ? owned.id : null
   }
   if (action.customer_name) {

@@ -20,10 +20,13 @@ type ChatMessage = { role: 'user' | 'ai'; content: string }
 // Mirror of the server-side Proposal (see api/jack/tools.ts). The widget
 // renders it as an Approve/Cancel card and echoes it back on approval.
 type QuoteLine = { description: string; qty: number; unit: string; rate: number; amount: number }
+type QuoteProposal = { type: 'create_quote' | 'update_quote'; summary: string; client_name: string; job_title: string | null; line_items: QuoteLine[]; subtotal: number; tax_rate: number; tax_amount: number; total: number; [k: string]: unknown }
 type Proposal =
-  | { type: 'create_quote'; summary: string; client_name: string; job_title: string | null; line_items: QuoteLine[]; subtotal: number; tax_rate: number; tax_amount: number; total: number; [k: string]: unknown }
+  | QuoteProposal
   | { type: 'create_customer'; summary: string; [k: string]: unknown }
+  | { type: 'update_customer'; summary: string; changes?: Record<string, string>; [k: string]: unknown }
   | { type: 'create_job'; summary: string; [k: string]: unknown }
+  | { type: 'schedule_job'; summary: string; [k: string]: unknown }
 
 export default function Jack() {
   const [isOpen, setIsOpen] = useState(false)
@@ -289,7 +292,17 @@ export default function Jack() {
                 <div className="bg-teal-50 px-3 py-2 text-[11px] font-bold text-teal-800 border-b border-teal-100">
                   Approve to save · {proposal.summary}
                 </div>
-                {proposal.type === 'create_quote' && (
+                {proposal.type === 'update_customer' && proposal.changes && (
+                  <div className="p-3 text-[11px] text-gray-600 space-y-0.5">
+                    {Object.entries(proposal.changes).map(([k, v]) => (
+                      <div key={k} className="flex justify-between gap-3">
+                        <span className="text-gray-400 capitalize">{k.replace(/_/g, ' ')}</span>
+                        <span className="font-medium text-gray-800 text-right">{v}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                {(proposal.type === 'create_quote' || proposal.type === 'update_quote') && (
                   <div className="p-3">
                     <div className="text-[11px] text-gray-500 mb-2">
                       <span className="font-semibold text-gray-700">{proposal.client_name}</span>
