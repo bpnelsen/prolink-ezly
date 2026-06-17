@@ -73,6 +73,7 @@ answer from live data (a short multi-step loop, capped at `MAX_STEPS`).
 | Tool | Reads | Notes |
 |------|-------|-------|
 | `get_schedule` | `jobs` (scheduled in a date range) | Answers schedule/calendar questions. Defaults to the next 14 days. |
+| `get_material_prices` | `materials` + recent `invoice_line_items` | The contractor's own price book and past-quote rates. Jack calls this before quoting so prices match how the contractor prices. |
 
 The current date is injected each turn so Jack resolves "today / tomorrow / next
 Tuesday" correctly.
@@ -90,6 +91,7 @@ card, and only on approval does `POST /api/jack/action` write.
 | `update_customer` | `clients` | Updates an existing customer's phone/email/address/name. |
 | `create_job` | `jobs` | New job for an existing customer. |
 | `schedule_job` | `jobs` (`scheduled_start` / `scheduled_end`) | Schedules or reschedules a job. Default duration 2h. |
+| `add_material` | `materials` | Adds an item + standard price to the contractor's price book. |
 
 > Line items are written with **both** column conventions the table requires
 > (`qty`+`quantity`, `rate`+`unit_price`, `amount`+`total`, `position`+`sort_order`),
@@ -135,7 +137,8 @@ Before finalizing a quote, Jack proactively asks about commonly-missed items
 | `jack_messages` | Jack's per-user chat history (migrations 027 create, 028 rename) |
 | `invoices` / `invoice_line_items` | Draft quotes created by `create_quote` |
 | `clients` | Customers (resolution + `create_customer`) |
-| `jobs` | Jobs (`create_job`, quote attachment) |
+| `jobs` | Jobs (`create_job`, `schedule_job`, quote attachment) |
+| `materials` | Per-contractor price book (migration 029); read for quoting, written by `add_material` |
 | `pl_pipelines` | Business-context summary (Refresh Data) |
 
 ### Migrations
@@ -144,12 +147,18 @@ Before finalizing a quote, Jack proactively asks about commonly-missed items
 - **028** `migrations/028_rename_foreman_messages_to_jack.sql` — renames it to
   `jack_messages` (preserves rows; renames index + RLS policy). **Run this in
   the Supabase SQL editor** for any environment that ran 027.
+- **029** `migrations/029_materials_price_book.sql` — creates the `materials`
+  price-book table (owner-scoped RLS). **Run in the Supabase SQL editor** to
+  enable pricing.
 
 ---
 
 ## Known limits / next steps
-- Material pricing is the model's general estimate, not live data — no price
-  book or pricing-API integration yet (see below).
+- Pricing draws on the contractor's price book + past quotes; items not found
+  there fall back to a model estimate (flagged). No live retail/material pricing
+  API yet (Home Depot/RSMeans etc. are paid/scraped — deferred).
+- No dedicated price-book management UI yet — it's built via Jack (`add_material`)
+  and grows from past quotes. A `/dashboard` materials page is a natural follow-up.
 - `schedule_job` writes times in UTC; no per-contractor timezone handling yet.
 - No document/photo uploads.
 - In-memory rate limiter is single-region.

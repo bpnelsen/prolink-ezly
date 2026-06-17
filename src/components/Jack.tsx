@@ -27,6 +27,7 @@ type Proposal =
   | { type: 'update_customer'; summary: string; changes?: Record<string, string>; [k: string]: unknown }
   | { type: 'create_job'; summary: string; [k: string]: unknown }
   | { type: 'schedule_job'; summary: string; [k: string]: unknown }
+  | { type: 'add_material'; summary: string; [k: string]: unknown }
 
 export default function Jack() {
   const [isOpen, setIsOpen] = useState(false)

@@ -161,9 +161,42 @@ export const JACK_TOOLS = [
       },
     },
   },
+  {
+    type: 'function',
+    function: {
+      name: 'get_material_prices',
+      description:
+        'Look up the contractor\'s OWN pricing for materials and labor — from their price book and their recent quotes. Call this BEFORE creating or updating a quote so line-item rates match how this contractor actually prices. Read-only.',
+      parameters: {
+        type: 'object',
+        properties: {
+          query: { type: 'string', description: 'Optional search term to filter by item name, e.g. "toilet" or "labor".' },
+        },
+      },
+    },
+  },
+  {
+    type: 'function',
+    function: {
+      name: 'add_material',
+      description:
+        'Add an item to the contractor\'s price book (their standard price for a material or labor line). Call this when the contractor asks to save/add a material or set a standard price. The contractor must approve.',
+      parameters: {
+        type: 'object',
+        properties: {
+          name: { type: 'string', description: 'Item name, e.g. "Toilet (standard)" or "Plumbing labor".' },
+          unit: { type: 'string', description: 'Unit of measure: ea, hr, sqft, lft, day, lot.' },
+          unit_price: { type: 'number', description: 'Price the contractor charges per unit, in dollars.' },
+          unit_cost: { type: 'number', description: 'Optional cost the contractor pays per unit.' },
+          category: { type: 'string', description: 'Optional grouping like plumbing, electrical, labor.' },
+        },
+        required: ['name', 'unit_price'],
+      },
+    },
+  },
 ] as const
 
-export const READ_TOOLS = new Set(['get_schedule'])
+export const READ_TOOLS = new Set(['get_schedule', 'get_material_prices'])
 
 // ---------------------------------------------------------------------------
 // Types
@@ -236,6 +269,15 @@ export type Proposal =
       client_name: string
       scheduled_start: string
       scheduled_end: string
+    }
+  | {
+      type: 'add_material'
+      summary: string
+      name: string
+      unit: string
+      unit_price: number
+      unit_cost: number | null
+      category: string | null
     }
 
 type ClientRow = { id: string; first_name: string; last_name: string; email: string | null; phone: string | null }
@@ -329,6 +371,7 @@ function parseDateOnly(v: unknown, fallback: Date): Date {
 
 export async function executeReadTool(
   supabase: SupabaseClient,
+  userId: string,
   name: string,
   args: any,
 ): Promise<string> {
@@ -353,6 +396,40 @@ export async function executeReadTool(
     }))
     return JSON.stringify({ range: { start: start.toISOString(), end: end.toISOString() }, count: jobs.length, jobs })
   }
+
+  if (name === 'get_material_prices') {
+    const q = typeof args?.query === 'string' ? args.query.trim().toLowerCase() : ''
+    // Price book (RLS-scoped to the contractor).
+    const { data: pb } = await supabase
+      .from('materials')
+      .select('name, unit, unit_price, unit_cost, category')
+      .eq('is_active', true)
+      .order('name')
+      .limit(200)
+    let book = (pb ?? []) as any[]
+    if (q) book = book.filter((m) => `${m.name ?? ''} ${m.category ?? ''}`.toLowerCase().includes(q))
+
+    // Recent quoted line items. invoice_line_items has a permissive read policy,
+    // so scope explicitly to this contractor's invoices via an inner join.
+    const { data: li } = await supabase
+      .from('invoice_line_items')
+      .select('description, unit, rate, invoices!inner(contractor_id)')
+      .eq('invoices.contractor_id', userId)
+      .order('id', { ascending: false })
+      .limit(300)
+    const seen = new Set<string>()
+    const history: any[] = []
+    for (const row of (li ?? []) as any[]) {
+      const key = String(row.description ?? '').trim().toLowerCase()
+      if (!key || seen.has(key)) continue
+      if (q && !key.includes(q)) continue
+      seen.add(key)
+      history.push({ description: row.description, unit: row.unit, rate: row.rate })
+      if (history.length >= 25) break
+    }
+    return JSON.stringify({ price_book: book.slice(0, 50), recent_quoted_items: history })
+  }
+
   return JSON.stringify({ error: 'unknown tool' })
 }
 
@@ -414,6 +491,26 @@ export async function executeAction(
     if (error) return { ok: false, error: 'Could not update the customer.' }
     const name = `${changes.first_name ?? owned.first_name} ${changes.last_name ?? owned.last_name}`.trim()
     return { ok: true, summary: `Updated ${name}`, link: `/customers/${action.client_id}` }
+  }
+
+  if (type === 'add_material') {
+    const matName = String(action.name || '').trim()
+    if (!matName) return { ok: false, error: 'A material name is required.' }
+    const price = Number(action.unit_price)
+    if (!Number.isFinite(price)) return { ok: false, error: 'A unit price is required.' }
+    const unitRaw = String(action.unit || 'ea').toLowerCase().trim()
+    const unit = UNITS.has(unitRaw) ? unitRaw : 'ea'
+    const cost = Number(action.unit_cost)
+    const { error } = await supabase.from('materials').insert({
+      contractor_id: userId,
+      name: matName.slice(0, 200),
+      unit,
+      unit_price: round2(price),
+      unit_cost: Number.isFinite(cost) ? round2(cost) : null,
+      category: action.category ? String(action.category).slice(0, 100) : null,
+    })
+    if (error) return { ok: false, error: 'Could not save the material.' }
+    return { ok: true, summary: `Added "${matName}" to your price book — $${round2(price).toFixed(2)}/${unit}` }
   }
 
   if (type === 'create_job') {

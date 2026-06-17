@@ -43,10 +43,14 @@ When a contractor asks about a specific job situation, always:
 
 You can take actions in the contractor's account using the provided tools. Call the matching tool whenever the contractor asks — never claim you lack access to their data:
 - get_schedule: to answer ANY schedule/calendar question (today, this week, upcoming, a customer's jobs). Read-only — call it, then answer from the result.
+- get_material_prices: to look up the contractor's own prices. Read-only.
 - create_quote / update_quote: to create a new draft quote, or change an existing draft quote. Include every line item with quantity and dollar rate. For an update, send the COMPLETE new line-item list (it replaces the old one).
+- add_material: to save an item and its standard price to the contractor's price book.
 - create_customer / update_customer: to add a new customer, or change a customer's phone, email, address, or name.
 - create_job: to open a new job for an existing customer.
 - schedule_job: to schedule or reschedule a job to a date/time.
+
+Pricing: BEFORE you build or update a quote, call get_material_prices and price each line item from the contractor's own price book and recent quotes. If an item isn't in their pricing, give a reasonable market estimate, say it's an estimate, and offer to save it to their price book.
 
 Before finalizing a quote, briefly ask about commonly-missed items — disposal/haul fees, small parts (wax rings, fittings, fasteners), permit costs, and whether sales tax applies — then call the tool. Every write action is shown to the contractor for approval before anything saves, so don't ask for separate confirmation in text; just call the tool.
 
@@ -187,7 +191,7 @@ export async function POST(req: NextRequest) {
       ...history.map(t => ({ role: t.role === 'ai' ? 'assistant' : 'user', content: t.content })),
       { role: 'user', content: userContent },
     ]
-    const result = await runConversation(apiKey, supabase, messages)
+    const result = await runConversation(apiKey, supabase, user.id, messages)
     response = result.response
     proposal = result.proposal
   }
@@ -201,6 +205,7 @@ export async function POST(req: NextRequest) {
 async function runConversation(
   apiKey: string,
   supabase: SupabaseClient,
+  userId: string,
   messages: any[],
 ): Promise<{ response: string; proposal: Proposal | null }> {
   for (let step = 0; step < MAX_STEPS; step++) {
@@ -252,7 +257,7 @@ async function runConversation(
       let args: any = {}
       try { args = JSON.parse(tc?.function?.arguments || '{}') } catch { args = {} }
       const out = READ_TOOLS.has(tc?.function?.name)
-        ? await executeReadTool(supabase, tc.function.name, args)
+        ? await executeReadTool(supabase, userId, tc.function.name, args)
         : JSON.stringify({ error: 'not available' })
       messages.push({ role: 'tool', tool_call_id: tc.id, content: out })
     }
@@ -447,6 +452,28 @@ async function buildProposal(
     return {
       response: `Update ${cn} — ${human}? Approve to confirm.`,
       proposal: { type: 'update_customer', summary: `Update ${cn}`, client_id: c.id, client_name: cn, changes },
+    }
+  }
+
+  if (name === 'add_material') {
+    const matName = String(args.name || '').trim()
+    const price = Number(args.unit_price)
+    if (!matName || !Number.isFinite(price)) {
+      return { response: 'What item and price should I add to your price book?', proposal: null }
+    }
+    const unitRaw = String(args.unit || 'ea').toLowerCase().trim()
+    const unit = ['ea', 'hr', 'sqft', 'lft', 'day', 'lot'].includes(unitRaw) ? unitRaw : 'ea'
+    return {
+      response: `Add “${matName}” to your price book at $${price.toFixed(2)}/${unit}? Approve to confirm.`,
+      proposal: {
+        type: 'add_material',
+        summary: `Add “${matName}” — $${price.toFixed(2)}/${unit}`,
+        name: matName,
+        unit,
+        unit_price: price,
+        unit_cost: Number.isFinite(Number(args.unit_cost)) ? Number(args.unit_cost) : null,
+        category: args.category || null,
+      },
     }
   }
 
