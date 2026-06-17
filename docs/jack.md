@@ -66,16 +66,39 @@ The **Refresh Data** button pulls the contractor's top 3 active jobs and lead
 count from `pl_pipelines` and injects it into the next question — but it's kept
 **out of** the saved history so the log stays clean.
 
-### 5. Write actions (approval-gated)
+### 5. Read tools
+Some tools run server-side and feed their result back to the model so Jack can
+answer from live data (a short multi-step loop, capped at `MAX_STEPS`).
+
+| Tool | Reads | Notes |
+|------|-------|-------|
+| `get_schedule` | `jobs` (scheduled in a date range) | Answers schedule/calendar questions. Defaults to the next 14 days. |
+| `get_material_prices` | `materials` + recent `invoice_line_items` | The contractor's own price book and past-quote rates. Jack calls this before quoting so prices match how the contractor prices. |
+
+The current date is injected each turn so Jack resolves "today / tomorrow / next
+Tuesday" correctly.
+
+### 6. Write actions (approval-gated)
 Jack can take actions via OpenRouter function-calling. It never writes directly:
-a tool-call becomes a **Proposal**, the widget shows an **Approve / Cancel**
+a write tool-call becomes a **Proposal**, the widget shows an **Approve / Cancel**
 card, and only on approval does `POST /api/jack/action` write.
 
 | Tool | Writes to | Notes |
 |------|-----------|-------|
 | `create_quote` | `invoices` (status `draft`) + `invoice_line_items` | Quotes are draft invoices. Optionally creates/attaches a customer/job. |
+| `update_quote` | `invoices` + `invoice_line_items` | Edits an existing **draft** quote (drafts only). Replaces the full line-item set; recomputes totals. |
 | `create_customer` | `clients` | New customer record. |
+| `update_customer` | `clients` | Updates an existing customer's phone/email/address/name. |
 | `create_job` | `jobs` | New job for an existing customer. |
+| `schedule_job` | `jobs` (`scheduled_start` / `scheduled_end`) | Schedules or reschedules a job. Default duration 2h. |
+| `add_material` | `materials` | Adds an item + standard price to the contractor's price book. |
+
+> Line items are written with **both** column conventions the table requires
+> (`qty`+`quantity`, `rate`+`unit_price`, `amount`+`total`, `position`+`sort_order`),
+> matching the manual invoice form.
+
+Before finalizing a quote, Jack proactively asks about commonly-missed items
+(disposal/haul fees, small parts, permits, tax) — then calls the tool.
 
 **Approval flow**
 1. Contractor asks Jack to do something (e.g. "add this quote to Mike Jones").
@@ -114,7 +137,8 @@ card, and only on approval does `POST /api/jack/action` write.
 | `jack_messages` | Jack's per-user chat history (migrations 027 create, 028 rename) |
 | `invoices` / `invoice_line_items` | Draft quotes created by `create_quote` |
 | `clients` | Customers (resolution + `create_customer`) |
-| `jobs` | Jobs (`create_job`, quote attachment) |
+| `jobs` | Jobs (`create_job`, `schedule_job`, quote attachment) |
+| `materials` | Per-contractor price book (migration 029); read for quoting, written by `add_material` |
 | `pl_pipelines` | Business-context summary (Refresh Data) |
 
 ### Migrations
@@ -123,11 +147,19 @@ card, and only on approval does `POST /api/jack/action` write.
 - **028** `migrations/028_rename_foreman_messages_to_jack.sql` — renames it to
   `jack_messages` (preserves rows; renames index + RLS policy). **Run this in
   the Supabase SQL editor** for any environment that ran 027.
+- **029** `migrations/029_materials_price_book.sql` — creates the `materials`
+  price-book table (owner-scoped RLS). **Run in the Supabase SQL editor** to
+  enable pricing.
 
 ---
 
 ## Known limits / next steps
-- No `update_quote` yet (edit an existing draft) — create-only.
+- Pricing draws on the contractor's price book + past quotes; items not found
+  there fall back to a model estimate (flagged). No live retail/material pricing
+  API yet (Home Depot/RSMeans etc. are paid/scraped — deferred).
+- The price book is managed at **Settings → Price Book** (`/settings/price-list`)
+  and via Jack (`add_material`); it also grows from past quotes.
+- `schedule_job` writes times in UTC; no per-contractor timezone handling yet.
 - No document/photo uploads.
 - In-memory rate limiter is single-region.
 - Building-code citations are general knowledge only — see `TODO.md` P4.2 and
