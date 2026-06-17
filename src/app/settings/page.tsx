@@ -32,11 +32,10 @@ const SETTINGS_CARDS = [
     icon: Users,
   },
   {
-    title: 'My Price List',
-    desc: 'Service catalog with categories and flat-rate pricing',
+    title: 'Price Book',
+    desc: 'Your materials & labor rates — used in quotes and by Jack',
     href: '/settings/price-list',
     icon: ListChecks,
-    soon: true,
   },
   {
     title: 'Online Booking Rates',

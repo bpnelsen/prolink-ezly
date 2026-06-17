@@ -157,8 +157,8 @@ Before finalizing a quote, Jack proactively asks about commonly-missed items
 - Pricing draws on the contractor's price book + past quotes; items not found
   there fall back to a model estimate (flagged). No live retail/material pricing
   API yet (Home Depot/RSMeans etc. are paid/scraped — deferred).
-- No dedicated price-book management UI yet — it's built via Jack (`add_material`)
-  and grows from past quotes. A `/dashboard` materials page is a natural follow-up.
+- The price book is managed at **Settings → Price Book** (`/settings/price-list`)
+  and via Jack (`add_material`); it also grows from past quotes.
 - `schedule_job` writes times in UTC; no per-contractor timezone handling yet.
 - No document/photo uploads.
 - In-memory rate limiter is single-region.
