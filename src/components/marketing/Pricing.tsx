@@ -72,25 +72,24 @@ export function Pricing() {
             }}
           />
 
-          <div className="relative overflow-hidden rounded-[26px] bg-[#11122B] p-8 sm:p-10">
-            <div className="absolute left-1/2 top-0 -translate-x-1/2 -translate-y-1/2 whitespace-nowrap rounded-full bg-gradient-to-r from-[#F97316] to-[#5468FF] px-4 py-1 text-[10px] font-extrabold uppercase tracking-[0.12em] text-white shadow-[0_4px_12px_rgba(84,104,255,0.5)]">
-              One simple plan
-            </div>
+          {/* Floating badge — sits on the outer wrapper so the inner card's
+              overflow-hidden doesn't clip it. */}
+          <div className="absolute left-1/2 top-0 z-10 -translate-x-1/2 -translate-y-1/2 whitespace-nowrap rounded-full bg-gradient-to-r from-[#F97316] to-[#5468FF] px-4 py-1 text-[10px] font-extrabold uppercase tracking-[0.12em] text-white shadow-[0_4px_12px_rgba(84,104,255,0.5)]">
+            One simple plan
+          </div>
 
-            <h3 className="text-base font-bold text-white">
-              Ezly
-            </h3>
-            <p className="mt-1 text-[13px] text-white/55">
+          <div className="relative overflow-hidden rounded-[26px] bg-[#11122B] px-8 pt-12 pb-10 sm:px-10 sm:pt-14 sm:pb-12">
+            <p className="text-center text-[15px] font-semibold text-white/75">
               Everything included. No tiers, no surprises.
             </p>
 
-            <div className="mt-7 flex items-baseline gap-1.5">
+            <div className="mt-8 flex items-baseline justify-center gap-1.5">
               <span className="bg-gradient-to-br from-white to-[#7B8AFF] bg-clip-text text-[52px] font-black leading-none text-transparent">
                 $49
               </span>
               <span className="text-base font-medium text-white/40">/mo</span>
             </div>
-            <p className="mt-2 text-xs text-white/45">
+            <p className="mt-2 text-center text-xs text-white/45">
               Unlimited team seats · 14-day free trial
             </p>
 
