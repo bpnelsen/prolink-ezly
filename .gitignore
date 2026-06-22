@@ -11,3 +11,21 @@ tsconfig.tsbuildinfo
 # Never commit data exports or backend bundles (may contain secrets/PII)
 *.zip
 data/*.csv
+
+# Arcads skill pack — local-only files
+MASTER_CONTEXT.md
+.claude/settings.local.json
+outputs/
+output/
+__pycache__/
+*.pyc
+
+# All reference media is local-only (face photos, product shots, style boards).
+references/
+!references/.gitkeep
+
+# Disposable one-off generation scripts
+scripts/generate-thumbnails.sh
+scripts/generate-thumbnails-*.sh
+scripts/generate-ab-variants*.sh
+scripts/regen-*.sh
