@@ -3,7 +3,7 @@
  */
 export function Trust() {
   const items = [
-    { icon: '🔒', title: 'Bank-Level Security', desc: '256-bit SSL encryption on all data, every time.' },
+    { icon: '👥', title: 'Unlimited Team Seats', desc: 'Bring your whole crew on the same flat plan.' },
     { icon: '⚡', title: '99.9% Uptime', desc: 'Your business never stops, and neither do we.' },
     { icon: '🤝', title: '24/7 Real Support', desc: 'Real humans, real help — not bots.' },
   ]

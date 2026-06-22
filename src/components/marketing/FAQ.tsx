@@ -28,10 +28,6 @@ export function FAQ() {
       q: 'How does the contractor website work?',
       a: 'When you sign up, Ezly generates a branded public website for your business — your services, photos, and service area, with a built-in quote form. Leads land straight in your pipeline so you can follow up the same day.',
     },
-    {
-      q: 'Is my data secure?',
-      a: 'All traffic is encrypted with TLS in transit, and we host your data on Supabase — an independently SOC-2 Type II certified data platform with encryption at rest. Your data is always yours: email hello@useezly.com any time to request a full copy or deletion.',
-    },
   ]
 
   const [open, setOpen] = useState<number | null>(0)
