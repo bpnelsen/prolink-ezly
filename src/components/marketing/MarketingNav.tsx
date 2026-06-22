@@ -47,20 +47,20 @@ export function MarketingNav() {
             />
           </Link>
 
-          <div className="hidden items-center gap-7 lg:flex">
-            <a href="/#features" className="text-[13px] font-semibold text-gray-600 transition-colors hover:text-[#0F3A7D]">
+          <div className="hidden items-center gap-1 lg:flex">
+            <a href="/#features" className="rounded-lg px-3 py-2 text-[13px] font-semibold text-gray-700 transition-colors hover:bg-emerald-500 hover:text-white">
               Features
             </a>
-            <a href="/#how-it-works" className="text-[13px] font-semibold text-gray-600 transition-colors hover:text-[#0F3A7D]">
+            <a href="/#how-it-works" className="rounded-lg px-3 py-2 text-[13px] font-semibold text-gray-700 transition-colors hover:bg-emerald-500 hover:text-white">
               How it works
             </a>
-            <a href="/#pricing" className="text-[13px] font-semibold text-gray-600 transition-colors hover:text-[#0F3A7D]">
+            <a href="/#pricing" className="rounded-lg px-3 py-2 text-[13px] font-semibold text-gray-700 transition-colors hover:bg-emerald-500 hover:text-white">
               Pricing
             </a>
-            <Link href="/blog" className="text-[13px] font-semibold text-gray-600 transition-colors hover:text-[#0F3A7D]">
+            <Link href="/blog" className="rounded-lg px-3 py-2 text-[13px] font-semibold text-gray-700 transition-colors hover:bg-emerald-500 hover:text-white">
               Blog
             </Link>
-            <a href="/#faq" className="text-[13px] font-semibold text-gray-600 transition-colors hover:text-[#0F3A7D]">
+            <a href="/#faq" className="rounded-lg px-3 py-2 text-[13px] font-semibold text-gray-700 transition-colors hover:bg-emerald-500 hover:text-white">
               FAQ
             </a>
           </div>
@@ -68,15 +68,15 @@ export function MarketingNav() {
           <div className="flex w-full flex-wrap items-center justify-center gap-2 sm:w-auto sm:justify-end">
             <Link
               href="/login"
-              className="hidden min-h-[40px] items-center justify-center rounded-lg px-3 text-[13.5px] font-semibold text-gray-700 transition-colors hover:text-[#0F3A7D] sm:inline-flex"
+              className="hidden min-h-[40px] items-center justify-center rounded-lg px-3 text-[13.5px] font-semibold text-gray-800 transition-colors hover:bg-[#5468FF] hover:text-white sm:inline-flex"
             >
-              Sign in
+              Contractor Portal
             </Link>
             <Link
               href="/portal/login"
-              className="hidden min-h-[40px] items-center justify-center rounded-lg px-3 text-[13.5px] font-semibold text-gray-700 transition-colors hover:text-[#0F3A7D] sm:inline-flex"
+              className="hidden min-h-[40px] items-center justify-center rounded-lg px-3 text-[13.5px] font-semibold text-gray-800 transition-colors hover:bg-[#5468FF] hover:text-white sm:inline-flex"
             >
-              Homeowner portal
+              Homeowner Portal
             </Link>
             <Link
               href="/signup"
