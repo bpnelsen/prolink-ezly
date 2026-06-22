@@ -21,10 +21,10 @@ export function MarketingNav() {
 
   return (
     <nav
-      className={`fixed inset-x-0 top-0 z-50 backdrop-blur-xl transition-all duration-300 ${
+      className={`fixed inset-x-0 top-0 z-50 bg-white transition-all duration-300 ${
         scrolled
-          ? 'border-b border-gray-200/70 bg-white/85 shadow-[0_2px_24px_rgba(15,23,42,0.06)]'
-          : 'border-b border-white/10 bg-white/40'
+          ? 'border-b border-gray-200 shadow-[0_2px_24px_rgba(15,23,42,0.06)]'
+          : 'border-b border-gray-100'
       }`}
     >
       <div className="mx-auto max-w-[1200px] px-4 sm:px-6">

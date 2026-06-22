@@ -8,12 +8,12 @@ import Link from 'next/link'
 export function Pricing() {
   const features = [
     'Everything included — no feature tiers',
+    'Unlimited team seats — invite your whole crew',
     'CRM, dispatch & scheduling, invoicing',
     'Contracts, e-signatures & change orders',
     'Client portal, chat & SMS/email automations',
     'Branded contractor website with lead capture',
     'Unlimited customers, jobs & invoices',
-    '$49/mo includes you — extra seats $15/mo each',
     '14-day free trial · cancel anytime',
   ]
 
@@ -52,7 +52,7 @@ export function Pricing() {
             </span>
           </h2>
           <p className="mx-auto mt-4 max-w-[540px] text-[17px] leading-relaxed text-white/60">
-            One flat plan. Free for 14 days. Add seats as your team grows.
+            One flat plan with unlimited seats. Free for 14 days. Bring your whole team for the same price.
           </p>
         </div>
 
@@ -91,7 +91,7 @@ export function Pricing() {
               <span className="text-base font-medium text-white/40">/mo</span>
             </div>
             <p className="mt-2 text-xs text-white/45">
-              + $15/mo per additional user · 14-day free trial
+              Unlimited team seats · 14-day free trial
             </p>
 
             <ul className="mt-8 flex flex-col gap-3.5">

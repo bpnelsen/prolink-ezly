@@ -1,26 +1,19 @@
 'use client'
 import { useState, useEffect, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
-import { CheckCircle2, Zap, AlertCircle, Users, CreditCard } from 'lucide-react'
+import { CheckCircle2, Zap, AlertCircle, CreditCard, Users } from 'lucide-react'
 import Breadcrumbs from '../../../components/Breadcrumbs'
 import { supabase } from '../../../lib/supabase-client'
 import { apiFetch } from '../../../lib/api-fetch'
 
-const BASE_PRICE = 49
-const SEAT_PRICE = 15
+const MONTHLY_PRICE = 49
 const TRIAL_DAYS = 14
-
-function total(seats: number) {
-  const s = Math.max(1, Math.floor(seats || 1))
-  return BASE_PRICE + SEAT_PRICE * (s - 1)
-}
 
 function BillingInner() {
   const params = useSearchParams()
   const checkout = params.get('checkout')
   const [status, setStatus] = useState('trialing')
   const [trialEndsAt, setTrialEndsAt] = useState<string | null>(null)
-  const [seats, setSeats] = useState(1)
   const [hasStripe, setHasStripe] = useState(false)
   const [loading, setLoading] = useState(true)
   const [busy, setBusy] = useState(false)
@@ -37,13 +30,12 @@ function BillingInner() {
       if (!session) return
       const { data } = await supabase
         .from('customers')
-        .select('subscription_status, trial_ends_at, seats, stripe_customer_id')
+        .select('subscription_status, trial_ends_at, stripe_customer_id')
         .eq('id', session.user.id)
         .single()
       if (data) {
         setStatus(data.subscription_status || 'trialing')
         setTrialEndsAt(data.trial_ends_at)
-        setSeats(Math.max(1, data.seats || 1))
         setHasStripe(Boolean(data.stripe_customer_id))
       }
       setLoading(false)
@@ -51,20 +43,11 @@ function BillingInner() {
     load()
   }, [])
 
-  const saveSeats = async (next: number) => {
-    const s = Math.max(1, Math.floor(next))
-    setSeats(s)
-    const { data: { session } } = await supabase.auth.getSession()
-    if (!session) return
-    await supabase.from('customers').update({ seats: s }).eq('id', session.user.id)
-  }
-
   const subscribe = async () => {
     setBusy(true)
     setMsg(null)
     const r = await apiFetch<{ url: string }>('/api/stripe/subscription', {
       method: 'POST',
-      body: JSON.stringify({ seats }),
     })
     if (r.data?.url) window.location.href = r.data.url
     else { setMsg({ type: 'error', text: r.message || r.error || 'Could not start checkout.' }); setBusy(false) }
@@ -115,14 +98,14 @@ function BillingInner() {
           <div className="flex items-start justify-between flex-wrap gap-4">
             <div>
               <p className="text-xs font-bold uppercase tracking-wider text-gray-400 mb-1">Your Plan</p>
-              <p className="text-lg font-bold text-gray-900">Prolink — Standard</p>
+              <p className="text-lg font-bold text-gray-900">Ezly — Standard</p>
               <p className="text-sm text-gray-500 mt-0.5">
-                ${BASE_PRICE}/mo base (includes 1 seat) + ${SEAT_PRICE}/mo per additional seat
+                Flat ${MONTHLY_PRICE}/mo. Unlimited team seats included.
               </p>
             </div>
             <div className="text-right">
-              <p className="text-3xl font-bold text-gray-900">${total(seats)}<span className="text-sm font-normal text-gray-400">/mo</span></p>
-              <p className="text-xs text-gray-400">{seats} seat{seats !== 1 ? 's' : ''}</p>
+              <p className="text-3xl font-bold text-gray-900">${MONTHLY_PRICE}<span className="text-sm font-normal text-gray-400">/mo</span></p>
+              <p className="text-xs text-gray-400 flex items-center justify-end gap-1"><Users size={11} /> Unlimited seats</p>
             </div>
           </div>
 
@@ -143,30 +126,6 @@ function BillingInner() {
           </div>
         </div>
 
-        {/* Seats */}
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 mb-5">
-          <div className="flex items-center gap-2 mb-3">
-            <Users size={15} className="text-teal-600" />
-            <p className="text-sm font-bold text-gray-900">Team seats</p>
-          </div>
-          <p className="text-xs text-gray-500 mb-3">
-            The owner is included in the ${BASE_PRICE} base. Each additional team member is +${SEAT_PRICE}/mo.
-          </p>
-          <div className="flex items-center gap-3">
-            <button onClick={() => saveSeats(seats - 1)} disabled={seats <= 1}
-              className="w-9 h-9 rounded-lg border border-gray-200 text-gray-600 font-bold disabled:opacity-40">−</button>
-            <span className="text-lg font-bold text-gray-900 w-10 text-center">{seats}</span>
-            <button onClick={() => saveSeats(seats + 1)}
-              className="w-9 h-9 rounded-lg border border-gray-200 text-gray-600 font-bold">+</button>
-            <span className="text-sm text-gray-500 ml-2">→ ${total(seats)}/mo</span>
-          </div>
-          {hasStripe && (
-            <p className="text-[11px] text-gray-400 mt-3">
-              Seat count is saved now; the charged amount updates when you start or manage your subscription.
-            </p>
-          )}
-        </div>
-
         {/* Actions */}
         <div className="flex flex-wrap gap-3">
           {hasStripe ? (
@@ -177,7 +136,7 @@ function BillingInner() {
           ) : (
             <button onClick={subscribe} disabled={busy}
               className="flex items-center gap-2 px-5 py-3 bg-teal-600 hover:bg-teal-700 text-white rounded-xl font-bold text-sm disabled:opacity-50">
-              <CreditCard size={15} /> {busy ? 'Starting…' : `Start subscription — $${total(seats)}/mo`}
+              <CreditCard size={15} /> {busy ? 'Starting…' : `Start subscription — $${MONTHLY_PRICE}/mo`}
             </button>
           )}
         </div>
@@ -185,8 +144,8 @@ function BillingInner() {
         <div className="bg-gray-50 rounded-2xl border border-gray-200 p-5 text-sm text-gray-500 mt-6">
           <p className="font-semibold text-gray-700 mb-1">How billing works</p>
           <p>
-            Every account gets a {TRIAL_DAYS}-day free trial. After that it&apos;s ${BASE_PRICE}/mo plus
-            ${SEAT_PRICE}/mo for each seat beyond the owner. Manage or cancel anytime. Questions?{' '}
+            Every account gets a {TRIAL_DAYS}-day free trial. After that it&apos;s a flat ${MONTHLY_PRICE}/mo —
+            invite your whole team at no extra cost. Manage or cancel anytime. Questions?{' '}
             <a href="mailto:hello@useezly.com" className="text-teal-600 font-semibold hover:underline">hello@useezly.com</a>.
           </p>
         </div>
