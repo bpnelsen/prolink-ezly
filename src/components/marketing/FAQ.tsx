@@ -30,7 +30,7 @@ export function FAQ() {
     },
     {
       q: 'Is my data secure?',
-      a: 'Yes. We use bank-level 256-bit SSL encryption, daily backups, and SOC-2 compliant hosting. Your data is always yours.',
+      a: 'All traffic is encrypted with TLS in transit, and we host your data on Supabase — an independently SOC-2 Type II certified data platform with encryption at rest. Your data is always yours: email hello@useezly.com any time to request a full copy or deletion.',
     },
   ]
 
