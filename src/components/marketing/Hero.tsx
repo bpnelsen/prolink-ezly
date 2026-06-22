@@ -96,14 +96,6 @@ export function Hero() {
             }}
           />
 
-          {/* Floating top card */}
-          <div className="absolute -top-3 right-2 z-20 hidden rounded-2xl border border-white/15 bg-white/[0.08] px-3.5 py-2.5 shadow-[0_12px_40px_rgba(0,0,0,0.4)] backdrop-blur-xl xl:block">
-            <div className="text-[10px] uppercase tracking-wider text-white/50">Invoice sent</div>
-            <div className="text-sm font-extrabold text-[#5468FF]">
-              $3,800 ✓
-            </div>
-          </div>
-
           {/* Floating bottom card */}
           <div className="absolute -bottom-3 -left-3 z-20 hidden items-center gap-2.5 rounded-2xl border border-white/15 bg-white/[0.08] px-3.5 py-2.5 shadow-[0_12px_40px_rgba(0,0,0,0.4)] backdrop-blur-xl xl:flex">
             <div className="text-xl" aria-hidden="true">
