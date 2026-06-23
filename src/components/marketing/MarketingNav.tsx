@@ -68,13 +68,13 @@ export function MarketingNav() {
           <div className="flex w-full flex-wrap items-center justify-center gap-2 sm:w-auto sm:justify-end">
             <Link
               href="/login"
-              className="inline-flex min-h-[40px] flex-1 items-center justify-center rounded-lg px-3 text-[13.5px] font-semibold text-gray-800 transition-colors hover:bg-[#5468FF] hover:text-white sm:flex-none"
+              className="inline-flex min-h-[40px] flex-1 items-center justify-center rounded-lg border-2 border-[#5468FF] bg-white px-4 text-[13.5px] font-bold text-[#0F3A7D] shadow-[0_2px_8px_-2px_rgba(84,104,255,0.25)] transition-all hover:-translate-y-px hover:bg-[#5468FF] hover:text-white hover:shadow-[0_6px_16px_-3px_rgba(84,104,255,0.5)] sm:flex-none sm:px-5"
             >
               Contractor Portal
             </Link>
             <Link
               href="/portal/login"
-              className="inline-flex min-h-[40px] flex-1 items-center justify-center rounded-lg px-3 text-[13.5px] font-semibold text-gray-800 transition-colors hover:bg-[#5468FF] hover:text-white sm:flex-none"
+              className="inline-flex min-h-[40px] flex-1 items-center justify-center rounded-lg border-2 border-[#5468FF] bg-white px-4 text-[13.5px] font-bold text-[#0F3A7D] shadow-[0_2px_8px_-2px_rgba(84,104,255,0.25)] transition-all hover:-translate-y-px hover:bg-[#5468FF] hover:text-white hover:shadow-[0_6px_16px_-3px_rgba(84,104,255,0.5)] sm:flex-none sm:px-5"
             >
               Homeowner Portal
             </Link>
