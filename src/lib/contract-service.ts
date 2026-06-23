@@ -212,12 +212,15 @@ export async function renderAndStoreVersion(
     .limit(1)
   const versionNumber = (existing?.[0]?.version_number || 0) + 1
 
-  // Upload (HTML always; PDF if/when we have a buffer)
+  // Upload (HTML always; PDF if/when we have a buffer).
+  // Charset must be on the Content-Type so Supabase serves the file with
+  // it; otherwise the browser falls back to Latin-1 and mojibakes UTF-8.
   const htmlPath = `${contractId}/v${versionNumber}.html`
-  await svc.storage.from(STORAGE_BUCKET).upload(htmlPath, new Blob([html], { type: 'text/html' }), {
-    upsert: true,
-    contentType: 'text/html',
-  })
+  await svc.storage.from(STORAGE_BUCKET).upload(
+    htmlPath,
+    new Blob([html], { type: 'text/html; charset=utf-8' }),
+    { upsert: true, contentType: 'text/html; charset=utf-8' }
+  )
   let pdfUrl: string | null = null
   if (pdfBuffer) {
     const pdfPath = `${contractId}/v${versionNumber}.pdf`

@@ -85,12 +85,14 @@ function applyFilter(value: unknown, filter: string): string {
       return STATE_NAMES[s] || String(value)
     }
     case 'humanize': {
-      return String(value)
-        .split(/[_\s]+/)
-        .filter(Boolean)
-        .map(w => w.charAt(0).toUpperCase() + w.slice(1))
-        .join(', then ')
-        .replace(/, then Then /g, ', then ')
+      const KNOWN: Record<string, string> = {
+        mediation_then_arbitration: 'Mediation, then Binding Arbitration',
+        arbitration: 'Binding Arbitration',
+        litigation: 'Litigation in a court of competent jurisdiction',
+      }
+      const raw = String(value)
+      if (KNOWN[raw]) return KNOWN[raw]
+      return raw.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')
     }
     case 'int': {
       const n = Number(value)
