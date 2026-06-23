@@ -68,19 +68,19 @@ export function MarketingNav() {
           <div className="flex w-full flex-wrap items-center justify-center gap-2 sm:w-auto sm:justify-end">
             <Link
               href="/login"
-              className="hidden min-h-[40px] items-center justify-center rounded-lg px-3 text-[13.5px] font-semibold text-gray-800 transition-colors hover:bg-[#5468FF] hover:text-white sm:inline-flex"
+              className="inline-flex min-h-[40px] flex-1 items-center justify-center rounded-lg px-3 text-[13.5px] font-semibold text-gray-800 transition-colors hover:bg-[#5468FF] hover:text-white sm:flex-none"
             >
               Contractor Portal
             </Link>
             <Link
               href="/portal/login"
-              className="hidden min-h-[40px] items-center justify-center rounded-lg px-3 text-[13.5px] font-semibold text-gray-800 transition-colors hover:bg-[#5468FF] hover:text-white sm:inline-flex"
+              className="inline-flex min-h-[40px] flex-1 items-center justify-center rounded-lg px-3 text-[13.5px] font-semibold text-gray-800 transition-colors hover:bg-[#5468FF] hover:text-white sm:flex-none"
             >
               Homeowner Portal
             </Link>
             <Link
               href="/signup"
-              className="inline-flex min-h-[40px] flex-1 items-center justify-center gap-1.5 rounded-lg bg-gradient-to-r from-[#0F3A7D] to-[#5468FF] px-4 py-2 text-[13.5px] font-bold text-white shadow-[0_4px_14px_-2px_rgba(84,104,255,0.45)] transition-all hover:-translate-y-px hover:shadow-[0_6px_18px_-2px_rgba(84,104,255,0.6)] sm:flex-none sm:px-5"
+              className="inline-flex min-h-[40px] w-full items-center justify-center gap-1.5 rounded-lg bg-gradient-to-r from-[#0F3A7D] to-[#5468FF] px-4 py-2 text-[13.5px] font-bold text-white shadow-[0_4px_14px_-2px_rgba(84,104,255,0.45)] transition-all hover:-translate-y-px hover:shadow-[0_6px_18px_-2px_rgba(84,104,255,0.6)] sm:w-auto sm:px-5"
             >
               Get started <span aria-hidden="true">→</span>
             </Link>
