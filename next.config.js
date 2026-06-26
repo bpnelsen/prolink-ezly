@@ -20,10 +20,17 @@ const securityHeaders = [
       "form-action 'self'",
       "frame-ancestors 'self'",
       "img-src 'self' data: blob: https:",
-      "font-src 'self' data: https://fonts.gstatic.com",
+      // blob: lets the marketing video bundle load its embedded webfonts,
+      // which it unpacks into blob: URLs and applies via @font-face.
+      "font-src 'self' data: blob: https://fonts.gstatic.com",
       "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
-      "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.googletagmanager.com https://www.google-analytics.com https://js.stripe.com https://maps.googleapis.com https://maps.gstatic.com",
-      "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://www.google-analytics.com https://api.stripe.com https://openrouter.ai https://maps.googleapis.com https://photon.komoot.io",
+      // blob: is required by the self-unpacking marketing video bundle
+      // (/prolink-video.html), which decodes React/ReactDOM/Babel into
+      // blob: URLs and injects them as <script> tags; Babel then fetches
+      // those blob: sources (hence blob: in connect-src too). Safe here
+      // because the policy already allows 'unsafe-inline'/'unsafe-eval'.
+      "script-src 'self' 'unsafe-inline' 'unsafe-eval' blob: https://www.googletagmanager.com https://www.google-analytics.com https://js.stripe.com https://maps.googleapis.com https://maps.gstatic.com",
+      "connect-src 'self' blob: https://*.supabase.co wss://*.supabase.co https://www.google-analytics.com https://api.stripe.com https://openrouter.ai https://maps.googleapis.com https://photon.komoot.io",
       "frame-src 'self' https://js.stripe.com https://hooks.stripe.com",
       "object-src 'none'",
       'upgrade-insecure-requests',
