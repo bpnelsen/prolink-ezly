@@ -23,6 +23,9 @@ export async function POST(req: NextRequest, { params }: { params: { jobId: stri
   // Make sure the job exists and belongs to the caller (RLS enforces this anyway)
   const { data: job } = await supabase.from('jobs').select('*').eq('id', params.jobId).single()
   if (!job) return notFound('Job not found')
+  if (!job.client_id) {
+    return badRequest('This job has no client attached. Add a client to the job before creating a contract.')
+  }
 
   const template = await getActiveTemplate(supabase, body.governing_law_state || null)
   if (!template) return serverError(
