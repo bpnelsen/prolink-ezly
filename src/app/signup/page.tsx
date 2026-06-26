@@ -11,10 +11,8 @@ import AddressAutocomplete from '../../components/ui/AddressAutocomplete'
 
 type Step = 1 | 2 | 3 | 4
 
-const BASE_PRICE = 49
-const SEAT_PRICE = 15
+const MONTHLY_PRICE = 49
 const TRIAL_DAYS = 14
-const planTotal = (seats: number) => BASE_PRICE + SEAT_PRICE * (Math.max(1, seats) - 1)
 
 export default function SignupPage() {
   return (
@@ -28,7 +26,6 @@ function SignupForm() {
   const [step, setStep] = useState<Step>(1)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
-  const [seats, setSeats] = useState(1)
 
   const [formData, setFormData] = useState({
     email: '',
@@ -131,7 +128,6 @@ const handleChange = (e: any) => {
         plan: 'standard',
         plan_status: 'active',
         subscription_status: 'trialing',
-        seats: Math.max(1, seats),
         trial_ends_at: new Date(Date.now() + TRIAL_DAYS * 24 * 60 * 60 * 1000).toISOString(),
         plan_started_at: new Date().toISOString(),
       })
@@ -448,37 +444,22 @@ const handleChange = (e: any) => {
                 <div className="flex items-center justify-between flex-wrap gap-2">
                   <div className="flex items-center gap-2">
                     <Zap size={16} className="text-teal-600" />
-                    <span className="font-bold text-gray-900">Prolink — Standard</span>
+                    <span className="font-bold text-gray-900">Ezly — Standard</span>
                   </div>
                   <span className="text-2xl font-bold text-gray-900">
-                    ${planTotal(seats)}<span className="text-xs font-normal text-gray-400">/mo</span>
+                    ${MONTHLY_PRICE}<span className="text-xs font-normal text-gray-400">/mo</span>
                   </span>
                 </div>
                 <p className="text-xs text-gray-500 mt-1">
-                  ${BASE_PRICE}/mo includes you. Each additional team member is +${SEAT_PRICE}/mo.
+                  Flat ${MONTHLY_PRICE}/mo. Unlimited team seats — invite your whole crew at no extra cost.
                 </p>
                 <ul className="mt-3 space-y-1">
-                  {['Everything included — no feature tiers', 'Unlimited customers, jobs & invoices', 'Customer portal, chat & AI deal plans', `${TRIAL_DAYS}-day free trial, cancel anytime`].map(f => (
+                  {['Everything included — no feature tiers', 'Unlimited customers, jobs & invoices', 'Unlimited team seats', `${TRIAL_DAYS}-day free trial, cancel anytime`].map(f => (
                     <li key={f} className="text-xs text-gray-600 flex items-center gap-1.5">
                       <span className="text-teal-500 font-bold">✦</span> {f}
                     </li>
                   ))}
                 </ul>
-              </div>
-
-              <div className="p-4 rounded-xl border border-gray-200">
-                <p className="text-sm font-semibold text-gray-800 mb-1">Team size</p>
-                <p className="text-xs text-gray-500 mb-3">How many people (including you) will use Prolink?</p>
-                <div className="flex items-center gap-3">
-                  <button type="button" onClick={() => setSeats(s => Math.max(1, s - 1))}
-                    className="w-9 h-9 rounded-lg border border-gray-200 text-gray-600 font-bold">−</button>
-                  <span className="text-lg font-bold text-gray-900 w-10 text-center">{seats}</span>
-                  <button type="button" onClick={() => setSeats(s => s + 1)}
-                    className="w-9 h-9 rounded-lg border border-gray-200 text-gray-600 font-bold">+</button>
-                  <span className="text-sm text-gray-500 ml-2">
-                    {seats === 1 ? 'Just me' : `${seats - 1} extra seat${seats - 1 !== 1 ? 's' : ''}`} → ${planTotal(seats)}/mo
-                  </span>
-                </div>
               </div>
 
               <p className="text-xs text-gray-400 text-center">Billing starts after your {TRIAL_DAYS}-day trial. Cancel anytime.</p>

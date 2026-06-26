@@ -1,153 +1,163 @@
 import Link from 'next/link'
 
 /**
- * Hero section for the marketing homepage. Two-column layout on >= lg
- * with the dashboard mockup on the right, single-column on mobile/tablet
- * where the mockup is hidden so the headline + CTAs read clean on small
- * screens without overlapping the busy mockup graphics.
+ * Algolia-style dark hero with gradient orbs, grid overlay, glass dashboard
+ * mockup, and gradient-text headline. Two-column layout on >=lg; the mockup
+ * collapses on small screens so the headline + CTAs read clean.
  */
 export function Hero() {
   return (
     <section
-      className="relative overflow-hidden bg-[#0F3A7D] pt-32 pb-16 sm:pt-36 sm:pb-20 lg:pt-44 lg:pb-24"
+      className="relative overflow-hidden bg-[#0B0B1F] pt-32 pb-20 sm:pt-36 sm:pb-24 lg:pt-44 lg:pb-32"
       aria-label="Hero"
     >
-      {/* Decorative radial glows */}
+      {/* Layered gradient orbs */}
       <div
         aria-hidden="true"
         className="pointer-events-none absolute inset-0"
         style={{
           background:
-            'radial-gradient(ellipse 60% 70% at 80% 50%, rgba(20,184,166,.12) 0%, transparent 60%), radial-gradient(ellipse 40% 50% at 10% 80%, rgba(249,115,22,.07) 0%, transparent 60%)',
+            'radial-gradient(60% 50% at 80% 20%, rgba(84,104,255,0.30) 0%, transparent 60%), radial-gradient(50% 50% at 20% 80%, rgba(249,115,22,0.18) 0%, transparent 60%), radial-gradient(70% 60% at 50% 100%, rgba(15,58,125,0.45) 0%, transparent 70%)',
         }}
       />
-      {/* Decorative grid */}
+      {/* Subtle dot grid overlay */}
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute inset-0"
+        className="pointer-events-none absolute inset-0 opacity-[0.35]"
         style={{
           backgroundImage:
-            'linear-gradient(rgba(255,255,255,.03) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.03) 1px, transparent 1px)',
-          backgroundSize: '60px 60px',
+            'radial-gradient(circle at 1px 1px, rgba(255,255,255,0.08) 1px, transparent 0)',
+          backgroundSize: '32px 32px',
         }}
       />
+      {/* Bottom fade into next section */}
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-x-0 bottom-0 h-32 bg-gradient-to-b from-transparent to-[#0B0B1F]"
+      />
 
-      <div className="relative z-10 mx-auto grid max-w-[1160px] grid-cols-1 items-center gap-10 px-4 sm:px-6 md:grid-cols-2 md:gap-12 lg:gap-16">
+      <div className="relative z-10 mx-auto grid max-w-[1200px] grid-cols-1 items-center gap-12 px-4 sm:px-6 lg:grid-cols-[1.05fr_1fr] lg:gap-16">
         <div>
-          <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-4 py-1.5">
-            <span className="relative inline-block h-[7px] w-[7px] rounded-full bg-[#F97316] shadow-[0_0_0_3px_rgba(249,115,22,0.25)]" />
-            <span className="font-['Inter',sans-serif] text-[12px] font-semibold tracking-wide text-white/80">
+          <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/[0.04] px-3.5 py-1.5 backdrop-blur-md">
+            <span className="relative inline-block h-[7px] w-[7px] rounded-full bg-[#5468FF] shadow-[0_0_0_3px_rgba(84,104,255,0.25)]" />
+            <span className="text-[12px] font-semibold tracking-wide text-white/80">
               Built for Contractors, by Contractors
             </span>
           </div>
-          <h1 className="font-['Inter',sans-serif] text-[clamp(34px,6vw,60px)] font-black leading-[1.08] tracking-tight text-white">
-            Run Your Business
+          <h1 className="font-['Inter',sans-serif] text-[clamp(36px,6.2vw,64px)] font-black leading-[1.04] tracking-[-0.02em] text-white">
+            Run your business
             <br />
-            <span className="text-[#F97316]">on Autopilot.</span>
+            <span
+              className="bg-gradient-to-r from-[#5468FF] via-[#7B8AFF] to-[#F97316] bg-clip-text text-transparent"
+            >
+              on autopilot.
+            </span>
           </h1>
-          <p className="mt-5 max-w-[440px] text-base leading-relaxed text-white/65 sm:text-[18px]">
-            Ezly connects the key aspects of your business — scheduling,
-            invoicing, CRM, and more — so nothing falls through the cracks.
+          <p className="mt-6 max-w-[480px] text-[17px] leading-relaxed text-white/65 sm:text-[18px]">
+            Scheduling, dispatch, CRM, invoicing, contracts, client portal,
+            automations — plus a public website that brings in new leads.
+            One platform, end to end.
           </p>
 
           <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:gap-4">
             <Link
               href="/signup"
-              className="inline-flex min-h-[48px] items-center justify-center gap-2 rounded-xl bg-[#0F3A7D] px-6 py-3.5 font-['Inter',sans-serif] text-base font-bold text-white shadow-[0_4px_16px_rgba(15,58,125,0.3)] ring-1 ring-white/20 transition-all hover:-translate-y-px hover:bg-[#082860] hover:shadow-[0_8px_24px_rgba(15,58,125,0.35)]"
+              className="group inline-flex min-h-[52px] items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#5468FF] to-[#0F3A7D] px-7 py-3.5 text-[15px] font-bold text-white shadow-[0_8px_28px_-4px_rgba(84,104,255,0.55)] ring-1 ring-white/15 transition-all hover:-translate-y-0.5 hover:shadow-[0_12px_36px_-4px_rgba(84,104,255,0.7)]"
             >
-              Start Free Trial <span aria-hidden="true">→</span>
+              Start free trial
+              <span aria-hidden="true" className="transition-transform group-hover:translate-x-0.5">→</span>
             </Link>
             <a
               href="#how-it-works"
-              className="inline-flex min-h-[48px] items-center justify-center gap-2 rounded-xl border-2 border-white/35 bg-transparent px-6 py-3.5 font-['Inter',sans-serif] text-base font-bold text-white transition-colors hover:border-white/60 hover:bg-white/10"
+              className="inline-flex min-h-[52px] items-center justify-center gap-2 rounded-xl border border-white/20 bg-white/[0.04] px-7 py-3.5 text-[15px] font-bold text-white backdrop-blur-md transition-colors hover:border-white/40 hover:bg-white/[0.08]"
             >
-              See How It Works
+              See how it works
             </a>
           </div>
 
-          <p className="mt-8 text-[13px] tracking-wide text-white/80">
-            <strong>14-day free trial &nbsp;·&nbsp; Cancel anytime</strong>
+          <p className="mt-7 text-[13px] tracking-wide text-white/75">
+            <strong className="font-bold text-white/90">14-day free trial</strong>
+            <span className="mx-2 text-white/30">·</span>
+            <span>No credit card required</span>
+            <span className="mx-2 text-white/30">·</span>
+            <span>Cancel anytime</span>
           </p>
-          <Link
-            href="/login"
-            className="mt-3 inline-flex items-center gap-1.5 border-b border-white/25 pb-[1px] font-['Inter',sans-serif] text-[13px] font-semibold text-white/65 transition-colors hover:border-white/60 hover:text-white"
-          >
-            Already have an account? &nbsp;
-            <strong className="text-white">Sign In →</strong>
-          </Link>
         </div>
 
-        {/* Dashboard mockup — hidden on small screens, visible from md+ */}
+        {/* Glass dashboard mockup */}
         <div className="relative hidden md:block">
-          {/* Floating card top */}
-          <div className="absolute -top-2 right-2 z-10 hidden rounded-2xl border border-white/50 bg-white px-3.5 py-2.5 shadow-[0_8px_32px_rgba(0,0,0,0.18)] xl:block">
-            <div className="text-[10px] text-gray-400">Invoice sent</div>
-            <div className="font-['Inter',sans-serif] text-sm font-extrabold text-[#F97316]">
-              $3,800 ✓
-            </div>
-          </div>
+          {/* Glow halo behind card */}
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute -inset-8 rounded-[2rem] opacity-60 blur-3xl"
+            style={{
+              background:
+                'radial-gradient(50% 50% at 50% 50%, rgba(84,104,255,0.5) 0%, transparent 70%)',
+            }}
+          />
 
-          {/* Floating card bottom */}
-          <div className="absolute -bottom-2 -left-3 z-10 hidden items-center gap-2.5 rounded-2xl border border-white/50 bg-white px-3.5 py-2.5 shadow-[0_8px_32px_rgba(0,0,0,0.18)] xl:flex">
+          {/* Floating bottom card */}
+          <div className="absolute -bottom-3 -left-3 z-20 hidden items-center gap-2.5 rounded-2xl border border-white/15 bg-white/[0.08] px-3.5 py-2.5 shadow-[0_12px_40px_rgba(0,0,0,0.4)] backdrop-blur-xl xl:flex">
             <div className="text-xl" aria-hidden="true">
               🎉
             </div>
             <div>
-              <div className="text-[10px] text-gray-400">New lead received</div>
-              <div className="font-['Inter',sans-serif] text-sm font-extrabold text-[#0F3A7D]">
+              <div className="text-[10px] uppercase tracking-wider text-white/50">New lead</div>
+              <div className="text-sm font-extrabold text-[#F97316]">
                 $4,200 Roofing Job
               </div>
             </div>
           </div>
 
-          <div className="overflow-hidden rounded-2xl bg-white shadow-[0_32px_80px_rgba(0,0,0,0.4),0_0_0_1px_rgba(255,255,255,0.08)]">
-            <div className="flex items-center gap-1.5 bg-[#0F3A7D] px-4 py-3">
+          <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-white/[0.03] shadow-[0_40px_80px_-20px_rgba(0,0,0,0.6)] backdrop-blur-2xl">
+            <div className="flex items-center gap-1.5 border-b border-white/10 bg-white/[0.04] px-4 py-3">
               <span className="h-2.5 w-2.5 rounded-full bg-[#FF5F57]" />
               <span className="h-2.5 w-2.5 rounded-full bg-[#FEBC2E]" />
               <span className="h-2.5 w-2.5 rounded-full bg-[#28C840]" />
+              <span className="ml-3 text-[10px] font-semibold text-white/40">dashboard.useezly.com</span>
             </div>
-            <div className="bg-gray-50 p-5">
+            <div className="p-5">
               <div className="mb-4 flex items-center justify-between">
-                <div className="font-['Inter',sans-serif] text-sm font-bold text-[#0F3A7D]">
+                <div className="text-sm font-bold text-white">
                   Good morning, Mike 👋
                 </div>
-                <div className="text-[11px] text-gray-400">Apr 23, 2026</div>
+                <div className="text-[11px] text-white/40">Apr 23, 2026</div>
               </div>
 
               <div className="mb-4 grid grid-cols-3 gap-2.5">
                 {[
-                  { label: 'Revenue', val: '$18.4k', cls: 'text-[#0F3A7D]', delta: '↑ 12% this month' },
-                  { label: 'Active Jobs', val: '9', cls: 'text-[#F97316]', delta: '↑ 3 new' },
-                  { label: 'Leads', val: '24', cls: 'text-[#F97316]', delta: '↑ 8 today' },
+                  { label: 'Revenue', val: '$18.4k', delta: '↑ 12% this month', accent: 'text-[#5468FF]' },
+                  { label: 'Active Jobs', val: '9', delta: '↑ 3 new', accent: 'text-[#F97316]' },
+                  { label: 'Leads', val: '24', delta: '↑ 8 today', accent: 'text-[#5468FF]' },
                 ].map(s => (
-                  <div key={s.label} className="rounded-xl border border-gray-200 bg-white p-3">
-                    <div className="mb-1 text-[9px] font-semibold uppercase tracking-wider text-gray-400">
+                  <div key={s.label} className="rounded-xl border border-white/10 bg-white/[0.03] p-3 backdrop-blur-md">
+                    <div className="mb-1 text-[9px] font-semibold uppercase tracking-wider text-white/40">
                       {s.label}
                     </div>
-                    <div className={`font-['Inter',sans-serif] text-lg font-extrabold ${s.cls}`}>
+                    <div className={`text-lg font-extrabold ${s.accent}`}>
                       {s.val}
                     </div>
-                    <div className="mt-0.5 text-[9px] font-semibold text-emerald-500">{s.delta}</div>
+                    <div className="mt-0.5 text-[9px] font-semibold text-emerald-400">{s.delta}</div>
                   </div>
                 ))}
               </div>
 
-              <div className="mb-2 font-['Inter',sans-serif] text-[11px] font-bold uppercase tracking-wider text-gray-700">
+              <div className="mb-2 text-[11px] font-bold uppercase tracking-wider text-white/50">
                 Active Jobs
               </div>
               <div className="mb-4 flex flex-col gap-1.5">
                 {[
-                  { icon: '🔧', bg: 'rgba(20,184,166,0.1)', name: 'Johnson Kitchen Reno', desc: 'Due May 2 · $6,400', badge: 'Active', bcls: 'bg-[#F97316]/15 text-[#F97316]' },
-                  { icon: '🏠', bg: 'rgba(249,115,22,0.1)', name: 'Smith Roof Repair', desc: 'Due Apr 28 · $2,100', badge: 'Pending', bcls: 'bg-amber-500/15 text-amber-700' },
-                  { icon: '⚡', bg: 'rgba(16,185,129,0.1)', name: 'Garcia Electrical', desc: 'Completed · $3,800', badge: 'Done', bcls: 'bg-emerald-500/15 text-emerald-700' },
+                  { icon: '🔧', name: 'Johnson Kitchen Reno', desc: 'Due May 2 · $6,400', badge: 'Active', bcls: 'bg-[#5468FF]/15 text-[#5468FF]' },
+                  { icon: '🏠', name: 'Smith Roof Repair', desc: 'Due Apr 28 · $2,100', badge: 'Pending', bcls: 'bg-amber-500/20 text-amber-300' },
+                  { icon: '⚡', name: 'Garcia Electrical', desc: 'Completed · $3,800', badge: 'Done', bcls: 'bg-emerald-500/20 text-emerald-300' },
                 ].map(j => (
-                  <div key={j.name} className="flex items-center gap-2.5 rounded-lg border border-gray-200 bg-white px-3 py-2.5">
-                    <div className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-lg text-[13px]" style={{ background: j.bg }}>
+                  <div key={j.name} className="flex items-center gap-2.5 rounded-lg border border-white/10 bg-white/[0.03] px-3 py-2.5">
+                    <div className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-lg bg-white/[0.06] text-[13px]">
                       {j.icon}
                     </div>
                     <div className="min-w-0 flex-1">
-                      <div className="truncate text-[11px] font-bold text-gray-900">{j.name}</div>
-                      <div className="mt-px truncate text-[10px] text-gray-400">{j.desc}</div>
+                      <div className="truncate text-[11px] font-bold text-white">{j.name}</div>
+                      <div className="mt-px truncate text-[10px] text-white/45">{j.desc}</div>
                     </div>
                     <span className={`flex-shrink-0 rounded-full px-2 py-0.5 text-[9px] font-bold ${j.bcls}`}>
                       {j.badge}
@@ -156,18 +166,18 @@ export function Hero() {
                 ))}
               </div>
 
-              <div className="mb-2 font-['Inter',sans-serif] text-[11px] font-bold uppercase tracking-wider text-gray-700">
+              <div className="mb-2 text-[11px] font-bold uppercase tracking-wider text-white/50">
                 Revenue by Service
               </div>
               {[
-                { label: 'Roofing', width: '78%', color: '#0F3A7D' },
-                { label: 'Plumbing', width: '55%', color: '#F97316' },
-                { label: 'Electrical', width: '40%', color: '#F97316' },
+                { label: 'Roofing', width: '78%', gradient: 'from-[#5468FF] to-[#7B8AFF]' },
+                { label: 'Plumbing', width: '55%', gradient: 'from-[#F97316] to-[#FFB266]' },
+                { label: 'Electrical', width: '40%', gradient: 'from-[#0F3A7D] to-[#5468FF]' },
               ].map(r => (
                 <div key={r.label} className="mb-2 flex items-center gap-2">
-                  <span className="w-14 flex-shrink-0 text-[9px] text-gray-400">{r.label}</span>
-                  <div className="h-1.5 flex-1 rounded bg-gray-200">
-                    <div className="h-full rounded" style={{ width: r.width, background: r.color }} />
+                  <span className="w-14 flex-shrink-0 text-[9px] text-white/45">{r.label}</span>
+                  <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-white/[0.06]">
+                    <div className={`h-full rounded-full bg-gradient-to-r ${r.gradient}`} style={{ width: r.width }} />
                   </div>
                 </div>
               ))}

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import type Stripe from 'stripe'
-import { getStripe, STRIPE_WEBHOOK_SECRET, STRIPE_SEAT_PRICE_ID } from '@/lib/stripe'
+import { getStripe, STRIPE_WEBHOOK_SECRET } from '@/lib/stripe'
 import { serviceClient } from '@/lib/server-auth'
 
 export const runtime = 'nodejs'
@@ -14,14 +14,6 @@ const STATUS_MAP: Record<string, string> = {
   incomplete: 'incomplete',
   incomplete_expired: 'canceled',
   paused: 'paused',
-}
-
-function seatsFromSubscription(sub: Stripe.Subscription): number {
-  let extra = 0
-  for (const item of sub.items?.data || []) {
-    if (item.price?.id === STRIPE_SEAT_PRICE_ID) extra += item.quantity || 0
-  }
-  return 1 + extra
 }
 
 export async function POST(req: NextRequest) {
@@ -64,14 +56,11 @@ export async function POST(req: NextRequest) {
           plan_status: status === 'active' || status === 'trialing' ? 'active'
             : status === 'past_due' ? 'past_due'
             : 'cancelled',
-          seats: seatsFromSubscription(sub),
           trial_ends_at: sub.trial_end ? new Date(sub.trial_end * 1000).toISOString() : null,
         })
         .eq('stripe_customer_id', customerId)
     }
   } catch {
-    // Acknowledge anyway so Stripe doesn't hammer retries on a transient
-    // DB hiccup; the next lifecycle event will reconcile.
     return NextResponse.json({ received: true, note: 'processing_error' })
   }
 

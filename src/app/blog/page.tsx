@@ -5,13 +5,31 @@ import { MarketingFooter } from '@/components/marketing/MarketingFooter'
 
 const posts = [
   {
+    slug: 'contractor-automations',
+    title: '5 Automations Every Contractor Should Turn On First',
+    desc: 'The trigger-based workflows that save the average crew 6 hours a week.',
+    date: 'Jun 17, 2026',
+    tag: 'Operations',
+    readTime: '4 min',
+    featured: true,
+  },
+  {
+    slug: 'website-lead-engine',
+    title: 'Turn Your Website Into a 24/7 Lead Engine',
+    desc: 'How a built-in quote form turns weekend visitors into Monday-morning jobs.',
+    date: 'Jun 12, 2026',
+    tag: 'Growth',
+    readTime: '5 min',
+    featured: false,
+  },
+  {
     slug: 'automated-dispatch',
     title: 'Automated Dispatching',
     desc: 'Scheduling software for crews who hate schedules.',
     date: 'Mar 15, 2026',
     tag: 'Operations',
     readTime: '4 min',
-    featured: true,
+    featured: false,
   },
   {
     slug: 'construction-tech-trends',

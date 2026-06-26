@@ -1,11 +1,9 @@
 import { MarketingNav } from '@/components/marketing/MarketingNav'
 import { Hero } from '@/components/marketing/Hero'
-import { ProofBar } from '@/components/marketing/ProofBar'
 import { ProblemSolution } from '@/components/marketing/ProblemSolution'
 import { Features } from '@/components/marketing/Features'
 import { PhotoBand } from '@/components/marketing/PhotoBand'
 import { HowItWorks } from '@/components/marketing/HowItWorks'
-import { Testimonials } from '@/components/marketing/Testimonials'
 import { BlogPreview } from '@/components/marketing/BlogPreview'
 import { Pricing } from '@/components/marketing/Pricing'
 import { Trust } from '@/components/marketing/Trust'
@@ -26,12 +24,10 @@ export default function Home() {
       <MarketingNav />
       <main>
         <Hero />
-        <ProofBar />
         <ProblemSolution />
         <Features />
         <PhotoBand />
         <HowItWorks />
-        <Testimonials />
         <BlogPreview />
         <Pricing />
         <Trust />
