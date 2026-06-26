@@ -68,10 +68,16 @@ export function Hero() {
               <span aria-hidden="true" className="transition-transform group-hover:translate-x-0.5">→</span>
             </Link>
             <a
-              href="#how-it-works"
-              className="inline-flex min-h-[52px] items-center justify-center gap-2 rounded-xl border border-white/20 bg-white/[0.04] px-7 py-3.5 text-[15px] font-bold text-white backdrop-blur-md transition-colors hover:border-white/40 hover:bg-white/[0.08]"
+              href="#video"
+              className="group inline-flex min-h-[52px] items-center justify-center gap-2 rounded-xl border border-white/20 bg-white/[0.04] px-7 py-3.5 text-[15px] font-bold text-white backdrop-blur-md transition-colors hover:border-white/40 hover:bg-white/[0.08]"
             >
-              See how it works
+              <span
+                aria-hidden="true"
+                className="flex h-6 w-6 items-center justify-center rounded-full bg-white/15 text-[10px] transition-transform group-hover:scale-110"
+              >
+                ▶
+              </span>
+              Watch the demo
             </a>
           </div>
 

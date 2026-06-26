@@ -1,5 +1,6 @@
 import { MarketingNav } from '@/components/marketing/MarketingNav'
 import { Hero } from '@/components/marketing/Hero'
+import { VideoHighlight } from '@/components/marketing/VideoHighlight'
 import { ProblemSolution } from '@/components/marketing/ProblemSolution'
 import { Features } from '@/components/marketing/Features'
 import { PhotoBand } from '@/components/marketing/PhotoBand'
@@ -24,6 +25,7 @@ export default function Home() {
       <MarketingNav />
       <main>
         <Hero />
+        <VideoHighlight />
         <ProblemSolution />
         <Features />
         <PhotoBand />

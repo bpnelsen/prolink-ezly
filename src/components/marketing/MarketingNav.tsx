@@ -48,6 +48,9 @@ export function MarketingNav() {
           </Link>
 
           <div className="hidden items-center gap-1 lg:flex">
+            <a href="/#video" className="rounded-lg px-3 py-2 text-[13px] font-semibold text-gray-700 transition-colors hover:bg-emerald-500 hover:text-white">
+              Watch demo
+            </a>
             <a href="/#features" className="rounded-lg px-3 py-2 text-[13px] font-semibold text-gray-700 transition-colors hover:bg-emerald-500 hover:text-white">
               Features
             </a>
