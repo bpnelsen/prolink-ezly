@@ -86,19 +86,13 @@ export default function ContractFormModal({ jobId, open, onClose, onCreated }: P
     return r.data.id
   }
 
-  const fetchContractPdfUrl = async (contractId: string): Promise<string | null> => {
-    const r = await apiFetch<{ contract_versions: Array<{ version_number: number; pdf_url: string | null }>; current_version: number }>(`/api/v1/contracts/${contractId}`)
-    if (!r.data) return null
-    const v = r.data.contract_versions.find(x => x.version_number === r.data!.current_version)
-    return v?.pdf_url || null
-  }
-
   const handlePrint = async () => {
     setBusy('print')
     const id = await createContract()
     if (!id) { setBusy(null); return }
-    const url = await fetchContractPdfUrl(id)
-    if (url) window.open(url, '_blank', 'noopener,noreferrer')
+    // Use our proxy route so the file is served from our origin with
+    // correct content-type/charset and no X-Frame-Options block.
+    window.open(`/api/v1/contracts/${id}/pdf`, '_blank', 'noopener,noreferrer')
     onCreated?.(id)
     setBusy(null)
     onClose()

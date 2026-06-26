@@ -319,8 +319,11 @@ function JobDetail({ params }: { params: { id: string } }) {
                     <FileSignature size={13} /> View Contract
                   </Link>
                 ) : (
-                  <button onClick={() => setContractModalOpen(true)}
-                    className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-gray-200 text-xs font-semibold text-gray-700 hover:bg-gray-50 transition">
+                  <button
+                    onClick={() => setContractModalOpen(true)}
+                    disabled={!job?.client_id}
+                    title={job?.client_id ? undefined : 'Attach a client to this job before creating a contract.'}
+                    className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-gray-200 text-xs font-semibold text-gray-700 hover:bg-gray-50 transition disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-transparent">
                     <FileSignature size={13} /> Create Contract
                   </button>
                 )}

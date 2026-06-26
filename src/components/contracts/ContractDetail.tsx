@@ -132,7 +132,7 @@ export default function ContractDetail({ contractId }: { contractId: string }) {
             </button>
           )}
           {currentVersion?.pdf_url && (
-            <a href={currentVersion.pdf_url} target="_blank" rel="noreferrer"
+            <a href={`/api/v1/contracts/${contract.id}/pdf`} target="_blank" rel="noreferrer"
               className="flex items-center gap-1.5 px-4 py-2 border border-gray-200 hover:bg-gray-50 rounded-xl text-sm font-semibold text-gray-700">
               <Download size={14} /> Download PDF
             </a>
@@ -256,7 +256,7 @@ export default function ContractDetail({ contractId }: { contractId: string }) {
             <p className="text-sm font-bold text-gray-900">Preview · v{contract.current_version}</p>
             <p className="text-xs text-gray-500">Print from the preview to save as PDF.</p>
           </div>
-          <iframe src={currentVersion.pdf_url} className="w-full" style={{ height: '900px', border: 0 }} />
+          <iframe src={`/api/v1/contracts/${contract.id}/pdf?v=${contract.current_version}`} className="w-full" style={{ height: '900px', border: 0 }} title="Contract preview" />
         </div>
       )}
 
@@ -337,7 +337,7 @@ export default function ContractDetail({ contractId }: { contractId: string }) {
                   <span className="text-gray-400 ml-2 text-xs">{new Date(v.created_at).toLocaleString()}</span>
                 </div>
                 <div className="flex gap-2">
-                  {v.pdf_url && <a href={v.pdf_url} target="_blank" rel="noreferrer" className="text-xs text-teal-700 hover:underline">Unsigned</a>}
+                  {v.pdf_url && <a href={`/api/v1/contracts/${contract.id}/pdf?v=${v.version_number}`} target="_blank" rel="noreferrer" className="text-xs text-teal-700 hover:underline">Unsigned</a>}
                   {v.signed_pdf_url && <a href={v.signed_pdf_url} target="_blank" rel="noreferrer" className="text-xs text-purple-700 hover:underline">Signed</a>}
                 </div>
               </li>
