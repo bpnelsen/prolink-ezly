@@ -1,11 +1,21 @@
+'use client'
+
+import { useState } from 'react'
+
 /**
  * Hero video highlight. Embeds the self-contained animated Prolink explainer
  * (public/prolink-video.html — a standalone React/Babel bundle) inside a
- * responsive 16:9 iframe. Sits directly under the Hero so it's the visual
- * centerpiece of the marketing page. Dark theme matches the hero for a
- * seamless transition.
+ * responsive 16:9 frame. Sits directly under the Hero so it's the visual
+ * centerpiece of the marketing page; dark theme matches the hero.
+ *
+ * Click-to-play: a branded poster is shown until the visitor clicks play,
+ * at which point the iframe mounts. Mounting on click (rather than on page
+ * load) gives the browser the user gesture it requires to let the video's
+ * voiceover play *with sound* — autoplaying audio on load is blocked.
  */
 export function VideoHighlight() {
+  const [playing, setPlaying] = useState(false)
+
   return (
     <section
       id="video"
@@ -66,15 +76,58 @@ export function VideoHighlight() {
               </span>
             </div>
 
-            {/* Responsive 16:9 iframe */}
+            {/* Responsive 16:9 stage: poster until clicked, then the iframe */}
             <div className="relative w-full" style={{ aspectRatio: '16 / 9' }}>
-              <iframe
-                src="/prolink-video.html"
-                title="Prolink product tour"
-                loading="lazy"
-                allow="autoplay; fullscreen"
-                className="absolute inset-0 h-full w-full border-0"
-              />
+              {playing ? (
+                <iframe
+                  src="/prolink-video.html"
+                  title="Prolink product tour"
+                  allow="autoplay; fullscreen"
+                  allowFullScreen
+                  className="absolute inset-0 h-full w-full border-0"
+                />
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setPlaying(true)}
+                  aria-label="Play Prolink video"
+                  className="group absolute inset-0 flex flex-col items-center justify-center gap-6 border-0 p-0"
+                  style={{
+                    background:
+                      'radial-gradient(ellipse at 50% 38%, #16356b 0%, #0E2143 60%, #060E1C 100%)',
+                  }}
+                >
+                  <span className="flex items-center gap-3 sm:gap-4">
+                    <svg
+                      viewBox="0 0 40 40"
+                      xmlns="http://www.w3.org/2000/svg"
+                      aria-hidden="true"
+                      className="h-9 w-9 sm:h-12 sm:w-12"
+                    >
+                      <rect x="10" y="17" width="20" height="6" rx="3" fill="#fff" />
+                      <circle cx="10" cy="20" r="8" fill="#fff" />
+                      <circle cx="30" cy="20" r="8" fill="#F5620F" />
+                    </svg>
+                    <span className="text-[32px] font-extrabold tracking-[-0.04em] text-white sm:text-[46px]">
+                      Prolink
+                    </span>
+                  </span>
+
+                  <span className="flex h-[68px] w-[68px] items-center justify-center rounded-full bg-[#F5620F] shadow-[0_12px_36px_rgba(245,98,15,0.5)] transition-transform group-hover:scale-[1.07] sm:h-[84px] sm:w-[84px]">
+                    <svg
+                      viewBox="0 0 24 24"
+                      aria-hidden="true"
+                      className="ml-1 h-7 w-7 fill-white sm:h-[34px] sm:w-[34px]"
+                    >
+                      <path d="M8 5v14l11-7z" />
+                    </svg>
+                  </span>
+
+                  <span className="text-[13px] font-semibold uppercase tracking-[0.12em] text-white/65 sm:text-[15px]">
+                    Watch · 60 sec
+                  </span>
+                </button>
+              )}
             </div>
           </div>
         </div>
