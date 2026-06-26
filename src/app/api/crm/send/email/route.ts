@@ -94,7 +94,7 @@ export async function POST(req: NextRequest) {
     .from('crm_deals').select('id').eq('contractor_id', contractorId).maybeSingle()
 
   const resend = new Resend(apiKey)
-  const { error: sendErr } = await resend.emails.send({
+  const sendResult = await resend.emails.send({
     from: FROM,
     to: contractor.email,
     ...(REPLY_TO ? { replyTo: REPLY_TO } : {}),
@@ -102,9 +102,11 @@ export async function POST(req: NextRequest) {
     html: bodyToHtml(messageBody),
     text: messageBody,
   })
-  if (sendErr) {
-    return serverError(sendErr.message || 'Email send failed', sendErr)
+  if (sendResult.error) {
+    return serverError(sendResult.error.message || 'Email send failed', sendResult.error)
   }
+  // Store the Resend message id so open-tracking webhooks can find this row.
+  const resendMessageId = (sendResult.data as { id?: string } | null)?.id || null
 
   // Log as an activity + advance contact_status / contact_date.
   const { data: activity, error: aErr } = await supabase
@@ -118,6 +120,7 @@ export async function POST(req: NextRequest) {
       completed: true,
       completed_at: new Date().toISOString(),
       owner_email: user.email,
+      resend_message_id: resendMessageId,
     })
     .select('*').single()
   if (aErr) return serverError(aErr.message)

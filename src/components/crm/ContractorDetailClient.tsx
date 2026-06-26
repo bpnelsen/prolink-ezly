@@ -1,6 +1,5 @@
 'use client'
 import { useEffect, useState } from 'react'
-import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import {
   ArrowLeft, Phone, Mail, MapPin, Globe, FileText, Tag, Calendar,
@@ -91,9 +90,17 @@ export default function ContractorDetailClient({ id }: { id: string }) {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between gap-4">
-        <Link href="/crm/contractors" className="text-sm text-gray-500 hover:text-gray-900 flex items-center gap-1 font-semibold">
+        <button
+          type="button"
+          onClick={() => {
+            const saved = typeof window !== 'undefined'
+              ? sessionStorage.getItem('crm:contractors:lastList') : null
+            router.push(saved ? `/crm/contractors?${saved}` : '/crm/contractors')
+          }}
+          className="text-sm text-gray-500 hover:text-gray-900 flex items-center gap-1 font-semibold"
+        >
           <ArrowLeft size={14} /> All contractors
-        </Link>
+        </button>
         <div className="flex gap-2">
           <button
             onClick={toggleDoNotContact}

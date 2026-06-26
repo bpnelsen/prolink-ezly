@@ -64,6 +64,13 @@ export type Activity = {
   due_at: string | null
   completed_at: string | null
   owner_email: string | null
+  resend_message_id: string | null
+  first_opened_at: string | null
+  last_opened_at: string | null
+  open_count: number
+  first_clicked_at: string | null
+  last_clicked_at: string | null
+  click_count: number
   created_at: string
   updated_at: string
 }
