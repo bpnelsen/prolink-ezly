@@ -20,7 +20,9 @@ const securityHeaders = [
       "form-action 'self'",
       "frame-ancestors 'self'",
       "img-src 'self' data: blob: https:",
-      "font-src 'self' data: https://fonts.gstatic.com",
+      // blob: lets the marketing video bundle load its embedded webfonts,
+      // which it unpacks into blob: URLs and applies via @font-face.
+      "font-src 'self' data: blob: https://fonts.gstatic.com",
       "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
       // blob: is required by the self-unpacking marketing video bundle
       // (/prolink-video.html), which decodes React/ReactDOM/Babel into
