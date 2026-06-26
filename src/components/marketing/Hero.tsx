@@ -1,10 +1,24 @@
+'use client'
+
 import Link from 'next/link'
+import { useState } from 'react'
 
 /**
- * Algolia-style dark hero with gradient orbs, grid overlay, glass dashboard
- * mockup, and gradient-text headline. Two-column layout on >=lg; the mockup
- * collapses on small screens so the headline + CTAs read clean.
+ * Algolia-style dark hero with gradient orbs, grid overlay, and a
+ * click-to-play YouTube video where the dashboard mockup used to be.
+ *
+ * To use a different video, swap the constants below. `HERO_VIDEO_ID`
+ * is the YouTube video ID (the bit after `v=` in a YouTube URL, e.g.
+ * `dQw4w9WgXcQ`). `HERO_VIDEO_POSTER` is optional — by default it uses
+ * YouTube's own maxres thumbnail; set it to a path under /public/ if
+ * you want a custom poster.
  */
+const HERO_VIDEO_ID = 'REPLACE_WITH_YOUTUBE_VIDEO_ID'
+const HERO_VIDEO_POSTER: string | null = null // e.g. '/videos/hero-poster.jpg'
+
+const posterUrl =
+  HERO_VIDEO_POSTER ?? `https://img.youtube.com/vi/${HERO_VIDEO_ID}/maxresdefault.jpg`
+
 export function Hero() {
   return (
     <section
@@ -84,9 +98,9 @@ export function Hero() {
           </p>
         </div>
 
-        {/* Glass dashboard mockup */}
+        {/* Click-to-play hero video */}
         <div className="relative hidden md:block">
-          {/* Glow halo behind card */}
+          {/* Glow halo behind player */}
           <div
             aria-hidden="true"
             className="pointer-events-none absolute -inset-8 rounded-[2rem] opacity-60 blur-3xl"
@@ -109,82 +123,57 @@ export function Hero() {
             </div>
           </div>
 
-          <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-white/[0.03] shadow-[0_40px_80px_-20px_rgba(0,0,0,0.6)] backdrop-blur-2xl">
-            <div className="flex items-center gap-1.5 border-b border-white/10 bg-white/[0.04] px-4 py-3">
-              <span className="h-2.5 w-2.5 rounded-full bg-[#FF5F57]" />
-              <span className="h-2.5 w-2.5 rounded-full bg-[#FEBC2E]" />
-              <span className="h-2.5 w-2.5 rounded-full bg-[#28C840]" />
-              <span className="ml-3 text-[10px] font-semibold text-white/40">dashboard.useezly.com</span>
-            </div>
-            <div className="p-5">
-              <div className="mb-4 flex items-center justify-between">
-                <div className="text-sm font-bold text-white">
-                  Good morning, Mike 👋
-                </div>
-                <div className="text-[11px] text-white/40">Apr 23, 2026</div>
-              </div>
-
-              <div className="mb-4 grid grid-cols-3 gap-2.5">
-                {[
-                  { label: 'Revenue', val: '$18.4k', delta: '↑ 12% this month', accent: 'text-[#5468FF]' },
-                  { label: 'Active Jobs', val: '9', delta: '↑ 3 new', accent: 'text-[#F97316]' },
-                  { label: 'Leads', val: '24', delta: '↑ 8 today', accent: 'text-[#5468FF]' },
-                ].map(s => (
-                  <div key={s.label} className="rounded-xl border border-white/10 bg-white/[0.03] p-3 backdrop-blur-md">
-                    <div className="mb-1 text-[9px] font-semibold uppercase tracking-wider text-white/40">
-                      {s.label}
-                    </div>
-                    <div className={`text-lg font-extrabold ${s.accent}`}>
-                      {s.val}
-                    </div>
-                    <div className="mt-0.5 text-[9px] font-semibold text-emerald-400">{s.delta}</div>
-                  </div>
-                ))}
-              </div>
-
-              <div className="mb-2 text-[11px] font-bold uppercase tracking-wider text-white/50">
-                Active Jobs
-              </div>
-              <div className="mb-4 flex flex-col gap-1.5">
-                {[
-                  { icon: '🔧', name: 'Johnson Kitchen Reno', desc: 'Due May 2 · $6,400', badge: 'Active', bcls: 'bg-[#5468FF]/15 text-[#5468FF]' },
-                  { icon: '🏠', name: 'Smith Roof Repair', desc: 'Due Apr 28 · $2,100', badge: 'Pending', bcls: 'bg-amber-500/20 text-amber-300' },
-                  { icon: '⚡', name: 'Garcia Electrical', desc: 'Completed · $3,800', badge: 'Done', bcls: 'bg-emerald-500/20 text-emerald-300' },
-                ].map(j => (
-                  <div key={j.name} className="flex items-center gap-2.5 rounded-lg border border-white/10 bg-white/[0.03] px-3 py-2.5">
-                    <div className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-lg bg-white/[0.06] text-[13px]">
-                      {j.icon}
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <div className="truncate text-[11px] font-bold text-white">{j.name}</div>
-                      <div className="mt-px truncate text-[10px] text-white/45">{j.desc}</div>
-                    </div>
-                    <span className={`flex-shrink-0 rounded-full px-2 py-0.5 text-[9px] font-bold ${j.bcls}`}>
-                      {j.badge}
-                    </span>
-                  </div>
-                ))}
-              </div>
-
-              <div className="mb-2 text-[11px] font-bold uppercase tracking-wider text-white/50">
-                Revenue by Service
-              </div>
-              {[
-                { label: 'Roofing', width: '78%', gradient: 'from-[#5468FF] to-[#7B8AFF]' },
-                { label: 'Plumbing', width: '55%', gradient: 'from-[#F97316] to-[#FFB266]' },
-                { label: 'Electrical', width: '40%', gradient: 'from-[#0F3A7D] to-[#5468FF]' },
-              ].map(r => (
-                <div key={r.label} className="mb-2 flex items-center gap-2">
-                  <span className="w-14 flex-shrink-0 text-[9px] text-white/45">{r.label}</span>
-                  <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-white/[0.06]">
-                    <div className={`h-full rounded-full bg-gradient-to-r ${r.gradient}`} style={{ width: r.width }} />
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
+          <HeroVideo videoId={HERO_VIDEO_ID} posterUrl={posterUrl} />
         </div>
       </div>
     </section>
+  )
+}
+
+function HeroVideo({ videoId, posterUrl }: { videoId: string; posterUrl: string }) {
+  const [playing, setPlaying] = useState(false)
+  const embedSrc = `https://www.youtube-nocookie.com/embed/${videoId}?autoplay=1&rel=0&modestbranding=1`
+
+  return (
+    <div className="relative aspect-video overflow-hidden rounded-2xl border border-white/10 bg-white/[0.03] shadow-[0_40px_80px_-20px_rgba(0,0,0,0.6)]">
+      {playing ? (
+        <iframe
+          src={embedSrc}
+          title="Ezly product video"
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+          allowFullScreen
+          className="absolute inset-0 h-full w-full"
+        />
+      ) : (
+        <button
+          type="button"
+          onClick={() => setPlaying(true)}
+          aria-label="Play product video"
+          className="group absolute inset-0 h-full w-full overflow-hidden"
+        >
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={posterUrl}
+            alt=""
+            loading="lazy"
+            className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.03]"
+          />
+          {/* Dark gradient so the play button reads on any thumbnail */}
+          <span
+            aria-hidden="true"
+            className="absolute inset-0 bg-gradient-to-b from-black/10 via-transparent to-black/40"
+          />
+          {/* Play button */}
+          <span
+            aria-hidden="true"
+            className="absolute left-1/2 top-1/2 flex h-20 w-20 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-white/95 shadow-[0_12px_40px_rgba(84,104,255,0.5)] backdrop-blur-md transition-all duration-300 group-hover:scale-110 group-hover:bg-white"
+          >
+            <svg viewBox="0 0 24 24" width="28" height="28" fill="#0B0B1F" className="ml-1">
+              <path d="M8 5v14l11-7z" />
+            </svg>
+          </span>
+        </button>
+      )}
+    </div>
   )
 }
