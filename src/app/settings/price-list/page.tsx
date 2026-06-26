@@ -1,6 +1,6 @@
 'use client'
 import { useEffect, useState, useCallback } from 'react'
-import { ListChecks, Plus, Trash2, Pencil, Check, X, Loader2 } from 'lucide-react'
+import { ListChecks, Plus, Trash2, Pencil, Check, X, Loader2, Sparkles } from 'lucide-react'
 import Breadcrumbs from '../../../components/Breadcrumbs'
 import { supabase } from '@/lib/supabase-client'
 
@@ -27,6 +27,8 @@ export default function PriceListPage() {
   const [form, setForm] = useState<Draft>(emptyDraft)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editDraft, setEditDraft] = useState<Draft>(emptyDraft)
+  const [refilling, setRefilling] = useState(false)
+  const [notice, setNotice] = useState<string | null>(null)
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -93,6 +95,31 @@ export default function PriceListPage() {
     load()
   }
 
+  const refillFromHistory = async () => {
+    setRefilling(true); setError(null); setNotice(null)
+    const { data: { session } } = await supabase.auth.getSession()
+    if (!session) { setError('Please sign in.'); setRefilling(false); return }
+    try {
+      const resp = await fetch('/api/materials/refill', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${session.access_token}` },
+      })
+      const data = await resp.json()
+      if (data.ok) {
+        setNotice(data.added > 0
+          ? `Added ${data.added} item${data.added > 1 ? 's' : ''} from your past quotes.`
+          : 'Your price book already covers your past quotes — nothing to add.')
+        if (data.added > 0) await load()
+      } else {
+        setError(data.message || 'Could not refill the price book.')
+      }
+    } catch {
+      setError('Could not refill the price book. Try again in a moment.')
+    } finally {
+      setRefilling(false)
+    }
+  }
+
   const remove = async (id: string) => {
     setSaving(true)
     const { error: err } = await supabase.from('materials').delete().eq('id', id)
@@ -111,12 +138,27 @@ export default function PriceListPage() {
         <h2 className="text-2xl font-bold text-gray-900 mb-2 flex items-center gap-2">
           <ListChecks size={22} className="text-teal-600" /> Price Book
         </h2>
-        <p className="text-gray-500 text-sm mb-8">
+        <p className="text-gray-500 text-sm mb-5">
           Your standard prices for materials and labor. These feed your quotes — and the Jack assistant uses them so quotes match how you price.
         </p>
 
+        <div className="mb-6">
+          <button
+            onClick={refillFromHistory}
+            disabled={refilling}
+            className="inline-flex items-center gap-2 bg-gray-900 disabled:opacity-50 text-white text-sm font-bold px-4 py-2.5 rounded-xl hover:bg-gray-800 transition shadow-sm"
+          >
+            {refilling ? <Loader2 size={15} className="animate-spin" /> : <Sparkles size={15} className="text-teal-400" />}
+            Refill from past quotes
+          </button>
+          <p className="text-xs text-gray-400 mt-1.5">Pulls items you&apos;ve quoted before (most recent price) and adds any that aren&apos;t here yet.</p>
+        </div>
+
         {error && (
           <div className="mb-6 p-4 bg-red-50 text-red-700 rounded-xl text-sm font-medium">{error}</div>
+        )}
+        {notice && (
+          <div className="mb-6 p-4 bg-teal-50 text-teal-700 rounded-xl text-sm font-medium">{notice}</div>
         )}
 
         {/* Add new item */}

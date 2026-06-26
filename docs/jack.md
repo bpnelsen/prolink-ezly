@@ -92,6 +92,7 @@ card, and only on approval does `POST /api/jack/action` write.
 | `create_job` | `jobs` | New job for an existing customer. |
 | `schedule_job` | `jobs` (`scheduled_start` / `scheduled_end`) | Schedules or reschedules a job. Default duration 2h. |
 | `add_material` | `materials` | Adds an item + standard price to the contractor's price book. |
+| `refill_price_book` | `materials` | Bulk-adds items from past quotes (most recent rate, skips existing). Also a button on Settings → Price Book. |
 
 > Line items are written with **both** column conventions the table requires
 > (`qty`+`quantity`, `rate`+`unit_price`, `amount`+`total`, `position`+`sort_order`),
@@ -158,7 +159,8 @@ Before finalizing a quote, Jack proactively asks about commonly-missed items
   there fall back to a model estimate (flagged). No live retail/material pricing
   API yet (Home Depot/RSMeans etc. are paid/scraped — deferred).
 - The price book is managed at **Settings → Price Book** (`/settings/price-list`)
-  and via Jack (`add_material`); it also grows from past quotes.
+  — add/edit/delete plus "Refill from past quotes" — and via Jack
+  (`add_material` / `refill_price_book`).
 - `schedule_job` writes times in UTC; no per-contractor timezone handling yet.
 - No document/photo uploads.
 - In-memory rate limiter is single-region.
